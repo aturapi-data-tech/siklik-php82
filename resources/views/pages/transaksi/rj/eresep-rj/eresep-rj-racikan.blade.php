@@ -191,7 +191,7 @@ new class extends Component {
                 // 2. Insert ke tabel transaksi
                 $lastInserted = DB::table('rstxn_rjobatracikans')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
 
-                // Siklik (klinik pratama): kolom 'takar' tdk ada di immst_products,
+                // Siklik (klinik pratama): kolom 'takar' tdk ada di tkmst_products,
                 // siklik-lite default 'Tablet'.
                 $takar = 'Tablet';
 

@@ -66,8 +66,8 @@ new class extends Component {
     private function findData(int $rjNo): void
     {
         $this->rjObat = DB::table('rstxn_rjobats')
-            ->join('immst_products', 'immst_products.product_id', 'rstxn_rjobats.product_id')
-            ->select('rstxn_rjobats.rjobat_dtl', 'rstxn_rjobats.product_id', 'immst_products.product_name', 'rstxn_rjobats.qty', 'rstxn_rjobats.price', 'rstxn_rjobats.rj_carapakai', 'rstxn_rjobats.rj_kapsul', 'rstxn_rjobats.rj_takar', 'rstxn_rjobats.rj_ket', 'rstxn_rjobats.exp_date', 'rstxn_rjobats.catatan_khusus', 'rstxn_rjobats.etiket_status')
+            ->join('tkmst_products', 'tkmst_products.product_id', 'rstxn_rjobats.product_id')
+            ->select('rstxn_rjobats.rjobat_dtl', 'rstxn_rjobats.product_id', 'tkmst_products.product_name', 'rstxn_rjobats.qty', 'rstxn_rjobats.price', 'rstxn_rjobats.rj_carapakai', 'rstxn_rjobats.rj_kapsul', 'rstxn_rjobats.rj_takar', 'rstxn_rjobats.rj_ket', 'rstxn_rjobats.exp_date', 'rstxn_rjobats.catatan_khusus', 'rstxn_rjobats.etiket_status')
             ->where('rj_no', $rjNo)
             ->orderBy('rstxn_rjobats.rjobat_dtl')
             ->get()
@@ -142,7 +142,7 @@ new class extends Component {
 
         $this->validate(
             [
-                'formEntryObat.productId' => 'bail|required|exists:immst_products,product_id',
+                'formEntryObat.productId' => 'bail|required|exists:tkmst_products,product_id',
                 'formEntryObat.price' => 'bail|required|numeric|min:0',
                 'formEntryObat.qty' => 'bail|required|numeric|min:1',
                 'formEntryObat.carapakai' => 'bail|required|numeric|min:1',

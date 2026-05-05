@@ -46,7 +46,7 @@ new class extends Component {
     private function loadObatRows(): void
     {
         $rows = DB::table('lbtxn_checkupobats as a')
-            ->leftJoin('immst_products as b', 'a.product_id', '=', 'b.product_id')
+            ->leftJoin('tkmst_products as b', 'a.product_id', '=', 'b.product_id')
             ->select('a.id', 'a.product_id', 'b.product_name', 'a.qty', 'a.price')
             ->where('a.checkup_no', $this->checkupNo)
             ->orderBy('a.id', 'asc')

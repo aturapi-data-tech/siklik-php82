@@ -326,7 +326,7 @@ new class extends Component {
      =============================== */
     private function paketObatJasaDokter(string $accdocId, int $rjNo, int $accdocDtl): void
     {
-        $items = DB::table('rsmst_accdocproducts')->join('immst_products', 'immst_products.product_id', 'rsmst_accdocproducts.product_id')->select('immst_products.product_id', 'immst_products.product_name', 'immst_products.sales_price', 'rsmst_accdocproducts.accdprod_qty')->where('accdoc_id', $accdocId)->orderBy('accdoc_id')->get();
+        $items = DB::table('rsmst_accdocproducts')->join('tkmst_products', 'tkmst_products.product_id', 'rsmst_accdocproducts.product_id')->select('tkmst_products.product_id', 'tkmst_products.product_name', 'tkmst_products.sales_price', 'rsmst_accdocproducts.accdprod_qty')->where('accdoc_id', $accdocId)->orderBy('accdoc_id')->get();
 
         foreach ($items as $item) {
             $this->insertObat($accdocId, $rjNo, $accdocDtl, $item->product_id, 'Paket JD ' . $item->product_name, $item->sales_price, $item->accdprod_qty);
@@ -346,7 +346,7 @@ new class extends Component {
                 'rjNo' => $rjNo,
             ],
             [
-                'productId' => 'bail|required|exists:immst_products,product_id',
+                'productId' => 'bail|required|exists:tkmst_products,product_id',
                 'productName' => 'bail|required',
                 'qty' => 'bail|required|numeric|min:1',
                 'productPrice' => 'bail|required|numeric',

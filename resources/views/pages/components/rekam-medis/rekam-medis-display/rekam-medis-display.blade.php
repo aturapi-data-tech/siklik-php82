@@ -124,7 +124,7 @@ new class extends Component {
                     foreach ($to['eresep'] as $key => $item) {
                         $maxDtl++;
 
-                        $productPrice = DB::table('immst_products')->where('product_id', $item['productId'])->value('sales_price') ?? 0;
+                        $productPrice = DB::table('tkmst_products')->where('product_id', $item['productId'])->value('sales_price') ?? 0;
 
                         DB::table('rstxn_rjobats')->insert([
                             'rjobat_dtl' => $maxDtl,

@@ -49,7 +49,7 @@ new class extends Component {
                 (b.product_name || '   ' || COUNT(*) || ' (X)') AS keterangan,
                 SUM(NVL(a.qty, 0) * NVL(a.price, 0))            AS obat
             FROM  rstxn_rjobats   a
-            JOIN  immst_products  b ON b.product_id = a.product_id
+            JOIN  tkmst_products  b ON b.product_id = a.product_id
             WHERE a.rj_no = :rjno
             GROUP BY b.product_name
             ORDER BY b.product_name
