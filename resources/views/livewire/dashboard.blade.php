@@ -42,6 +42,7 @@ new class extends Component {
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 14, 'route' => 'master.parameter',    'title' => 'Master Parameter',     'desc' => 'Parameter sistem & konfigurasi',                   'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 15, 'route' => 'master.medik',           'title' => 'Master Alat Medis',      'desc' => 'Tracking alat medis (kondisi, sertifikat, izin)','roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 16, 'route' => 'master.ref-bpjs',        'title' => 'Master Ref BPJS',        'desc' => 'Cache reference BPJS PCare (alergi, kesadaran, prognosa)', 'roles' => ['admin'], 'badge' => 'BPJS']),
+            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 17, 'route' => 'master.jadwal-mingguan', 'title' => 'Jadwal Mingguan BPJS',   'desc' => 'Pull jadwal dokter per poli dari BPJS Antrean RS untuk 7 hari ke depan', 'roles' => ['admin', 'mr'], 'badge' => 'BPJS']),
 
             // ── Master Akuntansi ──────────────────────────────────────
             $entry(['group' => 'Master Akuntansi', 'groupOrder' => 4, 'order' => 1, 'route' => 'master.group-akun', 'title' => 'Master Group Akun', 'desc' => 'Pengelompokan akun (Aktiva/Pasiva/Modal/Pendapatan/Biaya)',     'roles' => ['admin'], 'badge' => 'Akuntansi']),

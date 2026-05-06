@@ -10,6 +10,7 @@ Route::livewire('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/dashboard', 'dashboard')->name('dashboard');
 });
+
 // Route::middleware(['auth', 'verified'])->group(function () {
 //     Route::livewire('/master/poli', 'pages::master.poli.index')
 //         ->name('master.poli');
@@ -31,6 +32,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::livewire('/master/ref-bpjs', 'pages::master.master-klinik.master-ref-bpjs.master-ref-bpjs')
         ->name('master.ref-bpjs');
+
+    Route::livewire('/master/jadwal-mingguan', 'pages::master.master-klinik.master-jadwal-mingguan.master-jadwal-mingguan')
+        ->name('master.jadwal-mingguan');
 
     Route::livewire('/master/laborat', 'pages::master.master-lab.master-laborat.clab.master-clab')
         ->name('master.laborat');
@@ -144,6 +148,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('rawat-jalan.daftar');
 
     // ===========================================
+    // RAWAT JALAN (RJ) - BOOKING (Mobile JKN)
+    // ===========================================
+    Route::livewire('/rawat-jalan/booking', 'pages::transaksi.rj.booking-rj.booking-rj')
+        ->name('rawat-jalan.booking');
+
+    // ===========================================
     // TRANSAKSI RJ - ANTRIAN APOTEK
     // ===========================================
     Route::livewire('/transaksi/rj/antrian-apotek-rj', 'pages::transaksi.rj.antrian-apotek-rj.antrian-apotek-rj')
@@ -234,6 +244,7 @@ Route::middleware(['auth'])->group(function () {
     // ===========================================
     Route::livewire('/database-monitor/role-control', 'pages::database-monitor.role-control.role-control')
         ->name('database-monitor.role-control');
+
 });
 
 
