@@ -394,124 +394,125 @@ new class extends Component {
                 <x-input-label for="" :value="__('Racikan')" :required="false" class="pt-2 sm:text-xl" />
 
                 @role(['Dokter', 'Admin'])
-                    <div x-data x-ref="racikanSection">
+                <div x-data x-ref="racikanSection">
 
-                        {{-- LOV + No Racikan --}}
-                        @if (!$formEresepRacikan)
-                            <div class="flex items-center gap-3 mt-2" x-init="$nextTick(() => $el.querySelector('input:not([disabled])')?.focus())">
+                    {{-- LOV + No Racikan --}}
+                    @if (!$formEresepRacikan)
+                    <div class="flex items-center gap-3 mt-2"
+                        x-init="$nextTick(() => $el.querySelector('input:not([disabled])')?.focus())">
 
-                                <div class="flex-1">
-                                    <livewire:lov.product.lov-product target="eresepRjObatRacikan" label="Nama Obat Racikan"
-                                        :readonly="$isFormLocked" />
-                                </div>
+                        <div class="flex-1">
+                            <livewire:lov.product.lov-product target="eresepRjObatRacikan" label="Nama Obat Racikan"
+                                :readonly="$isFormLocked" />
+                        </div>
 
-                                <div class="w-32">
-                                    <x-input-label :value="__('No Racikan')" />
-                                    <x-text-input wire:model="noRacikan" placeholder="R1" :disabled="$isFormLocked"
-                                        class="mt-1" />
-                                </div>
-                            </div>
-                        @endif
-
-                        {{-- Form input obat racikan --}}
-                        @if ($formEresepRacikan)
-                            {{-- Input Row --}}
-                            <div class="flex items-end w-full gap-1 mt-2">
-
-                                {{-- No Racikan --}}
-                                <div class="flex-[1]">
-                                    <x-input-label :value="__('Racikan')" />
-                                    <x-text-input class="w-full mt-1" :disabled="false"
-                                        wire:model="formEresepRacikan.noRacikan" />
-                                </div>
-
-                                {{-- Nama obat (readonly) --}}
-                                <div class="flex-[3]">
-                                    <x-input-label :value="__('Nama Obat')" :required="true" />
-                                    <x-text-input class="w-full mt-1" :disabled="true"
-                                        wire:model="formEresepRacikan.productName" />
-                                </div>
-
-                                {{-- Sedia --}}
-                                <div class="flex-[1]">
-                                    <x-input-label :value="__('Sedia')" :required="true" />
-                                    <x-text-input placeholder="Sedia" class="w-full mt-1" :disabled="$isFormLocked"
-                                        wire:model="formEresepRacikan.sedia" x-ref="sedia" x-init="$nextTick(() => $el.focus())"
-                                        x-on:keydown.enter.prevent="$refs.dosis.focus()" />
-                                </div>
-
-                                {{-- Dosis --}}
-                                <div class="flex-[1]">
-                                    <x-input-label :value="__('Dosis')" :required="true" />
-                                    <x-text-input placeholder="Dosis" class="w-full mt-1" :disabled="$isFormLocked"
-                                        wire:model="formEresepRacikan.dosis" x-ref="dosis"
-                                        x-on:keydown.enter.prevent="$refs.qty.focus()" />
-                                </div>
-
-                                {{-- Qty --}}
-                                <div class="flex-[1]">
-                                    <x-input-label :value="__('Jml')" />
-                                    <x-text-input placeholder="Jml" class="w-full mt-1" :disabled="$isFormLocked"
-                                        wire:model="formEresepRacikan.qty" x-ref="qty"
-                                        x-on:keydown.enter.prevent="$refs.catatan.focus()" />
-                                </div>
-
-                                {{-- Catatan --}}
-                                <div class="flex-[2]">
-                                    <x-input-label :value="__('Catatan')" />
-                                    <x-text-input placeholder="Catatan" class="w-full mt-1" :disabled="$isFormLocked"
-                                        wire:model="formEresepRacikan.catatan" x-ref="catatan"
-                                        x-on:keydown.enter.prevent="$refs.signa.focus()" />
-                                </div>
-
-                                {{-- Signa --}}
-                                <div class="flex-[2]">
-                                    <x-input-label :value="__('Signa')" />
-                                    <x-text-input placeholder="Signa" class="w-full mt-1" :disabled="$isFormLocked"
-                                        wire:model="formEresepRacikan.catatanKhusus" x-ref="signa"
-                                        x-on:keydown.enter.prevent="$wire.insertProduct()" />
-                                </div>
-
-                                {{-- Hapus draft --}}
-                                <div class="ml-auto shrink-0">
-                                    <x-input-label :value="__('')" />
-                                    <x-secondary-button class="inline-flex mt-1" :disabled="$isFormLocked"
-                                        wire:click="resetFormEresepRacikan">
-                                        <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true"
-                                            xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                                            <path
-                                                d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
-                                        </svg>
-                                    </x-secondary-button>
-                                </div>
-                            </div>
-
-                            {{-- Error Row --}}
-                            <div class="flex w-full gap-1 text-xs">
-                                <div class="flex-[1]"></div>
-                                <div class="flex-[3]">
-                                    <x-input-error :messages="$errors->get('formEresepRacikan.productName')" />
-                                </div>
-                                <div class="flex-[1]">
-                                    <x-input-error :messages="$errors->get('formEresepRacikan.sedia')" />
-                                </div>
-                                <div class="flex-[1]">
-                                    <x-input-error :messages="$errors->get('formEresepRacikan.dosis')" />
-                                </div>
-                                <div class="flex-[1]">
-                                    <x-input-error :messages="$errors->get('formEresepRacikan.qty')" />
-                                </div>
-                                <div class="flex-[2]">
-                                    <x-input-error :messages="$errors->get('formEresepRacikan.catatan')" />
-                                </div>
-                                <div class="flex-[2]">
-                                    <x-input-error :messages="$errors->get('formEresepRacikan.catatanKhusus')" />
-                                </div>
-                                <div class="ml-auto shrink-0"></div>
-                            </div>
-                        @endif
-
+                        <div class="w-32">
+                            <x-input-label :value="__('No Racikan')" />
+                            <x-text-input wire:model="noRacikan" placeholder="R1" :disabled="$isFormLocked"
+                                class="mt-1" />
+                        </div>
                     </div>
+                    @endif
+
+                    {{-- Form input obat racikan --}}
+                    @if ($formEresepRacikan)
+                    {{-- Input Row --}}
+                    <div class="flex items-end w-full gap-1 mt-2">
+
+                        {{-- No Racikan --}}
+                        <div class="flex-[1]">
+                            <x-input-label :value="__('Racikan')" />
+                            <x-text-input class="w-full mt-1" :disabled="false"
+                                wire:model="formEresepRacikan.noRacikan" />
+                        </div>
+
+                        {{-- Nama obat (readonly) --}}
+                        <div class="flex-[3]">
+                            <x-input-label :value="__('Nama Obat')" :required="true" />
+                            <x-text-input class="w-full mt-1" :disabled="true"
+                                wire:model="formEresepRacikan.productName" />
+                        </div>
+
+                        {{-- Sedia --}}
+                        <div class="flex-[1]">
+                            <x-input-label :value="__('Sedia')" :required="true" />
+                            <x-text-input placeholder="Sedia" class="w-full mt-1" :disabled="$isFormLocked"
+                                wire:model="formEresepRacikan.sedia" x-ref="sedia" x-init="$nextTick(() => $el.focus())"
+                                x-on:keydown.enter.prevent="$refs.dosis.focus()" />
+                        </div>
+
+                        {{-- Dosis --}}
+                        <div class="flex-[1]">
+                            <x-input-label :value="__('Dosis')" :required="true" />
+                            <x-text-input placeholder="Dosis" class="w-full mt-1" :disabled="$isFormLocked"
+                                wire:model="formEresepRacikan.dosis" x-ref="dosis"
+                                x-on:keydown.enter.prevent="$refs.qty.focus()" />
+                        </div>
+
+                        {{-- Qty --}}
+                        <div class="flex-[1]">
+                            <x-input-label :value="__('Jml')" />
+                            <x-text-input placeholder="Jml" class="w-full mt-1" :disabled="$isFormLocked"
+                                wire:model="formEresepRacikan.qty" x-ref="qty"
+                                x-on:keydown.enter.prevent="$refs.catatan.focus()" />
+                        </div>
+
+                        {{-- Catatan --}}
+                        <div class="flex-[2]">
+                            <x-input-label :value="__('Catatan')" />
+                            <x-text-input placeholder="Catatan" class="w-full mt-1" :disabled="$isFormLocked"
+                                wire:model="formEresepRacikan.catatan" x-ref="catatan"
+                                x-on:keydown.enter.prevent="$refs.signa.focus()" />
+                        </div>
+
+                        {{-- Signa --}}
+                        <div class="flex-[2]">
+                            <x-input-label :value="__('Signa')" />
+                            <x-text-input placeholder="Signa" class="w-full mt-1" :disabled="$isFormLocked"
+                                wire:model="formEresepRacikan.catatanKhusus" x-ref="signa"
+                                x-on:keydown.enter.prevent="$wire.insertProduct()" />
+                        </div>
+
+                        {{-- Hapus draft --}}
+                        <div class="ml-auto shrink-0">
+                            <x-input-label :value="__('')" />
+                            <x-secondary-button class="inline-flex mt-1" :disabled="$isFormLocked"
+                                wire:click="resetFormEresepRacikan">
+                                <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
+                                    <path
+                                        d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                </svg>
+                            </x-secondary-button>
+                        </div>
+                    </div>
+
+                    {{-- Error Row --}}
+                    <div class="flex w-full gap-1 text-xs">
+                        <div class="flex-[1]"></div>
+                        <div class="flex-[3]">
+                            <x-input-error :messages="$errors->get('formEresepRacikan.productName')" />
+                        </div>
+                        <div class="flex-[1]">
+                            <x-input-error :messages="$errors->get('formEresepRacikan.sedia')" />
+                        </div>
+                        <div class="flex-[1]">
+                            <x-input-error :messages="$errors->get('formEresepRacikan.dosis')" />
+                        </div>
+                        <div class="flex-[1]">
+                            <x-input-error :messages="$errors->get('formEresepRacikan.qty')" />
+                        </div>
+                        <div class="flex-[2]">
+                            <x-input-error :messages="$errors->get('formEresepRacikan.catatan')" />
+                        </div>
+                        <div class="flex-[2]">
+                            <x-input-error :messages="$errors->get('formEresepRacikan.catatanKhusus')" />
+                        </div>
+                        <div class="ml-auto shrink-0"></div>
+                    </div>
+                    @endif
+
+                </div>
                 @endrole
 
                 {{-- Tabel Resep Racikan --}}
@@ -534,63 +535,63 @@ new class extends Component {
                                     </thead>
                                     <tbody class="bg-white">
                                         @isset($dataDaftarPoliRJ['eresepRacikan'])
-                                            @php $myPreviousRow = null; @endphp
+                                        @php $myPreviousRow = null; @endphp
 
-                                            @foreach ($dataDaftarPoliRJ['eresepRacikan'] as $key => $eresep)
-                                                @isset($eresep['jenisKeterangan'])
-                                                    @php
-                                                        $myRacikanBorder =
-                                                            $myPreviousRow !== $eresep['noRacikan']
-                                                                ? 'border-t-2 border-red-400'
-                                                                : 'border-t-2 border-gray-200';
-                                                    @endphp
+                                        @foreach ($dataDaftarPoliRJ['eresepRacikan'] as $key => $eresep)
+                                        @isset($eresep['jenisKeterangan'])
+                                        @php
+                                        $myRacikanBorder =
+                                        $myPreviousRow !== $eresep['noRacikan']
+                                        ? 'border-t-2 border-red-400'
+                                        : 'border-t-2 border-gray-200';
+                                        @endphp
 
-                                                    <tr class="{{ $myRacikanBorder }} group" x-data>
+                                        <tr class="{{ $myRacikanBorder }} group" x-data>
 
-                                                        {{-- Racikan label --}}
-                                                        <td class="px-4 py-3 w-28 whitespace-nowrap">
-                                                            {{ $eresep['jenisKeterangan'] . ' (' . $eresep['noRacikan'] . ')' }}{{ $myPreviousRow }}
-                                                        </td>
+                                            {{-- Racikan label --}}
+                                            <td class="px-4 py-3 w-28 whitespace-nowrap">
+                                                {{ $eresep['jenisKeterangan'] . ' (' . $eresep['noRacikan'] . ')' }}{{
+                                                $myPreviousRow }}
+                                            </td>
 
-                                                        {{-- Nama Obat --}}
-                                                        <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
+                                            {{-- Nama Obat --}}
+                                            <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
 
-                                                        {{-- Sedia --}}
-                                                        <td class="w-16 px-4 py-3">{{ $eresep['sedia'] }}</td>
+                                            {{-- Sedia --}}
+                                            <td class="w-16 px-4 py-3">{{ $eresep['sedia'] }}</td>
 
-                                                        {{-- Dosis --}}
-                                                        <td class="w-24 px-4 py-3">
-                                                            <x-text-input placeholder="Dosis" :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.dosis"
-                                                                x-ref="dosis{{ $key }}"
-                                                                x-on:keydown.enter.prevent="$refs.qty{{ $key }}.focus()" />
-                                                            @error("dataDaftarPoliRJ.eresepRacikan.{{ $key }}.dosis")
-                                                                <x-input-error :messages="$message" />
-                                                            @enderror
-                                                        </td>
+                                            {{-- Dosis --}}
+                                            <td class="w-24 px-4 py-3">
+                                                <x-text-input placeholder="Dosis" :disabled="$isFormLocked"
+                                                    wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.dosis"
+                                                    x-ref="dosis{{ $key }}"
+                                                    x-on:keydown.enter.prevent="$refs.qty{{ $key }}.focus()" />
+                                                @error("dataDaftarPoliRJ.eresepRacikan.{{ $key }}.dosis")
+                                                <x-input-error :messages="$message" />
+                                                @enderror
+                                            </td>
 
-                                                        {{-- Jml Racikan --}}
-                                                        <td class="w-20 px-4 py-3">
-                                                            <x-text-input placeholder="Jml" :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.qty"
-                                                                x-ref="qty{{ $key }}"
-                                                                x-on:keydown.enter.prevent="$refs.catatan{{ $key }}.focus()" />
-                                                        </td>
+                                            {{-- Jml Racikan --}}
+                                            <td class="w-20 px-4 py-3">
+                                                <x-text-input placeholder="Jml" :disabled="$isFormLocked"
+                                                    wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.qty"
+                                                    x-ref="qty{{ $key }}"
+                                                    x-on:keydown.enter.prevent="$refs.catatan{{ $key }}.focus()" />
+                                            </td>
 
-                                                        {{-- Catatan --}}
-                                                        <td class="px-4 py-3">
-                                                            <x-text-input placeholder="Catatan" :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.catatan"
-                                                                x-ref="catatan{{ $key }}"
-                                                                x-on:keydown.enter.prevent="$refs.catatanKhusus{{ $key }}.focus()" />
-                                                        </td>
+                                            {{-- Catatan --}}
+                                            <td class="px-4 py-3">
+                                                <x-text-input placeholder="Catatan" :disabled="$isFormLocked"
+                                                    wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.catatan"
+                                                    x-ref="catatan{{ $key }}"
+                                                    x-on:keydown.enter.prevent="$refs.catatanKhusus{{ $key }}.focus()" />
+                                            </td>
 
-                                                        {{-- Signa --}}
-                                                        <td class="px-4 py-3">
-                                                            <x-text-input placeholder="Signa" :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.catatanKhusus"
-                                                                x-ref="catatanKhusus{{ $key }}"
-                                                                x-on:keydown.enter.prevent="
+                                            {{-- Signa --}}
+                                            <td class="px-4 py-3">
+                                                <x-text-input placeholder="Signa" :disabled="$isFormLocked"
+                                                    wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.catatanKhusus"
+                                                    x-ref="catatanKhusus{{ $key }}" x-on:keydown.enter.prevent="
                                                                     $wire.updateProduct(
                                                                         '{{ $eresep['rjObatDtl'] }}',
                                                                         $wire.dataDaftarPoliRJ.eresepRacikan[{{ $key }}].qty,
@@ -600,28 +601,28 @@ new class extends Component {
                                                                     );
                                                                     $nextTick(() => $refs.dosis{{ $key }}.focus())
                                                                 " />
-                                                        </td>
+                                            </td>
 
-                                                        {{-- Action --}}
-                                                        <td class="w-8 px-4 py-3 text-center">
-                                                            @role(['Dokter', 'Admin'])
-                                                                <x-secondary-button class="inline-flex" :disabled="$isFormLocked"
-                                                                    wire:click="removeProduct('{{ $eresep['rjObatDtl'] }}')">
-                                                                    <svg class="w-5 h-5 text-gray-800 dark:text-white"
-                                                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                                                                        fill="currentColor" viewBox="0 0 18 20">
-                                                                        <path
-                                                                            d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
-                                                                    </svg>
-                                                                </x-secondary-button>
-                                                            @endrole
-                                                        </td>
-                                                    </tr>
+                                            {{-- Action --}}
+                                            <td class="w-8 px-4 py-3 text-center">
+                                                @role(['Dokter', 'Admin'])
+                                                <x-secondary-button class="inline-flex" :disabled="$isFormLocked"
+                                                    wire:click="removeProduct('{{ $eresep['rjObatDtl'] }}')">
+                                                    <svg class="w-5 h-5 text-gray-800 dark:text-white"
+                                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                                        fill="currentColor" viewBox="0 0 18 20">
+                                                        <path
+                                                            d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                                    </svg>
+                                                </x-secondary-button>
+                                                @endrole
+                                            </td>
+                                        </tr>
 
-                                                    {{-- Update tracker setelah row dirender --}}
-                                                    @php $myPreviousRow = $eresep['noRacikan']; @endphp
-                                                @endisset
-                                            @endforeach
+                                        {{-- Update tracker setelah row dirender --}}
+                                        @php $myPreviousRow = $eresep['noRacikan']; @endphp
+                                        @endisset
+                                        @endforeach
                                         @endisset
                                     </tbody>
                                 </table>

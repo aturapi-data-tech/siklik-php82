@@ -167,7 +167,8 @@ new class extends Component {
 <div>
     <x-modal name="emr-rj.eresep-rj" size="full" height="full" focusable>
         {{-- CONTAINER UTAMA --}}
-        <div class="flex flex-col min-h-[calc(100vh-8rem)]" wire:key="{{ $this->renderKey('modal', [$rjNo ?? 'new']) }}">
+        <div class="flex flex-col min-h-[calc(100vh-8rem)]"
+            wire:key="{{ $this->renderKey('modal', [$rjNo ?? 'new']) }}">
 
             {{-- HEADER --}}
             <div class="relative px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -202,7 +203,7 @@ new class extends Component {
                         {{-- Info status --}}
                         <div class="flex flex-wrap gap-4 mt-3">
                             @if ($isFormLocked)
-                                <x-badge variant="danger">Read Only</x-badge>
+                            <x-badge variant="danger">Read Only</x-badge>
                             @endif
                         </div>
                     </div>
@@ -238,8 +239,7 @@ new class extends Component {
                                     class="flex flex-row flex-wrap justify-center -mb-px text-sm font-medium text-gray-500 text-start">
 
                                     {{-- Non Racikan Tab --}}
-                                    <li class="mx-1 mr-0 rounded-t-lg"
-                                        :class="activeTab === 'NonRacikan' ? 'text-primary border-primary bg-gray-100' :
+                                    <li class="mx-1 mr-0 rounded-t-lg" :class="activeTab === 'NonRacikan' ? 'text-primary border-primary bg-gray-100' :
                                             'border border-gray-200'">
                                         <label
                                             class="inline-block p-2 border-b-2 border-transparent rounded-t-lg cursor-pointer hover:text-gray-600 hover:border-gray-300"
@@ -250,8 +250,7 @@ new class extends Component {
                                     </li>
 
                                     {{-- Racikan Tab --}}
-                                    <li class="mx-1 mr-0 rounded-t-lg"
-                                        :class="activeTab === 'Racikan' ? 'text-primary border-primary bg-gray-100' :
+                                    <li class="mx-1 mr-0 rounded-t-lg" :class="activeTab === 'Racikan' ? 'text-primary border-primary bg-gray-100' :
                                             'border border-gray-200'">
                                         <label
                                             class="inline-block p-2 border-b-2 border-transparent rounded-t-lg cursor-pointer hover:text-gray-600 hover:border-gray-300"
@@ -304,21 +303,21 @@ new class extends Component {
                     </x-secondary-button>
 
                     @if (!$isFormLocked)
-                        <x-primary-button wire:click="saveAllEreseptoTerapi" class="min-w-[120px]"
-                            wire:loading.attr="disabled">
-                            <span wire:loading.remove>
-                                <svg class="inline w-4 h-4 mr-1 -ml-1" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4l-4 4-4-4m4 4V4" />
-                                </svg>
-                                Simpan
-                            </span>
-                            <span wire:loading>
-                                <x-loading />
-                                Menyimpan...
-                            </span>
-                        </x-primary-button>
+                    <x-primary-button wire:click="saveAllEreseptoTerapi" class="min-w-[120px]"
+                        wire:loading.attr="disabled">
+                        <span wire:loading.remove>
+                            <svg class="inline w-4 h-4 mr-1 -ml-1" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4l-4 4-4-4m4 4V4" />
+                            </svg>
+                            Simpan
+                        </span>
+                        <span wire:loading>
+                            <x-loading />
+                            Menyimpan...
+                        </span>
+                    </x-primary-button>
                     @endif
                 </div>
             </div>

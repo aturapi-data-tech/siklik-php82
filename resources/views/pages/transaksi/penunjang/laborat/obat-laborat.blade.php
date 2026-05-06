@@ -153,9 +153,11 @@ new class extends Component {
     <div class="space-y-4">
 
         @if ($labStatus !== 'P')
-            <div class="p-3 text-sm border rounded-lg {{ $labStatus === 'H' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700' }}">
-                Status: <strong>{{ $labStatus === 'H' ? 'Selesai' : 'Proses Entry Hasil' }}</strong> — Data obat dan bahan terkunci.
-            </div>
+        <div
+            class="p-3 text-sm border rounded-lg {{ $labStatus === 'H' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700' }}">
+            Status: <strong>{{ $labStatus === 'H' ? 'Selesai' : 'Proses Entry Hasil' }}</strong> — Data obat dan bahan
+            terkunci.
+        </div>
         @endif
 
         {{-- FORM ADD OBAT --}}
@@ -167,36 +169,33 @@ new class extends Component {
                     <livewire:lov.product.lov-product target="labObatItem" label="Cari Obat"
                         wire:key="lov-lab-obat-child" />
                     @if (!empty($formObat['productName']))
-                        <div class="mt-1 text-xs text-brand-green">
-                            Dipilih: {{ $formObat['productName'] }}
-                        </div>
+                    <div class="mt-1 text-xs text-brand-green">
+                        Dipilih: {{ $formObat['productName'] }}
+                    </div>
                     @endif
                     @error('formObat.productId')
-                        <span class="text-xs text-red-500">{{ $message }}</span>
+                    <span class="text-xs text-red-500">{{ $message }}</span>
                     @enderror
                 </div>
                 <div>
                     <x-input-label value="Jumlah" />
-                    <x-text-input type="number" wire:model="formObat.qty" class="w-full mt-1"
-                        placeholder="Qty" step="0.01" min="0.01" />
+                    <x-text-input type="number" wire:model="formObat.qty" class="w-full mt-1" placeholder="Qty"
+                        step="0.01" min="0.01" />
                     @error('formObat.qty')
-                        <span class="text-xs text-red-500">{{ $message }}</span>
+                    <span class="text-xs text-red-500">{{ $message }}</span>
                     @enderror
                 </div>
                 <div>
                     <x-input-label value="Harga" />
-                    <x-text-input type="number" wire:model="formObat.price" class="w-full mt-1"
-                        placeholder="Harga" readonly />
+                    <x-text-input type="number" wire:model="formObat.price" class="w-full mt-1" placeholder="Harga"
+                        readonly />
                 </div>
             </div>
             <div class="flex justify-end mt-3">
                 <x-primary-button type="button" wire:click="addObat" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="addObat"
-                        class="flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 4v16m8-8H4" />
+                    <span wire:loading.remove wire:target="addObat" class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Tambah Obat dan Bahan
                     </span>
@@ -226,52 +225,48 @@ new class extends Component {
                 <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
                     @php $totalObat = 0; @endphp
                     @forelse ($obatRows as $idx => $ob)
-                        @php
-                            $subtotal = ($ob['qty'] ?? 0) * ($ob['price'] ?? 0);
-                            $totalObat += $subtotal;
-                        @endphp
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <td class="px-3 py-2 text-gray-500">{{ $idx + 1 }}</td>
-                            <td class="px-3 py-2 font-mono text-gray-500">{{ $ob['product_id'] ?? '-' }}</td>
-                            <td class="px-3 py-2 text-gray-900 dark:text-gray-100">{{ $ob['product_name'] ?? '-' }}</td>
-                            <td class="px-3 py-2 text-right">{{ number_format($ob['qty'] ?? 0, 2) }}</td>
-                            <td class="px-3 py-2 text-right">{{ number_format($ob['price'] ?? 0) }}</td>
-                            <td class="px-3 py-2 text-right font-medium">{{ number_format($subtotal) }}</td>
-                            <td class="px-3 py-2 text-center">
-                                @if ($labStatus === 'P')
-                                    <button type="button"
-                                        wire:click="deleteObatRow({{ $ob['id'] }})"
-                                        wire:confirm="Yakin hapus obat ini?"
-                                        class="text-red-500 hover:text-red-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                @endif
-                            </td>
-                        </tr>
+                    @php
+                    $subtotal = ($ob['qty'] ?? 0) * ($ob['price'] ?? 0);
+                    $totalObat += $subtotal;
+                    @endphp
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td class="px-3 py-2 text-gray-500">{{ $idx + 1 }}</td>
+                        <td class="px-3 py-2 font-mono text-gray-500">{{ $ob['product_id'] ?? '-' }}</td>
+                        <td class="px-3 py-2 text-gray-900 dark:text-gray-100">{{ $ob['product_name'] ?? '-' }}</td>
+                        <td class="px-3 py-2 text-right">{{ number_format($ob['qty'] ?? 0, 2) }}</td>
+                        <td class="px-3 py-2 text-right">{{ number_format($ob['price'] ?? 0) }}</td>
+                        <td class="px-3 py-2 text-right font-medium">{{ number_format($subtotal) }}</td>
+                        <td class="px-3 py-2 text-center">
+                            @if ($labStatus === 'P')
+                            <button type="button" wire:click="deleteObatRow({{ $ob['id'] }})"
+                                wire:confirm="Yakin hapus obat ini?" class="text-red-500 hover:text-red-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                            @endif
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="px-3 py-8 text-center text-gray-400">
-                                Belum ada obat
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" class="px-3 py-8 text-center text-gray-400">
+                            Belum ada obat
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
                 @if (count($obatRows))
-                    <tfoot class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <td colspan="5"
-                                class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                Total:</td>
-                            <td class="px-3 py-2 text-right text-sm font-bold text-brand">
-                                {{ number_format($totalObat) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
+                <tfoot class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <td colspan="5"
+                            class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Total:</td>
+                        <td class="px-3 py-2 text-right text-sm font-bold text-brand">
+                            {{ number_format($totalObat) }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
                 @endif
             </table>
         </div>

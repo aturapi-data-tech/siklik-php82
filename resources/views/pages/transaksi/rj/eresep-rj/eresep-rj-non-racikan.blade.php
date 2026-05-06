@@ -385,99 +385,100 @@ new class extends Component {
                 <x-input-label for="" :value="__('Non Racikan')" :required="false" class="pt-2 sm:text-xl" />
 
                 @role(['Dokter', 'Admin'])
-                    <div x-data x-ref="nonRacikanSection">
+                <div x-data x-ref="nonRacikanSection">
 
-                        {{-- LOV Obat --}}
-                        @if (!$formEresep)
-                            <div class="mt-2" x-init="$nextTick(() => $el.querySelector('input:not([disabled])')?.focus())">
-                                <livewire:lov.product.lov-product target="eresepRjObatNonRacikan" label="Nama Obat"
-                                    :initialProductId="$formEresep['productId'] ?? null" :readonly="$isFormLocked" />
-                            </div>
-                        @endif
-
-                        {{-- Form input obat --}}
-                        @if ($formEresep)
-                            {{-- Input Row --}}
-                            <div class="flex items-end w-full gap-1 mt-2">
-
-                                {{-- Nama obat (readonly) --}}
-                                <div class="flex-[3]">
-                                    <x-input-label for="formEresep.productName" :value="__('Nama Obat')" :required="true" />
-                                    <x-text-input id="formEresep.productName" class="w-full mt-1" :disabled="true"
-                                        wire:model="formEresep.productName" />
-                                </div>
-
-                                {{-- Qty --}}
-                                <div class="flex-[1]">
-                                    <x-input-label for="formEresep.qty" :value="__('Jml')" :required="true" />
-                                    <x-text-input id="formEresep.qty" placeholder="Jml" class="w-full mt-1"
-                                        :disabled="$isFormLocked" wire:model.live="formEresep.qty" x-ref="qty"
-                                        x-init="$nextTick(() => $el.focus())" x-on:keydown.enter.prevent="$refs.signaX.focus()" />
-                                </div>
-
-                                {{-- Signa X --}}
-                                <div class="flex-[1]">
-                                    <x-input-label for="formEresep.signaX" :value="__('Signa')" />
-                                    <x-text-input id="formEresep.signaX" placeholder="Signa1" class="w-full mt-1"
-                                        :disabled="$isFormLocked" wire:model="formEresep.signaX" x-ref="signaX"
-                                        x-on:keydown.enter.prevent="$refs.signaHari.focus()" />
-                                </div>
-
-                                <div class="pb-2 shrink-0"><span class="text-sm">dd</span></div>
-
-                                {{-- Signa Hari --}}
-                                <div class="flex-[1]">
-                                    <x-input-label for="formEresep.signaHari" :value="__('*')" />
-                                    <x-text-input id="formEresep.signaHari" placeholder="Signa2" class="w-full mt-1"
-                                        :disabled="$isFormLocked" wire:model="formEresep.signaHari" x-ref="signaHari"
-                                        x-on:keydown.enter.prevent="$refs.catatanKhusus.focus()" />
-                                </div>
-
-                                {{-- Catatan Khusus --}}
-                                <div class="flex-[3]">
-                                    <x-input-label for="formEresep.catatanKhusus" :value="__('Catatan Khusus')" />
-                                    <x-text-input id="formEresep.catatanKhusus" placeholder="Catatan Khusus"
-                                        class="w-full mt-1" :disabled="$isFormLocked" wire:model="formEresep.catatanKhusus"
-                                        x-ref="catatanKhusus" x-on:keydown.enter.prevent="$wire.insertProduct()" />
-                                </div>
-
-                                {{-- Hapus draft --}}
-                                <div class="ml-auto shrink-0">
-                                    <x-input-label :value="__('')" />
-                                    <x-secondary-button class="inline-flex mt-1" :disabled="$isFormLocked"
-                                        wire:click="resetFormEresep">
-                                        <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true"
-                                            xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                                            <path
-                                                d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
-                                        </svg>
-                                    </x-secondary-button>
-                                </div>
-                            </div>
-
-                            {{-- Error Row --}}
-                            <div class="flex w-full gap-1 text-xs">
-                                <div class="flex-[3]">
-                                    <x-input-error :messages="$errors->get('formEresep.productName')" />
-                                </div>
-                                <div class="flex-[1]">
-                                    <x-input-error :messages="$errors->get('formEresep.qty')" />
-                                </div>
-                                <div class="flex-[1]">
-                                    <x-input-error :messages="$errors->get('formEresep.signaX')" />
-                                </div>
-                                <div class="shrink-0"></div>
-                                <div class="flex-[1]">
-                                    <x-input-error :messages="$errors->get('formEresep.signaHari')" />
-                                </div>
-                                <div class="flex-[3]">
-                                    <x-input-error :messages="$errors->get('formEresep.catatanKhusus')" />
-                                </div>
-                                <div class="ml-auto shrink-0"></div>
-                            </div>
-                        @endif
-
+                    {{-- LOV Obat --}}
+                    @if (!$formEresep)
+                    <div class="mt-2" x-init="$nextTick(() => $el.querySelector('input:not([disabled])')?.focus())">
+                        <livewire:lov.product.lov-product target="eresepRjObatNonRacikan" label="Nama Obat"
+                            :initialProductId="$formEresep['productId'] ?? null" :readonly="$isFormLocked" />
                     </div>
+                    @endif
+
+                    {{-- Form input obat --}}
+                    @if ($formEresep)
+                    {{-- Input Row --}}
+                    <div class="flex items-end w-full gap-1 mt-2">
+
+                        {{-- Nama obat (readonly) --}}
+                        <div class="flex-[3]">
+                            <x-input-label for="formEresep.productName" :value="__('Nama Obat')" :required="true" />
+                            <x-text-input id="formEresep.productName" class="w-full mt-1" :disabled="true"
+                                wire:model="formEresep.productName" />
+                        </div>
+
+                        {{-- Qty --}}
+                        <div class="flex-[1]">
+                            <x-input-label for="formEresep.qty" :value="__('Jml')" :required="true" />
+                            <x-text-input id="formEresep.qty" placeholder="Jml" class="w-full mt-1"
+                                :disabled="$isFormLocked" wire:model.live="formEresep.qty" x-ref="qty"
+                                x-init="$nextTick(() => $el.focus())"
+                                x-on:keydown.enter.prevent="$refs.signaX.focus()" />
+                        </div>
+
+                        {{-- Signa X --}}
+                        <div class="flex-[1]">
+                            <x-input-label for="formEresep.signaX" :value="__('Signa')" />
+                            <x-text-input id="formEresep.signaX" placeholder="Signa1" class="w-full mt-1"
+                                :disabled="$isFormLocked" wire:model="formEresep.signaX" x-ref="signaX"
+                                x-on:keydown.enter.prevent="$refs.signaHari.focus()" />
+                        </div>
+
+                        <div class="pb-2 shrink-0"><span class="text-sm">dd</span></div>
+
+                        {{-- Signa Hari --}}
+                        <div class="flex-[1]">
+                            <x-input-label for="formEresep.signaHari" :value="__('*')" />
+                            <x-text-input id="formEresep.signaHari" placeholder="Signa2" class="w-full mt-1"
+                                :disabled="$isFormLocked" wire:model="formEresep.signaHari" x-ref="signaHari"
+                                x-on:keydown.enter.prevent="$refs.catatanKhusus.focus()" />
+                        </div>
+
+                        {{-- Catatan Khusus --}}
+                        <div class="flex-[3]">
+                            <x-input-label for="formEresep.catatanKhusus" :value="__('Catatan Khusus')" />
+                            <x-text-input id="formEresep.catatanKhusus" placeholder="Catatan Khusus" class="w-full mt-1"
+                                :disabled="$isFormLocked" wire:model="formEresep.catatanKhusus" x-ref="catatanKhusus"
+                                x-on:keydown.enter.prevent="$wire.insertProduct()" />
+                        </div>
+
+                        {{-- Hapus draft --}}
+                        <div class="ml-auto shrink-0">
+                            <x-input-label :value="__('')" />
+                            <x-secondary-button class="inline-flex mt-1" :disabled="$isFormLocked"
+                                wire:click="resetFormEresep">
+                                <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
+                                    <path
+                                        d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                </svg>
+                            </x-secondary-button>
+                        </div>
+                    </div>
+
+                    {{-- Error Row --}}
+                    <div class="flex w-full gap-1 text-xs">
+                        <div class="flex-[3]">
+                            <x-input-error :messages="$errors->get('formEresep.productName')" />
+                        </div>
+                        <div class="flex-[1]">
+                            <x-input-error :messages="$errors->get('formEresep.qty')" />
+                        </div>
+                        <div class="flex-[1]">
+                            <x-input-error :messages="$errors->get('formEresep.signaX')" />
+                        </div>
+                        <div class="shrink-0"></div>
+                        <div class="flex-[1]">
+                            <x-input-error :messages="$errors->get('formEresep.signaHari')" />
+                        </div>
+                        <div class="flex-[3]">
+                            <x-input-error :messages="$errors->get('formEresep.catatanKhusus')" />
+                        </div>
+                        <div class="ml-auto shrink-0"></div>
+                    </div>
+                    @endif
+
+                </div>
                 @endrole
 
                 {{-- Tabel Resep --}}
@@ -497,38 +498,37 @@ new class extends Component {
                                     </thead>
                                     <tbody class="bg-white">
                                         @foreach ($dataDaftarPoliRJ['eresep'] ?? [] as $key => $eresep)
-                                            <tr class="border-b group" x-data>
-                                                <td class="w-24 px-4 py-3 whitespace-nowrap">
-                                                    {{ $eresep['jenisKeterangan'] }}
-                                                </td>
-                                                <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
-                                                <td class="w-20 px-4 py-3">
-                                                    <x-text-input placeholder="Jml" :disabled="$isFormLocked"
-                                                        wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.qty"
-                                                        x-ref="qty{{ $key }}"
-                                                        x-on:keydown.enter.prevent="$refs.signaX{{ $key }}.focus()" />
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <div class="flex items-center gap-1">
-                                                        <div class="w-16 shrink-0">
-                                                            <x-text-input placeholder="Signa1" :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.signaX"
-                                                                x-ref="signaX{{ $key }}"
-                                                                x-on:keydown.enter.prevent="$refs.signaHari{{ $key }}.focus()" />
-                                                        </div>
-                                                        <span class="text-sm text-gray-500 shrink-0">dd</span>
-                                                        <div class="w-16 shrink-0">
-                                                            <x-text-input placeholder="Signa2" :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.signaHari"
-                                                                x-ref="signaHari{{ $key }}"
-                                                                x-on:keydown.enter.prevent="$refs.catatanKhusus{{ $key }}.focus()" />
-                                                        </div>
-                                                        <div class="flex-1">
-                                                            <x-text-input placeholder="Catatan Khusus"
-                                                                :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.catatanKhusus"
-                                                                x-ref="catatanKhusus{{ $key }}"
-                                                                x-on:keydown.enter.prevent="
+                                        <tr class="border-b group" x-data>
+                                            <td class="w-24 px-4 py-3 whitespace-nowrap">
+                                                {{ $eresep['jenisKeterangan'] }}
+                                            </td>
+                                            <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
+                                            <td class="w-20 px-4 py-3">
+                                                <x-text-input placeholder="Jml" :disabled="$isFormLocked"
+                                                    wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.qty"
+                                                    x-ref="qty{{ $key }}"
+                                                    x-on:keydown.enter.prevent="$refs.signaX{{ $key }}.focus()" />
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-1">
+                                                    <div class="w-16 shrink-0">
+                                                        <x-text-input placeholder="Signa1" :disabled="$isFormLocked"
+                                                            wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.signaX"
+                                                            x-ref="signaX{{ $key }}"
+                                                            x-on:keydown.enter.prevent="$refs.signaHari{{ $key }}.focus()" />
+                                                    </div>
+                                                    <span class="text-sm text-gray-500 shrink-0">dd</span>
+                                                    <div class="w-16 shrink-0">
+                                                        <x-text-input placeholder="Signa2" :disabled="$isFormLocked"
+                                                            wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.signaHari"
+                                                            x-ref="signaHari{{ $key }}"
+                                                            x-on:keydown.enter.prevent="$refs.catatanKhusus{{ $key }}.focus()" />
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <x-text-input placeholder="Catatan Khusus"
+                                                            :disabled="$isFormLocked"
+                                                            wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.catatanKhusus"
+                                                            x-ref="catatanKhusus{{ $key }}" x-on:keydown.enter.prevent="
                                                                     $wire.updateProduct(
                                                                         '{{ $eresep['rjObatDtl'] }}',
                                                                         $wire.dataDaftarPoliRJ.eresep[{{ $key }}].qty,
@@ -538,23 +538,23 @@ new class extends Component {
                                                                     );
                                                                     $nextTick(() => $refs.qty{{ $key }}.focus())
                                                                 " />
-                                                        </div>
                                                     </div>
-                                                </td>
-                                                <td class="w-8 px-4 py-3 text-center">
-                                                    @role(['Dokter', 'Admin'])
-                                                        <x-secondary-button class="inline-flex" :disabled="$isFormLocked"
-                                                            wire:click="removeProduct('{{ $eresep['rjObatDtl'] }}')">
-                                                            <svg class="w-5 h-5 text-gray-800 dark:text-white"
-                                                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                                                                fill="currentColor" viewBox="0 0 18 20">
-                                                                <path
-                                                                    d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
-                                                            </svg>
-                                                        </x-secondary-button>
-                                                    @endrole
-                                                </td>
-                                            </tr>
+                                                </div>
+                                            </td>
+                                            <td class="w-8 px-4 py-3 text-center">
+                                                @role(['Dokter', 'Admin'])
+                                                <x-secondary-button class="inline-flex" :disabled="$isFormLocked"
+                                                    wire:click="removeProduct('{{ $eresep['rjObatDtl'] }}')">
+                                                    <svg class="w-5 h-5 text-gray-800 dark:text-white"
+                                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                                        fill="currentColor" viewBox="0 0 18 20">
+                                                        <path
+                                                            d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                                    </svg>
+                                                </x-secondary-button>
+                                                @endrole
+                                            </td>
+                                        </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
