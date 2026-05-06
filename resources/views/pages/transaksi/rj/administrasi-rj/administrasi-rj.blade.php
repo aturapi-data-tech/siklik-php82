@@ -175,14 +175,6 @@ new class extends Component {
                 ->update(['poli_price' => $data['poliPrice']]);
         }
 
-        // ── Kronis — semua admin 0 ──
-        if ($hdr->klaim_id === 'KR') {
-            $data['rjAdmin'] = $data['rsAdmin'] = $data['poliPrice'] = 0;
-            DB::table('rstxn_rjhdrs')
-                ->where('rj_no', $rjNo)
-                ->update(['rj_admin' => 0, 'rs_admin' => 0, 'poli_price' => 0]);
-        }
-
         // ── Status Resep ──
         $this->statusResep = $data['statusResep'] ?? ['status' => null, 'keterangan' => ''];
         if (!isset($data['statusResep'])) {
