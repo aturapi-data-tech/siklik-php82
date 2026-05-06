@@ -30,6 +30,7 @@
             ['label' => 'Master Parameter',       'route' => 'master.parameter',       'roles' => ['admin']],
             ['label' => 'Master Alat Medis',      'route' => 'master.medik',           'roles' => ['admin']],
             ['label' => 'Master Ref BPJS',        'route' => 'master.ref-bpjs',        'roles' => ['admin']],
+            ['label' => 'Jadwal Mingguan BPJS',   'route' => 'master.jadwal-mingguan', 'roles' => ['admin', 'mr']],
         ],
         'Master Tarif Jasa' => [
             ['label' => 'Master Jasa Dokter',     'route' => 'master.jasa-dokter',     'roles' => ['admin']],
@@ -63,6 +64,7 @@
             ['label' => 'Master Desa',      'route' => 'master.desa',                  'roles' => ['admin']],
         ],
         'Rawat Jalan' => [
+            ['label' => 'Booking RJ',         'route' => 'rawat-jalan.booking',                 'roles' => ['admin', 'mr', 'perawat']],
             ['label' => 'Daftar RJ',          'route' => 'rawat-jalan.daftar',                  'roles' => ['admin', 'mr', 'perawat', 'dokter']],
             ['label' => 'Antrian Apotek',     'route' => 'transaksi.rj.antrian-apotek-rj',      'roles' => ['admin', 'apotek']],
         ],

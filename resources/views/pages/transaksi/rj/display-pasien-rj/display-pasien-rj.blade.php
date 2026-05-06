@@ -55,7 +55,6 @@ new class extends Component {
             $badgeKlaim = match ($rj['klaimId'] ?? '') {
                 'UM' => 'green',
                 'JM' => 'default',
-                'KR' => 'yellow',
                 default => 'red',
             };
 

@@ -11,15 +11,15 @@ use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
 use App\Http\Traits\BPJS\PcareTrait;
+use App\Http\Traits\BPJS\AntrianTrait;
 
 new class extends Component {
-    use EmrRJTrait, MasterPasienTrait, WithRenderVersioningTrait, PcareTrait;
+    use EmrRJTrait, MasterPasienTrait, WithRenderVersioningTrait, PcareTrait, AntrianTrait;
 
     public string $formMode = 'create';
     public bool $isFormLocked = false;
 
     public ?string $rjNo = null;
-    public ?string $kronisNotice = null;
     public array $dataDaftarPoliRJ = ['passStatus' => 'O'];
     public array $dataPasien = [];
 
@@ -27,22 +27,16 @@ new class extends Component {
     protected array $renderAreas = ['modal', 'pasien', 'dokter'];
 
     public string $klaimId = 'UM';
-    public array $klaimOptions = [['klaimId' => 'UM', 'klaimDesc' => 'UMUM'], ['klaimId' => 'JM', 'klaimDesc' => 'BPJS'], ['klaimId' => 'JR', 'klaimDesc' => 'JASA RAHARJA'], ['klaimId' => 'JML', 'klaimDesc' => 'Asuransi Lain'], ['klaimId' => 'KR', 'klaimDesc' => 'Kronis']];
+    public array $klaimOptions = [['klaimId' => 'UM', 'klaimDesc' => 'UMUM'], ['klaimId' => 'JM', 'klaimDesc' => 'BPJS'], ['klaimId' => 'JR', 'klaimDesc' => 'JASA RAHARJA'], ['klaimId' => 'JML', 'klaimDesc' => 'Asuransi Lain']];
 
     /* -------------------------
      | BPJS PCare klinik pratama: Kunjungan Sakit/Sehat & Tkp
      * ------------------------- */
     public string $kunjSakit = '1'; // 1=Sakit (default), 0=Sehat
-    public array $kunjSakitOptions = [
-        ['kunjSakitId' => '1', 'kunjSakitDesc' => 'Kunjungan Sakit'],
-        ['kunjSakitId' => '0', 'kunjSakitDesc' => 'Kunjungan Sehat'],
-    ];
+    public array $kunjSakitOptions = [['kunjSakitId' => '1', 'kunjSakitDesc' => 'Kunjungan Sakit'], ['kunjSakitId' => '0', 'kunjSakitDesc' => 'Kunjungan Sehat']];
 
     public string $kdTkp = '10'; // 10=RJTP (default), 50=Promotif
-    public array $kdTkpOptions = [
-        ['kdTkpId' => '10', 'kdTkpDesc' => 'RJTP'],
-        ['kdTkpId' => '50', 'kdTkpDesc' => 'Promotif'],
-    ];
+    public array $kdTkpOptions = [['kdTkpId' => '10', 'kdTkpDesc' => 'RJTP'], ['kdTkpId' => '50', 'kdTkpDesc' => 'Promotif']];
 
     /* -------------------------
      | Riwayat Kunjungan BPJS state
@@ -163,7 +157,7 @@ new class extends Component {
                 Cache::lock($lockKey, 15)->block(5, function () use ($rjNo, $drId, $rjDateCarbon, &$message) {
                     DB::transaction(function () use ($rjNo, $drId, $rjDateCarbon, &$message) {
                         // Re-hitung noAntrian di dalam lock untuk cegah race condition
-                        if (!empty($this->dataDaftarPoliRJ['klaimId']) && $this->dataDaftarPoliRJ['klaimId'] !== 'KR') {
+                        if (!empty($this->dataDaftarPoliRJ['klaimId'])) {
                             $this->dataDaftarPoliRJ['noAntrian'] = $this->hitungNoAntrian($drId, $rjDateCarbon);
                         }
                         DB::table('rstxn_rjhdrs')->insert($this->buildPayload($rjNo));
@@ -181,9 +175,21 @@ new class extends Component {
             }
 
             // ============================================================
-            // 5. AFTER SAVE
+            // 5. PUSH BPJS ANTREAN RS — tambah_antrean + panggil_antrean
+            //    Cuma untuk mode CREATE (pendaftaran baru). Edit tidak push.
+            //    Best-effort: gagal di sini gak rollback transaksi lokal.
+            //    Kalau klinik belum pakai BPJS Antrean RS, env ANTRIAN_URL
+            //    kosong → trait return error 408 ke web_log_status, lokal aman.
             // ============================================================
-            $this->afterSave($message);
+            $bpjsMsg = '';
+            if ($this->formMode === 'create') {
+                $bpjsMsg = $this->pushBpjsAntrean();
+            }
+
+            // ============================================================
+            // 6. AFTER SAVE
+            // ============================================================
+            $this->afterSave($message . $bpjsMsg);
         } catch (LockTimeoutException $e) {
             $this->dispatch('toast', type: 'error', message: 'Sistem sedang sibuk, silakan coba lagi.');
         } catch (\RuntimeException $e) {
@@ -194,6 +200,109 @@ new class extends Component {
             $this->dispatch('toast', type: 'error', message: 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
+
+    /* ===============================
+     | PUSH BPJS ANTREAN RS  (tambah_antrean + panggil_antrean)
+     |
+     | Dipanggil setelah save sukses (mode create), HANYA untuk pasien BPJS
+     | (klaim_id = JM). Pasien non-JKN (UM/JR/JML) di-skip — gak perlu daftar
+     | ke BPJS Antrean RS.
+     |
+     | Pasien udah hadir di loket → langsung dikirim status Hadir setelah
+     | tambah_antrean berhasil. Best-effort: gagal di sini tetep return msg
+     | tanpa rollback transaksi lokal.
+     =============================== */
+    private function pushBpjsAntrean(): string
+    {
+        $data = $this->dataDaftarPoliRJ;
+
+        // Filter: hanya pasien BPJS yang di-push
+        if (($data['klaimId'] ?? '') !== 'JM') {
+            return '';
+        }
+
+        $pasien = DB::table('rsmst_pasiens')->select('reg_no', 'reg_name', 'nokartu_bpjs', 'nik_bpjs', 'phone')->where('reg_no', $data['regNo'])->first();
+        if (!$pasien) {
+            return '';
+        }
+
+        // Pasien BPJS harus punya nokartu — kalau gak ada, skip
+        if (empty($pasien->nokartu_bpjs)) {
+            return ' · BPJS push dilewati (pasien BPJS tapi nokartu_bpjs kosong)';
+        }
+
+        $poli = DB::table('rsmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs')->where('poli_id', $data['poliId'])->first();
+        if (!$poli || empty($poli->kd_poli_bpjs)) {
+            return ' · BPJS push dilewati (poli belum mapping kd_poli_bpjs)';
+        }
+
+        $doctor = DB::table('rsmst_doctors')->select('dr_id', 'dr_name', 'kd_dr_bpjs')->where('dr_id', $data['drId'])->first();
+        if (!$doctor || empty($doctor->kd_dr_bpjs)) {
+            return ' · BPJS push dilewati (dokter belum mapping kd_dr_bpjs)';
+        }
+
+        $rjDateCarbon = Carbon::createFromFormat('d/m/Y H:i:s', $data['rjDate']);
+        $tanggalperiksa = $rjDateCarbon->format('Y-m-d');
+
+        // jampraktek dari SCVIEW_SCPOLIS — match by dokter + poli + hari + shift
+        $hariMap = [
+            'Sunday' => 'MINGGU',
+            'Monday' => 'SENIN',
+            'Tuesday' => 'SELASA',
+            'Wednesday' => 'RABU',
+            'Thursday' => 'KAMIS',
+            'Friday' => 'JUMAT',
+            'Saturday' => 'SABTU',
+        ];
+        $hari = $hariMap[$rjDateCarbon->dayName] ?? null;
+
+        $jadwal = DB::table('scview_scpolis')->select('sc_poli_ket')->where('poli_id', $poli->poli_id)->where('dr_id', $doctor->dr_id)->where('day_desc', $hari)->where('shift', $data['shift'])->where('sc_poli_status_', '1')->first();
+        $jampraktek = $jadwal->sc_poli_ket ?? '';
+
+        $noAntrian = (int) ($data['noAntrian'] ?? 0);
+        $nomorAntrean = $poli->kd_poli_bpjs . '-' . $noAntrian;
+
+        // 1) tambah_antrean
+        $tambah = self::tambah_antrean([
+            'nomorkartu' => $pasien->nokartu_bpjs ?? '',
+            'nik' => $pasien->nik_bpjs ?? '',
+            'nohp' => $pasien->phone ?? '',
+            'kodepoli' => $poli->kd_poli_bpjs,
+            'namapoli' => $poli->poli_desc,
+            'norm' => $pasien->reg_no,
+            'tanggalperiksa' => $tanggalperiksa,
+            'kodedokter' => $doctor->kd_dr_bpjs,
+            'namadokter' => $doctor->dr_name,
+            'jampraktek' => $jampraktek,
+            'nomorantrean' => $nomorAntrean,
+            'angkaantrean' => $noAntrian,
+            'keterangan' => 'Pendaftaran loket',
+        ]);
+
+        $msg = $tambah['ok'] ? '' : " · BPJS add: {$tambah['code']}/{$tambah['msg']}";
+
+        // 2) panggil_antrean (status hadir) — cuma kalau tambah berhasil
+        if ($tambah['ok']) {
+            // Waktu = jam rjDate (pendaftaran loket = jam hadir).
+            // Pakai timestamp dari form, bukan now(), supaya kalau admin save
+            // beberapa menit setelah pasien dateng, BPJS tetep dapet jam yg benar.
+            $waktuMs = $rjDateCarbon->timestamp * 1000;
+
+            $panggil = self::panggil_antrean(
+                $tanggalperiksa,
+                $poli->kd_poli_bpjs,
+                $pasien->nokartu_bpjs,
+                1, // 1=Hadir
+                $waktuMs,
+            );
+            if (!$panggil['ok']) {
+                $msg .= " · BPJS panggil: {$panggil['code']}/{$panggil['msg']}";
+            }
+        }
+
+        return $msg;
+    }
+
     /* ===============================
      | BUILD PAYLOAD
      =============================== */
@@ -236,7 +345,7 @@ new class extends Component {
         }
 
         if (empty($data['noAntrian'])) {
-            if (!empty($data['klaimId']) && $data['klaimId'] !== 'KR') {
+            if (!empty($data['klaimId'])) {
                 if (!empty($data['rjDate']) && !empty($data['drId'])) {
                     $rjDateCarbon = Carbon::createFromFormat('d/m/Y H:i:s', $data['rjDate']);
 
@@ -300,12 +409,8 @@ new class extends Component {
 
         if (($this->dataDaftarPoliRJ['klaimStatus'] ?? '') === 'BPJS' || ($this->dataDaftarPoliRJ['klaimId'] ?? '') === 'JM') {
             $rules['dataDaftarPoliRJ.kunjSakit'] = 'required|in:0,1';
-            $rules['dataDaftarPoliRJ.kdTkp']     = 'required|in:10,50';
+            $rules['dataDaftarPoliRJ.kdTkp'] = 'required|in:10,50';
             $rules['dataDaftarPoliRJ.kdpolibpjs'] = 'required|string';
-        }
-
-        if (($this->dataDaftarPoliRJ['klaimStatus'] ?? '') === 'KRONIS') {
-            $rules['dataDaftarPoliRJ.noAntrian'] = 'required|numeric';
         }
 
         return $this->validate($rules, [], $attributes);
@@ -370,7 +475,9 @@ new class extends Component {
     {
         $this->rjNo = $rjNo;
         $rjData = $this->findDataRJ($rjNo);
-        if (!$rjData) return;
+        if (!$rjData) {
+            return;
+        }
         $this->dataDaftarPoliRJ = $rjData;
         $this->dataPasien = $this->getMasterPasien($rjData['regNo'] ?? '') ?? [];
         $this->pushPendaftaranBPJS();
@@ -383,7 +490,9 @@ new class extends Component {
         }
 
         $rjNo = $this->dataDaftarPoliRJ['rjNo'] ?? null;
-        if (!$rjNo) return;
+        if (!$rjNo) {
+            return;
+        }
 
         // Skip kalau sudah pernah berhasil
         $sentCode = $this->dataDaftarPoliRJ['taskIdPelayanan']['pcarePendaftaran']['code'] ?? '';
@@ -393,17 +502,15 @@ new class extends Component {
         }
 
         // Build vital signs dari pemeriksaanFisik (perawat) dgn fallback tandaVital
-        $pf = $this->dataDaftarPoliRJ['pemeriksaanFisik']
-            ?? $this->dataDaftarPoliRJ['tandaVital']
-            ?? [];
+        $pf = $this->dataDaftarPoliRJ['pemeriksaanFisik'] ?? ($this->dataDaftarPoliRJ['tandaVital'] ?? []);
 
-        $sistole  = (int) ($pf['sistole']  ?? 0);
+        $sistole = (int) ($pf['sistole'] ?? 0);
         $diastole = (int) ($pf['diastole'] ?? 0);
-        $nadi     = (int) ($pf['nadi']     ?? 0);
-        $rr       = (int) ($pf['rr'] ?? $pf['respirasi'] ?? 0);
-        $bb       = (int) ($pf['beratBadan']  ?? 0);
-        $tb       = (int) ($pf['tinggiBadan'] ?? 0);
-        $lp       = (int) ($pf['lingkarPerut'] ?? 0);
+        $nadi = (int) ($pf['nadi'] ?? 0);
+        $rr = (int) ($pf['rr'] ?? ($pf['respirasi'] ?? 0));
+        $bb = (int) ($pf['beratBadan'] ?? 0);
+        $tb = (int) ($pf['tinggiBadan'] ?? 0);
+        $lp = (int) ($pf['lingkarPerut'] ?? 0);
 
         // Skip kalau vital signs belum lengkap (perawat belum input pemeriksaan)
         if ($sistole === 0 || $diastole === 0 || $nadi === 0 || $rr === 0) {
@@ -417,44 +524,42 @@ new class extends Component {
             return;
         }
 
-        $rjDate  = Carbon::createFromFormat('d/m/Y H:i:s', $this->dataDaftarPoliRJ['rjDate']);
+        $rjDate = Carbon::createFromFormat('d/m/Y H:i:s', $this->dataDaftarPoliRJ['rjDate']);
         $noKartu = preg_replace('/\D/', '', $this->dataPasien['pasien']['identitas']['nokartuBpjs'] ?? '');
-        $keluhan = $this->dataDaftarPoliRJ['anamnesa']['keluhanUtama']
-            ?? $this->dataDaftarPoliRJ['anamnesa']['anamnesa']
-            ?? '-';
+        $keluhan = $this->dataDaftarPoliRJ['anamnesa']['keluhanUtama'] ?? ($this->dataDaftarPoliRJ['anamnesa']['anamnesa'] ?? '-');
 
         $payload = [
             'kdProviderPeserta' => env('PCARE_PROVIDER'),
-            'tglDaftar'    => $rjDate->format('d-m-Y'),
-            'noKartu'      => $noKartu,
-            'kdPoli'       => $this->dataDaftarPoliRJ['kdpolibpjs'] ?? '',
-            'keluhan'      => $keluhan,
-            'kunjSakit'    => (int) ($this->dataDaftarPoliRJ['kunjSakit'] ?? 1), // 1=sakit, 0=sehat
-            'sistole'      => $sistole,
-            'diastole'     => $diastole,
-            'beratBadan'   => $bb,
-            'tinggiBadan'  => $tb,
-            'respRate'     => $rr,
+            'tglDaftar' => $rjDate->format('d-m-Y'),
+            'noKartu' => $noKartu,
+            'kdPoli' => $this->dataDaftarPoliRJ['kdpolibpjs'] ?? '',
+            'keluhan' => $keluhan,
+            'kunjSakit' => (int) ($this->dataDaftarPoliRJ['kunjSakit'] ?? 1), // 1=sakit, 0=sehat
+            'sistole' => $sistole,
+            'diastole' => $diastole,
+            'beratBadan' => $bb,
+            'tinggiBadan' => $tb,
+            'respRate' => $rr,
             'lingkarPerut' => $lp,
-            'heartRate'    => $nadi,
-            'rujukBalik'   => 'N',
-            'kdTkp'        => (string) ($this->dataDaftarPoliRJ['kdTkp'] ?? '10'), // 10=RJTP, 50=Promotif
+            'heartRate' => $nadi,
+            'rujukBalik' => 'N',
+            'kdTkp' => (string) ($this->dataDaftarPoliRJ['kdTkp'] ?? '10'), // 10=RJTP, 50=Promotif
         ];
 
         try {
             \Log::info('PCare addPedaftaran request', ['rjNo' => $rjNo, 'payload' => $payload]);
             $response = $this->addPedaftaran($payload)->getOriginalContent();
             $code = $response['metadata']['code'] ?? 0;
-            $msg  = $response['metadata']['message'] ?? '';
+            $msg = $response['metadata']['message'] ?? '';
 
             // Simpan status ke JSON
             $rjData = $this->findDataRJ($rjNo) ?: [];
             $rjData['taskIdPelayanan'] ??= [];
             $rjData['taskIdPelayanan']['pcarePendaftaran'] = [
-                'code'    => $code,
+                'code' => $code,
                 'message' => $msg,
-                'sentAt'  => now()->format('Y-m-d H:i:s'),
-                'response'=> $response['response'] ?? null,
+                'sentAt' => now()->format('Y-m-d H:i:s'),
+                'response' => $response['response'] ?? null,
             ];
             DB::transaction(function () use ($rjNo, $rjData) {
                 $this->lockRJRow($rjNo);
@@ -462,12 +567,7 @@ new class extends Component {
             });
 
             $isOk = $code == 200 || $code == 201;
-            $this->dispatch('toast',
-                type: $isOk ? 'success' : 'warning',
-                message: 'PCare Pendaftaran: ' . $msg,
-                title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal',
-                duration: 6000
-            );
+            $this->dispatch('toast', type: $isOk ? 'success' : 'warning', message: 'PCare Pendaftaran: ' . $msg, title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal', duration: 6000);
         } catch (\Exception $e) {
             \Log::error('PCare addPedaftaran exception', ['rjNo' => $rjNo, 'error' => $e->getMessage()]);
             $this->dispatch('toast', type: 'error', message: 'Error PCare: ' . $e->getMessage(), title: 'BPJS Error');
@@ -486,7 +586,9 @@ new class extends Component {
     {
         $this->rjNo = $rjNo;
         $rjData = $this->findDataRJ($rjNo);
-        if (!$rjData) return;
+        if (!$rjData) {
+            return;
+        }
         $this->dataDaftarPoliRJ = $rjData;
         $this->dataPasien = $this->getMasterPasien($rjData['regNo'] ?? '') ?? [];
         $this->pushKunjunganBPJS();
@@ -499,14 +601,14 @@ new class extends Component {
         }
 
         $rjNo = $this->dataDaftarPoliRJ['rjNo'] ?? null;
-        if (!$rjNo) return;
+        if (!$rjNo) {
+            return;
+        }
 
         // Wajib: pendaftaran sudah sukses dulu
         $pendaftaranCode = $this->dataDaftarPoliRJ['taskIdPelayanan']['pcarePendaftaran']['code'] ?? '';
         if ($pendaftaranCode != 200 && $pendaftaranCode != 201) {
-            $this->dispatch('toast', type: 'warning',
-                message: 'Kirim Pendaftaran BPJS dulu sebelum kirim Kunjungan.',
-                title: 'BPJS Pendaftaran Belum');
+            $this->dispatch('toast', type: 'warning', message: 'Kirim Pendaftaran BPJS dulu sebelum kirim Kunjungan.', title: 'BPJS Pendaftaran Belum');
             return;
         }
 
@@ -518,21 +620,23 @@ new class extends Component {
         }
 
         $payload = $this->buildKunjunganPayload($rjNo);
-        if ($payload === null) return;
+        if ($payload === null) {
+            return;
+        }
 
         try {
             \Log::info('PCare addKunjungan request', ['rjNo' => $rjNo, 'payload' => $payload]);
             $response = $this->addKunjungan($payload)->getOriginalContent();
             $code = $response['metadata']['code'] ?? 0;
-            $msg  = $response['metadata']['message'] ?? '';
+            $msg = $response['metadata']['message'] ?? '';
 
             $rjData = $this->findDataRJ($rjNo) ?: [];
             $rjData['taskIdPelayanan'] ??= [];
             $rjData['taskIdPelayanan']['pcareKunjungan'] = [
-                'code'    => $code,
+                'code' => $code,
                 'message' => $msg,
-                'sentAt'  => now()->format('Y-m-d H:i:s'),
-                'response'=> $response['response'] ?? null,
+                'sentAt' => now()->format('Y-m-d H:i:s'),
+                'response' => $response['response'] ?? null,
             ];
             DB::transaction(function () use ($rjNo, $rjData) {
                 $this->lockRJRow($rjNo);
@@ -540,12 +644,7 @@ new class extends Component {
             });
 
             $isOk = $code == 200 || $code == 201;
-            $this->dispatch('toast',
-                type: $isOk ? 'success' : 'warning',
-                message: 'PCare Kunjungan: ' . $msg,
-                title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal',
-                duration: 6000
-            );
+            $this->dispatch('toast', type: $isOk ? 'success' : 'warning', message: 'PCare Kunjungan: ' . $msg, title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal', duration: 6000);
         } catch (\Exception $e) {
             \Log::error('PCare addKunjungan exception', ['rjNo' => $rjNo, 'error' => $e->getMessage()]);
             $this->dispatch('toast', type: 'error', message: 'Error PCare: ' . $e->getMessage(), title: 'BPJS Error');
@@ -567,14 +666,12 @@ new class extends Component {
             return;
         }
 
-        $pasien  = $this->getMasterPasien($rjData['regNo'] ?? '') ?? [];
+        $pasien = $this->getMasterPasien($rjData['regNo'] ?? '') ?? [];
         $noKartu = preg_replace('/\D/', '', $pasien['pasien']['identitas']['nokartuBpjs'] ?? '');
-        $nama    = $pasien['pasien']['regName'] ?? ($rjData['regName'] ?? '');
+        $nama = $pasien['pasien']['regName'] ?? ($rjData['regName'] ?? '');
 
         if (strlen($noKartu) !== 13) {
-            $this->dispatch('toast', type: 'warning',
-                message: 'No. Kartu BPJS pasien belum diisi (atau bukan 13 digit).',
-                title: 'BPJS Riwayat');
+            $this->dispatch('toast', type: 'warning', message: 'No. Kartu BPJS pasien belum diisi (atau bukan 13 digit).', title: 'BPJS Riwayat');
             return;
         }
 
@@ -584,21 +681,18 @@ new class extends Component {
 
             if ($code != 200) {
                 $msg = $resp['metadata']['message'] ?? "code {$code}";
-                $this->dispatch('toast', type: 'error',
-                    message: 'BPJS getRiwayatKunjungan: ' . $msg,
-                    title: 'BPJS Riwayat');
+                $this->dispatch('toast', type: 'error', message: 'BPJS getRiwayatKunjungan: ' . $msg, title: 'BPJS Riwayat');
                 return;
             }
 
-            $list = $resp['response']['list'] ?? $resp['response'] ?? [];
+            $list = $resp['response']['list'] ?? ($resp['response'] ?? []);
             $this->riwayatBpjsList = is_array($list) ? array_values($list) : [];
             $this->riwayatBpjsTitle = trim("Riwayat Kunjungan BPJS — {$nama} ({$noKartu})");
             $this->showRiwayatBpjs = true;
             $this->dispatch('open-modal', name: 'rj-riwayat-bpjs');
         } catch (\Exception $e) {
             \Log::error('PCare getRiwayatKunjungan exception', ['rjNo' => $rjNo, 'error' => $e->getMessage()]);
-            $this->dispatch('toast', type: 'error',
-                message: 'Error PCare: ' . $e->getMessage(), title: 'BPJS Error');
+            $this->dispatch('toast', type: 'error', message: 'Error PCare: ' . $e->getMessage(), title: 'BPJS Error');
         }
     }
 
@@ -621,7 +715,9 @@ new class extends Component {
     {
         $this->rjNo = $rjNo;
         $rjData = $this->findDataRJ($rjNo);
-        if (!$rjData) return;
+        if (!$rjData) {
+            return;
+        }
         $this->dataDaftarPoliRJ = $rjData;
         $this->dataPasien = $this->getMasterPasien($rjData['regNo'] ?? '') ?? [];
         $this->editKunjunganBPJS();
@@ -629,36 +725,40 @@ new class extends Component {
 
     private function editKunjunganBPJS(): void
     {
-        if (($this->dataDaftarPoliRJ['klaimId'] ?? '') !== 'JM') return;
+        if (($this->dataDaftarPoliRJ['klaimId'] ?? '') !== 'JM') {
+            return;
+        }
 
         $rjNo = $this->dataDaftarPoliRJ['rjNo'] ?? null;
-        if (!$rjNo) return;
+        if (!$rjNo) {
+            return;
+        }
 
         $kunjunganCode = $this->dataDaftarPoliRJ['taskIdPelayanan']['pcareKunjungan']['code'] ?? '';
         if ($kunjunganCode != 200 && $kunjunganCode != 201) {
-            $this->dispatch('toast', type: 'warning',
-                message: 'Kunjungan belum pernah dikirim sukses. Pakai "Kirim Kunjungan BPJS" dulu.',
-                title: 'BPJS Edit');
+            $this->dispatch('toast', type: 'warning', message: 'Kunjungan belum pernah dikirim sukses. Pakai "Kirim Kunjungan BPJS" dulu.', title: 'BPJS Edit');
             return;
         }
 
         $payload = $this->buildKunjunganPayload($rjNo);
-        if ($payload === null) return; // toast sudah di-dispatch
+        if ($payload === null) {
+            return;
+        } // toast sudah di-dispatch
 
         try {
             \Log::info('PCare editKunjungan request', ['rjNo' => $rjNo, 'payload' => $payload]);
             $response = $this->editKunjungan($payload)->getOriginalContent();
             $code = $response['metadata']['code'] ?? 0;
-            $msg  = $response['metadata']['message'] ?? '';
+            $msg = $response['metadata']['message'] ?? '';
 
             $rjData = $this->findDataRJ($rjNo) ?: [];
             $rjData['taskIdPelayanan'] ??= [];
             $rjData['taskIdPelayanan']['pcareKunjungan'] = [
-                'code'    => $code,
+                'code' => $code,
                 'message' => $msg,
-                'sentAt'  => now()->format('Y-m-d H:i:s'),
-                'response'=> $response['response'] ?? null,
-                'editedAt'=> now()->format('Y-m-d H:i:s'),
+                'sentAt' => now()->format('Y-m-d H:i:s'),
+                'response' => $response['response'] ?? null,
+                'editedAt' => now()->format('Y-m-d H:i:s'),
             ];
             DB::transaction(function () use ($rjNo, $rjData) {
                 $this->lockRJRow($rjNo);
@@ -666,11 +766,7 @@ new class extends Component {
             });
 
             $isOk = $code == 200 || $code == 201;
-            $this->dispatch('toast',
-                type: $isOk ? 'success' : 'warning',
-                message: 'PCare Edit Kunjungan: ' . $msg,
-                title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal',
-                duration: 6000);
+            $this->dispatch('toast', type: $isOk ? 'success' : 'warning', message: 'PCare Edit Kunjungan: ' . $msg, title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal', duration: 6000);
         } catch (\Exception $e) {
             \Log::error('PCare editKunjungan exception', ['rjNo' => $rjNo, 'error' => $e->getMessage()]);
             $this->dispatch('toast', type: 'error', message: 'Error PCare: ' . $e->getMessage(), title: 'BPJS Error');
@@ -688,14 +784,14 @@ new class extends Component {
     {
         $this->rjNo = $rjNo;
         $rjData = $this->findDataRJ($rjNo);
-        if (!$rjData) return;
+        if (!$rjData) {
+            return;
+        }
         $this->dataDaftarPoliRJ = $rjData;
 
         $kunjunganCode = $this->dataDaftarPoliRJ['taskIdPelayanan']['pcareKunjungan']['code'] ?? '';
         if ($kunjunganCode != 200 && $kunjunganCode != 201) {
-            $this->dispatch('toast', type: 'warning',
-                message: 'Kunjungan belum pernah dikirim sukses, tidak bisa dihapus.',
-                title: 'BPJS Hapus');
+            $this->dispatch('toast', type: 'warning', message: 'Kunjungan belum pernah dikirim sukses, tidak bisa dihapus.', title: 'BPJS Hapus');
             return;
         }
 
@@ -705,15 +801,15 @@ new class extends Component {
             \Log::info('PCare deleteKunjungan request', ['rjNo' => $rjNo, 'noKunjungan' => $noKunjungan]);
             $response = $this->deleteKunjungan($noKunjungan)->getOriginalContent();
             $code = $response['metadata']['code'] ?? 0;
-            $msg  = $response['metadata']['message'] ?? '';
+            $msg = $response['metadata']['message'] ?? '';
 
             $rjData = $this->findDataRJ($rjNo) ?: [];
             $rjData['taskIdPelayanan'] ??= [];
             $rjData['taskIdPelayanan']['pcareKunjunganDelete'] = [
-                'code'    => $code,
+                'code' => $code,
                 'message' => $msg,
-                'sentAt'  => now()->format('Y-m-d H:i:s'),
-                'response'=> $response['response'] ?? null,
+                'sentAt' => now()->format('Y-m-d H:i:s'),
+                'response' => $response['response'] ?? null,
             ];
             // Reset pcareKunjungan code supaya bisa Kirim ulang
             if ($code == 200 || $code == 201) {
@@ -726,11 +822,7 @@ new class extends Component {
             });
 
             $isOk = $code == 200 || $code == 201;
-            $this->dispatch('toast',
-                type: $isOk ? 'success' : 'warning',
-                message: 'PCare Hapus Kunjungan: ' . $msg,
-                title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal',
-                duration: 6000);
+            $this->dispatch('toast', type: $isOk ? 'success' : 'warning', message: 'PCare Hapus Kunjungan: ' . $msg, title: $isOk ? 'BPJS Berhasil' : 'BPJS Gagal', duration: 6000);
         } catch (\Exception $e) {
             \Log::error('PCare deleteKunjungan exception', ['rjNo' => $rjNo, 'error' => $e->getMessage()]);
             $this->dispatch('toast', type: 'error', message: 'Error PCare: ' . $e->getMessage(), title: 'BPJS Error');
@@ -742,60 +834,56 @@ new class extends Component {
      * ------------------------- */
     private function buildKunjunganPayload(string $rjNo): ?array
     {
-        $diagnosa  = $this->dataDaftarPoliRJ['diagnosis'] ?? [];
-        $kdDiag1   = $diagnosa[0]['icdX'] ?? '';
-        $kdDiag2   = $diagnosa[1]['icdX'] ?? null;
-        $kdDiag3   = $diagnosa[2]['icdX'] ?? null;
+        $diagnosa = $this->dataDaftarPoliRJ['diagnosis'] ?? [];
+        $kdDiag1 = $diagnosa[0]['icdX'] ?? '';
+        $kdDiag2 = $diagnosa[1]['icdX'] ?? null;
+        $kdDiag3 = $diagnosa[2]['icdX'] ?? null;
 
         if (!$kdDiag1) {
-            $this->dispatch('toast', type: 'warning',
-                message: 'Diagnosa primer wajib diisi sebelum kirim Kunjungan.',
-                title: 'Diagnosa Belum');
+            $this->dispatch('toast', type: 'warning', message: 'Diagnosa primer wajib diisi sebelum kirim Kunjungan.', title: 'Diagnosa Belum');
             return null;
         }
 
-        $pf = $this->dataDaftarPoliRJ['pemeriksaanFisik']
-            ?? $this->dataDaftarPoliRJ['tandaVital']
-            ?? [];
+        $pf = $this->dataDaftarPoliRJ['pemeriksaanFisik'] ?? ($this->dataDaftarPoliRJ['tandaVital'] ?? []);
 
-        $rjDate  = Carbon::createFromFormat('d/m/Y H:i:s', $this->dataDaftarPoliRJ['rjDate']);
+        $rjDate = Carbon::createFromFormat('d/m/Y H:i:s', $this->dataDaftarPoliRJ['rjDate']);
         $noKartu = preg_replace('/\D/', '', $this->dataPasien['pasien']['identitas']['nokartuBpjs'] ?? '');
         $perencanaan = $this->dataDaftarPoliRJ['perencanaan'] ?? [];
-        $anamnesa    = $this->dataDaftarPoliRJ['anamnesa'] ?? [];
+        $anamnesa = $this->dataDaftarPoliRJ['anamnesa'] ?? [];
 
         return [
-            'noKunjungan'  => 'RJ-' . $rjNo,
-            'noKartu'      => $noKartu,
-            'tglDaftar'    => $rjDate->format('d-m-Y'),
-            'kdPoli'       => $this->dataDaftarPoliRJ['kdpolibpjs'] ?? '',
-            'keluhan'      => $anamnesa['keluhanUtama'] ?? '-',
-            'kdSadar'      => $pf['kdSadar'] ?? '01',
-            'sistole'      => (int) ($pf['sistole'] ?? 0),
-            'diastole'     => (int) ($pf['diastole'] ?? 0),
-            'beratBadan'   => (int) ($pf['beratBadan'] ?? 0),
-            'tinggiBadan'  => (int) ($pf['tinggiBadan'] ?? 0),
-            'respRate'     => (int) ($pf['rr'] ?? $pf['respirasi'] ?? 0),
-            'heartRate'    => (int) ($pf['nadi'] ?? 0),
+            'noKunjungan' => 'RJ-' . $rjNo,
+            'noKartu' => $noKartu,
+            'tglDaftar' => $rjDate->format('d-m-Y'),
+            'kdPoli' => $this->dataDaftarPoliRJ['kdpolibpjs'] ?? '',
+            'keluhan' => $anamnesa['keluhanUtama'] ?? '-',
+            'kdSadar' => $pf['kdSadar'] ?? '01',
+            'sistole' => (int) ($pf['sistole'] ?? 0),
+            'diastole' => (int) ($pf['diastole'] ?? 0),
+            'beratBadan' => (int) ($pf['beratBadan'] ?? 0),
+            'tinggiBadan' => (int) ($pf['tinggiBadan'] ?? 0),
+            'respRate' => (int) ($pf['rr'] ?? ($pf['respirasi'] ?? 0)),
+            'heartRate' => (int) ($pf['nadi'] ?? 0),
             'lingkarPerut' => (int) ($pf['lingkarPerut'] ?? 0),
             'kdStatusPulang' => $perencanaan['kdStatusPulang'] ?? '4',
-            'tglPulang'    => Carbon::now()->format('d-m-Y'),
-            'kdDokter'     => $this->dataDaftarPoliRJ['kddrbpjs'] ?? '',
-            'kdDiag1'      => $kdDiag1,
-            'kdDiag2'      => $kdDiag2,
-            'kdDiag3'      => $kdDiag3,
+            'tglPulang' => Carbon::now()->format('d-m-Y'),
+            'kdDokter' => $this->dataDaftarPoliRJ['kddrbpjs'] ?? '',
+            'kdDiag1' => $kdDiag1,
+            'kdDiag2' => $kdDiag2,
+            'kdDiag3' => $kdDiag3,
             'kdPoliRujukInternal' => null,
-            'rujukLanjut'  => null,
-            'kdTacc'       => -1,
-            'alasanTacc'   => '',
-            'anamnesa'     => $anamnesa['anamnesa'] ?? $anamnesa['keluhanUtama'] ?? '-',
-            'alergiMakan'  => $anamnesa['alergi']['alergiMakan']  ?? $anamnesa['alergiMakan']  ?? '00',
-            'alergiUdara'  => $anamnesa['alergi']['alergiUdara']  ?? $anamnesa['alergiUdara']  ?? '00',
-            'alergiObat'   => $anamnesa['alergi']['alergiObat']   ?? $anamnesa['alergiObat']   ?? '00',
-            'kdPrognosa'   => $perencanaan['kdPrognosa'] ?? '01',
-            'terapiObat'   => $perencanaan['terapiObat'] ?? '-',
-            'terapiNonObat'=> $perencanaan['terapiNonObat'] ?? '',
-            'bmhp'         => $perencanaan['bmhp'] ?? '',
-            'suhu'         => (string) ($pf['suhu'] ?? '36.5'),
+            'rujukLanjut' => null,
+            'kdTacc' => -1,
+            'alasanTacc' => '',
+            'anamnesa' => $anamnesa['anamnesa'] ?? ($anamnesa['keluhanUtama'] ?? '-'),
+            'alergiMakan' => $anamnesa['alergi']['alergiMakan'] ?? ($anamnesa['alergiMakan'] ?? '00'),
+            'alergiUdara' => $anamnesa['alergi']['alergiUdara'] ?? ($anamnesa['alergiUdara'] ?? '00'),
+            'alergiObat' => $anamnesa['alergi']['alergiObat'] ?? ($anamnesa['alergiObat'] ?? '00'),
+            'kdPrognosa' => $perencanaan['kdPrognosa'] ?? '01',
+            'terapiObat' => $perencanaan['terapiObat'] ?? '-',
+            'terapiNonObat' => $perencanaan['terapiNonObat'] ?? '',
+            'bmhp' => $perencanaan['bmhp'] ?? '',
+            'suhu' => (string) ($pf['suhu'] ?? '36.5'),
         ];
     }
 
@@ -826,7 +914,9 @@ new class extends Component {
     {
         $rjDate = $this->dataDaftarPoliRJ['rjDate'] ?? '';
         $shift = (string) ($this->dataDaftarPoliRJ['shift'] ?? '');
-        if (empty($rjDate) || empty($shift)) return null;
+        if (empty($rjDate) || empty($shift)) {
+            return null;
+        }
 
         try {
             $time = Carbon::createFromFormat('d/m/Y H:i:s', $rjDate)->format('H:i:s');
@@ -835,7 +925,9 @@ new class extends Component {
         }
 
         $expected = $this->resolveShiftByTime($time);
-        if ($expected === $shift) return null;
+        if ($expected === $shift) {
+            return null;
+        }
 
         return "Jam {$time} seharusnya Shift {$expected}, bukan Shift {$shift}.";
     }
@@ -852,24 +944,20 @@ new class extends Component {
             ->first();
 
         return (string) ($row?->shift ?? '1');
-    }    private function hitungNoAntrian(string $drId, Carbon $rjDateCarbon): int
+    }
+    private function hitungNoAntrian(string $drId, Carbon $rjDateCarbon): int
     {
         $poliId = $this->dataDaftarPoliRJ['poliId'] ?? null;
 
         $maxAntrianRjhdrs = (int) DB::table('rstxn_rjhdrs')
             ->where('dr_id', $drId)
             ->when($poliId, fn($q) => $q->where('poli_id', $poliId))
-            ->where('klaim_id', '!=', 'KR')
+
             ->whereRaw("to_char(rj_date, 'ddmmyyyy') = ?", [$rjDateCarbon->format('dmY')])
             ->max('no_antrian');
 
         // angkaantrean bertipe VARCHAR2 — pakai to_number agar max numeric (bukan lex sort).
-        $maxAntrianBooking = (int) DB::table('referensi_mobilejkn_bpjs as b')
-            ->join('rsmst_doctors as d', 'd.kd_dr_bpjs', '=', 'b.kodedokter')
-            ->where('d.dr_id', $drId)
-            ->where('b.tanggalperiksa', $rjDateCarbon->format('Y-m-d'))
-            ->selectRaw("nvl(max(to_number(b.angkaantrean)), 0) as maxq")
-            ->value('maxq');
+        $maxAntrianBooking = (int) DB::table('referensi_mobilejkn_bpjs as b')->join('rsmst_doctors as d', 'd.kd_dr_bpjs', '=', 'b.kodedokter')->where('d.dr_id', $drId)->where('b.tanggalperiksa', $rjDateCarbon->format('Y-m-d'))->selectRaw('nvl(max(to_number(b.angkaantrean)), 0) as maxq')->value('maxq');
 
         return max($maxAntrianRjhdrs, $maxAntrianBooking) + 1;
     }
@@ -905,7 +993,6 @@ new class extends Component {
     /* ===============================
      | SEP HANDLERS
      =============================== */
-    #[On('sep-generated')]
     /* ===============================
      | SATU SEHAT
      =============================== */
@@ -920,10 +1007,10 @@ new class extends Component {
     // Trigger lewat dispatch event 'daftar-rj.idrg.open' yang ditangkap oleh
     // idrg-rj-actions di file ini paling bawah.
 
-
     /* ===============================
      | UPDATED HOOKS
      =============================== */
+    #[On('sep-generated')]
     public function updated($name, $value): void
     {
         if ($name === 'dataDaftarPoliRJ.rjDate' && !empty($value)) {
@@ -971,9 +1058,9 @@ new class extends Component {
      =============================== */
     private function syncFromDataDaftarPoliRJ(): void
     {
-        $this->klaimId   = $this->dataDaftarPoliRJ['klaimId'] ?? 'UM';
+        $this->klaimId = $this->dataDaftarPoliRJ['klaimId'] ?? 'UM';
         $this->kunjSakit = (string) ($this->dataDaftarPoliRJ['kunjSakit'] ?? '1');
-        $this->kdTkp     = (string) ($this->dataDaftarPoliRJ['kdTkp'] ?? '10');
+        $this->kdTkp = (string) ($this->dataDaftarPoliRJ['kdTkp'] ?? '10');
     }
 
     protected function resetForm(): void
@@ -1051,7 +1138,8 @@ new class extends Component {
                             </x-select-input>
                             <x-input-error :messages="$errors->get('dataDaftarPoliRJ.shift')" class="mt-1" />
                             @if ($shiftMsg = $this->shiftMismatchMessage())
-                                <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{{ $shiftMsg }}</p>
+                                <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{{ $shiftMsg }}
+                                </p>
                             @endif
                         </div>
                     </div>
@@ -1122,11 +1210,13 @@ new class extends Component {
                                             <x-input-label value="Kunjungan Sakit / Sehat" :required="true" />
                                             <div class="grid grid-cols-2 gap-2">
                                                 @foreach ($kunjSakitOptions as $opt)
-                                                    <x-radio-button :label="$opt['kunjSakitDesc']" :value="$opt['kunjSakitId']" name="kunjSakit"
-                                                        wire:model.live="kunjSakit" :disabled="$isFormLocked" />
+                                                    <x-radio-button :label="$opt['kunjSakitDesc']" :value="$opt['kunjSakitId']"
+                                                        name="kunjSakit" wire:model.live="kunjSakit"
+                                                        :disabled="$isFormLocked" />
                                                 @endforeach
                                             </div>
-                                            <p class="mt-1 text-xs {{ $kunjSakit === '1' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' }}">
+                                            <p
+                                                class="mt-1 text-xs {{ $kunjSakit === '1' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' }}">
                                                 {{ $kunjSakit === '1' ? 'Pasien datang dgn keluhan/sakit.' : 'Imunisasi, KB, kontrol gizi, promotif (poli BPJS: 020, 021, 023–026).' }}
                                             </p>
                                         </div>
@@ -1141,7 +1231,8 @@ new class extends Component {
                                                 @endforeach
                                             </div>
                                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                10 = Rawat Jalan Tingkat Pertama (default klinik). 50 = Promotif (penyuluhan / kelas ibu hamil / dll).
+                                                10 = Rawat Jalan Tingkat Pertama (default klinik). 50 = Promotif
+                                                (penyuluhan / kelas ibu hamil / dll).
                                             </p>
                                         </div>
                                     </div>
@@ -1263,7 +1354,7 @@ new class extends Component {
                                     @endif
                                     @if (!empty($row['kdDokter']) || !empty($row['nmDokter']))
                                         <div class="text-xs text-gray-500">
-                                            Dokter: {{ $row['nmDokter'] ?? $row['kdDokter'] ?? '-' }}
+                                            Dokter: {{ $row['nmDokter'] ?? ($row['kdDokter'] ?? '-') }}
                                         </div>
                                     @endif
                                 </div>

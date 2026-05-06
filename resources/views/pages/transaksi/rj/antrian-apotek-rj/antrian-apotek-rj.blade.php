@@ -129,8 +129,7 @@ new class extends Component {
             ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
             ->select(['h.rj_no', DB::raw("to_char(h.rj_date,'dd/mm/yyyy hh24:mi:ss') as rj_date_display"), 'h.reg_no', 'p.reg_name', 'p.sex', 'p.address', DB::raw("to_char(p.birth_date,'dd/mm/yyyy') as birth_date"), 'h.no_antrian', 'h.poli_id', 'po.poli_desc', 'h.dr_id', 'd.dr_name', 'h.klaim_id', 'h.shift', 'h.rj_status', 'h.vno_sep', 'h.nobooking', 'h.datadaftarpolirj_json', 'k.klaim_desc', 'k.klaim_status', 'h.waktu_masuk_apt', 'h.waktu_selesai_pelayanan'])
             ->whereBetween('h.rj_date', [$start, $end])
-            ->where(DB::raw("NVL(h.rj_status,'A')"), $this->filterStatus)
-            ->where('h.klaim_id', '!=', 'KR');
+            ->where(DB::raw("NVL(h.rj_status,'A')"), $this->filterStatus);
 
         if ($this->filterDokter !== '') {
             $query->where('h.dr_id', $this->filterDokter);
@@ -234,13 +233,11 @@ new class extends Component {
             $row->klaim_label = match ($row->klaim_id) {
                 'UM' => 'UMUM',
                 'JM' => 'BPJS',
-                'KR' => 'Kronis',
                 default => 'Asuransi Lain',
             };
             $row->klaim_variant = match ($row->klaim_id) {
                 'UM' => 'success',
                 'JM' => 'brand',
-                'KR' => 'warning',
                 default => 'alternative',
             };
 
@@ -262,7 +259,6 @@ new class extends Component {
             ->join('rsmst_doctors', 'rsmst_doctors.dr_id', '=', 'rstxn_rjhdrs.dr_id')
             ->select('rstxn_rjhdrs.dr_id', DB::raw('MAX(rsmst_doctors.dr_name) as dr_name'), DB::raw('COUNT(DISTINCT rstxn_rjhdrs.rj_no) as total_pasien'))
             ->whereBetween('rstxn_rjhdrs.rj_date', [$start, $end])
-            ->where('rstxn_rjhdrs.klaim_id', '!=', 'KR')
             ->groupBy('rstxn_rjhdrs.dr_id')
             ->orderBy('dr_name')
             ->get();

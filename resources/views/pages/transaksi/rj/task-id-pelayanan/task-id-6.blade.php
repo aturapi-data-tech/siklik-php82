@@ -91,18 +91,14 @@ new class extends Component {
                     $jenisResep = $eresepRacikanCount > 0 ? 'racikan' : 'non racikan';
 
                     $refDate = Carbon::now(config('app.timezone'))->format('d/m/Y');
-                    $noAntrian =
-                        ($existingData['klaimId'] ?? '') !== 'KR'
-                            ? DB::table('rstxn_rjhdrs')
-                                    ->select('datadaftarpolirj_json')
-                                    ->where('rj_status', '!=', 'F')
-                                    ->where('klaim_id', '!=', 'KR')
-                                    ->where(DB::raw("to_char(rj_date,'dd/mm/yyyy')"), '=', $refDate)
-                                    ->lockForUpdate() // lock tabel untuk cegah race condition
-                                    ->get()
-                                    ->filter(fn($item) => isset((json_decode($item->datadaftarpolirj_json, true) ?: [])['noAntrianApotek']))
-                                    ->count() + 1
-                            : 9999;
+                    $noAntrian = DB::table('rstxn_rjhdrs')
+                            ->select('datadaftarpolirj_json')
+                            ->where('rj_status', '!=', 'F')
+                            ->where(DB::raw("to_char(rj_date,'dd/mm/yyyy')"), '=', $refDate)
+                            ->lockForUpdate() // lock tabel untuk cegah race condition
+                            ->get()
+                            ->filter(fn($item) => isset((json_decode($item->datadaftarpolirj_json, true) ?: [])['noAntrianApotek']))
+                            ->count() + 1;
 
                     $existingData['noAntrianApotek'] = [
                         'noAntrian' => $noAntrian,
@@ -158,7 +154,8 @@ new class extends Component {
 
     /* ===============================
      | HELPERS
-     =============================== */};
+     =============================== */
+};
 ?>
 
 <div class="inline-block">
