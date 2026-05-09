@@ -58,6 +58,17 @@ new class extends Component {
         $this->dispatch('focus-acte-desc');
     }
 
+    #[On('master.jasa-karyawan.toggleActive')]
+    public function toggleActive(string $acteId): void
+    {
+        $cur = (string) DB::table('rsmst_actemps')->where('acte_id', $acteId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('rsmst_actemps')->where('acte_id', $acteId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status jasa karyawan → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.jasa-karyawan.saved');
+    }
+
     #[On('master.jasa-karyawan.requestDelete')]
     public function deleteJasaDokter(string $acteId): void
     {

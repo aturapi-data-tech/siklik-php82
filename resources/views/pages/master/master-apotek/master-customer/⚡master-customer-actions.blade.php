@@ -100,6 +100,17 @@ new class extends Component {
         $this->dispatch('focus-cm-name');
     }
 
+    #[On('master.customer.toggleActive')]
+    public function toggleActive(string $cmId): void
+    {
+        $cur = (string) DB::table('tkmst_customers')->where('cm_id', $cmId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('tkmst_customers')->where('cm_id', $cmId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status customer → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.customer.saved');
+    }
+
     #[On('master.customer.requestDelete')]
     public function deleteCustomer(string $cmId): void
     {

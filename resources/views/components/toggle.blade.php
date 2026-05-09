@@ -5,18 +5,16 @@
         <x-toggle wire:model.live="passStatus" trueValue="N" falseValue="O" label="Pasien Baru" :disabled="$isFormLocked" />
         <x-toggle wire:model.live="dataDaftarUGD.passStatus" trueValue="N" falseValue="O" label="Pasien Baru" />
         <x-toggle wire:model.live="activeStatus" trueValue="1" falseValue="0">Status Aktif</x-toggle>
+        <x-toggle wire:model.live="forceFlag" :trueValue="true" :falseValue="false" label="Paksa" />
 
       Mode 2 (per-row di table — pakai `current` + `wireClick`):
         <x-toggle :current="$row->active_record" trueValue="1" falseValue="0"
                   wireClick="toggleActive('{{ $row->emp_id }}')">Aktif</x-toggle>
 
     Catatan:
-      - Visual driven by server-rendered class — Alpine cuma jadi click handler.
-        Cegah bug "klik 2x kembali tercentang" akibat Alpine optimistic flip vs
-        Livewire morph re-render yang nggak sync.
+      - Pure server-side render (visual + click via wire:click) — bebas race condition.
       - Mendukung nested array (dataDaftarXxx.field) tanpa @entangle.
-      - Nilai awal diambil via $current (jika diisi) atau data_get($__livewire, $wireModel).
-      - Toggle via $wire.set() (Mode 1) atau $wire.{method}(...) (Mode 2).
+      - Click memicu wire:click="$set(...)" (Mode 1) atau wire:click="..." (Mode 2).
 --}}
 
 @props([
@@ -43,13 +41,20 @@
     }
     $currentValue ??= $falseValue;
 
-    // Server-side: tentukan ON/OFF di Blade, bukan di Alpine.
     $isOn = $currentValue == $trueValue;
     $nextValue = $isOn ? $falseValue : $trueValue;
 
+    // Encode value untuk wire:click="$set(...)" expression
+    $encode = fn($v) => match (true) {
+        is_bool($v)    => $v ? 'true' : 'false',
+        is_int($v),
+        is_float($v)   => (string) $v,
+        is_null($v)    => 'null',
+        default        => "'" . addslashes((string) $v) . "'",
+    };
+
     $attrs = $attributes->whereDoesntStartWith('wire:model');
 
-    // Class untuk track + thumb berdasarkan state server.
     $trackClass = match (true) {
         $isOn && $disabled => 'bg-gray-400',
         $isOn => 'bg-brand',
@@ -57,7 +62,6 @@
         default => 'bg-gray-300',
     };
 
-    // Size variants — default 'sm' menjaga kompatibilitas dgn pemakaian existing.
     [$trackSize, $thumbSize, $thumbOn, $thumbOff, $labelSize] = match ($size) {
         'lg'    => ['h-8 w-14',  'w-6 h-6 mt-1',   'translate-x-7 ml-1', 'translate-x-1', 'text-base'],
         'md'    => ['h-7 w-[3.25rem]', 'w-5 h-5 mt-1', 'translate-x-7 ml-1', 'translate-x-1', 'text-sm'],
@@ -66,15 +70,14 @@
     $thumbClass = $isOn ? $thumbOn : $thumbOff;
 @endphp
 
-<div x-data="{
-    disabled: @js($disabled),
-    toggle() {
-        if (this.disabled) return;
-        @if ($wireModel) $wire.set('{{ $wireModel }}', @js($nextValue)); @endif
-        @if ($wireClick) $wire.{{ $wireClick }}; @endif
-    }
-}"
-    @click="toggle"
+<div
+    @if (!$disabled)
+        @if ($wireModel)
+            wire:click="$set('{{ $wireModel }}', {{ $encode($nextValue) }})"
+        @elseif ($wireClick)
+            wire:click="{{ $wireClick }}"
+        @endif
+    @endif
     {{ $attrs->merge([
         'class' => 'flex items-center space-x-2 ' . ($disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'),
     ]) }}>

@@ -32,6 +32,11 @@ new class extends Component {
         $this->dispatch('master.customer.requestDelete', cmId: $cmId);
     }
 
+    public function toggleActive(string $cmId): void
+    {
+        $this->dispatch('master.customer.toggleActive', cmId: $cmId);
+    }
+
     #[On('master.customer.saved')]
     public function refreshAfterSaved(): void
     {
@@ -144,9 +149,10 @@ new class extends Component {
                                         @if ($row->cm_email)  <div class="text-gray-500">{{ $row->cm_email }}</div> @endif
                                     </td>
                                     <td class="px-4 py-3">
-                                        <x-badge :variant="(string) $row->active_status === '1' ? 'success' : 'gray'">
+                                        <x-toggle :current="(string) $row->active_status" trueValue="1" falseValue="0"
+                                            wireClick="toggleActive('{{ $row->cm_id }}')">
                                             {{ (string) $row->active_status === '1' ? 'AKTIF' : 'NONAKTIF' }}
-                                        </x-badge>
+                                        </x-toggle>
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-wrap gap-2">

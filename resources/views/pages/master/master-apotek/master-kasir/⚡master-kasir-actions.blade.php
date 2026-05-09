@@ -56,6 +56,17 @@ new class extends Component {
         $this->dispatch('focus-kasir-name');
     }
 
+    #[On('master.kasir.toggleActive')]
+    public function toggleActive(string $kasirId): void
+    {
+        $cur = (string) DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status kasir → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.kasir.saved');
+    }
+
     #[On('master.kasir.requestDelete')]
     public function deleteKasir(string $kasirId): void
     {

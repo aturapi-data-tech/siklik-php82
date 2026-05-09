@@ -58,6 +58,17 @@ new class extends Component {
         $this->dispatch('focus-accdoc-desc');
     }
 
+    #[On('master.jasa-dokter.toggleActive')]
+    public function toggleActive(string $accdocId): void
+    {
+        $cur = (string) DB::table('rsmst_accdocs')->where('accdoc_id', $accdocId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('rsmst_accdocs')->where('accdoc_id', $accdocId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status jasa dokter → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.jasa-dokter.saved');
+    }
+
     #[On('master.jasa-dokter.requestDelete')]
     public function deleteJasaDokter(string $accdocId): void
     {

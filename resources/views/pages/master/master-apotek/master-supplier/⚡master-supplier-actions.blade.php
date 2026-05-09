@@ -64,6 +64,17 @@ new class extends Component {
         $this->dispatch('focus-supp-name');
     }
 
+    #[On('master.supplier.toggleActive')]
+    public function toggleActive(string $suppId): void
+    {
+        $cur = (string) DB::table('tkmst_suppliers')->where('supp_id', $suppId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('tkmst_suppliers')->where('supp_id', $suppId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status supplier → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.supplier.saved');
+    }
+
     #[On('master.supplier.requestDelete')]
     public function deleteSupplier(string $suppId): void
     {

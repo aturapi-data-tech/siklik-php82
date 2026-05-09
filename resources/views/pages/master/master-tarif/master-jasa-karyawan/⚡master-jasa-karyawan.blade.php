@@ -32,6 +32,11 @@ new class extends Component {
         $this->dispatch('master.jasa-karyawan.requestDelete', acteId: $acteId);
     }
 
+    public function toggleActive(string $acteId): void
+    {
+        $this->dispatch('master.jasa-karyawan.toggleActive', acteId: $acteId);
+    }
+
     #[On('master.jasa-karyawan.saved')]
     public function refreshAfterSaved(): void
     {
@@ -140,9 +145,10 @@ new class extends Component {
                                         Rp {{ number_format((float) $row->acte_price, 0, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <x-badge :variant="(string) $row->active_status === '1' ? 'success' : 'gray'">
+                                        <x-toggle :current="(string) $row->active_status" trueValue="1" falseValue="0"
+                                            wireClick="toggleActive('{{ $row->acte_id }}')">
                                             {{ (string) $row->active_status === '1' ? 'AKTIF' : 'NONAKTIF' }}
-                                        </x-badge>
+                                        </x-toggle>
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-wrap gap-2">

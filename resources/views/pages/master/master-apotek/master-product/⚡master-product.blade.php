@@ -36,6 +36,11 @@ new class extends Component {
         $this->dispatch('master.product.requestDelete', productId: $productId);
     }
 
+    public function toggleActive(string $productId): void
+    {
+        $this->dispatch('master.product.toggleActive', productId: $productId);
+    }
+
     #[On('master.product.saved')]
     public function refreshAfterSaved(): void
     {
@@ -205,9 +210,10 @@ new class extends Component {
                                     </td>
                                     <td class="px-4 py-3 text-xs">{{ $row->supp_name ?? '-' }}</td>
                                     <td class="px-4 py-3">
-                                        <x-badge :variant="(string) $row->active_status === '1' ? 'success' : 'gray'">
+                                        <x-toggle :current="(string) $row->active_status" trueValue="1" falseValue="0"
+                                            wireClick="toggleActive('{{ $row->product_id }}')">
                                             {{ (string) $row->active_status === '1' ? 'AKTIF' : 'NONAKTIF' }}
-                                        </x-badge>
+                                        </x-toggle>
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-wrap gap-2">

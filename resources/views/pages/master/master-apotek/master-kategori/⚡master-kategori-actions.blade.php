@@ -56,6 +56,17 @@ new class extends Component {
         $this->dispatch('focus-cat-desc');
     }
 
+    #[On('master.kategori.toggleActive')]
+    public function toggleActive(string $catId): void
+    {
+        $cur = (string) DB::table('tkmst_categories')->where('cat_id', $catId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('tkmst_categories')->where('cat_id', $catId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status kategori → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.kategori.saved');
+    }
+
     #[On('master.kategori.requestDelete')]
     public function deleteKategori(string $catId): void
     {

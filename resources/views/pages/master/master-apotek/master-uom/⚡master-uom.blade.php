@@ -32,6 +32,11 @@ new class extends Component {
         $this->dispatch('master.uom.requestDelete', uomId: $uomId);
     }
 
+    public function toggleActive(string $uomId): void
+    {
+        $this->dispatch('master.uom.toggleActive', uomId: $uomId);
+    }
+
     #[On('master.uom.saved')]
     public function refreshAfterSaved(): void
     {
@@ -136,9 +141,10 @@ new class extends Component {
                                     <td class="px-4 py-3 font-mono text-xs">{{ $row->uom_id }}</td>
                                     <td class="px-4 py-3 font-semibold">{{ $row->uom_desc }}</td>
                                     <td class="px-4 py-3">
-                                        <x-badge :variant="(string) $row->active_status === '1' ? 'success' : 'gray'">
+                                        <x-toggle :current="(string) $row->active_status" trueValue="1" falseValue="0"
+                                            wireClick="toggleActive('{{ $row->uom_id }}')">
                                             {{ (string) $row->active_status === '1' ? 'AKTIF' : 'NONAKTIF' }}
-                                        </x-badge>
+                                        </x-toggle>
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-wrap gap-2">

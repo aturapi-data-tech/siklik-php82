@@ -58,6 +58,17 @@ new class extends Component {
         $this->dispatch('focus-pact-desc');
     }
 
+    #[On('master.jasa-paramedis.toggleActive')]
+    public function toggleActive(string $pactId): void
+    {
+        $cur = (string) DB::table('rsmst_actparamedics')->where('pact_id', $pactId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('rsmst_actparamedics')->where('pact_id', $pactId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status jasa paramedis → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.jasa-paramedis.saved');
+    }
+
     #[On('master.jasa-paramedis.requestDelete')]
     public function deleteJasaDokter(string $pactId): void
     {

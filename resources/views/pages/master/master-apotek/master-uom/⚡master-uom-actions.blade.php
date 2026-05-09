@@ -56,6 +56,17 @@ new class extends Component {
         $this->dispatch('focus-uom-desc');
     }
 
+    #[On('master.uom.toggleActive')]
+    public function toggleActive(string $uomId): void
+    {
+        $cur = (string) DB::table('tkmst_uoms')->where('uom_id', $uomId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('tkmst_uoms')->where('uom_id', $uomId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status UoM → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.uom.saved');
+    }
+
     #[On('master.uom.requestDelete')]
     public function deleteUom(string $uomId): void
     {

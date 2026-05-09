@@ -121,6 +121,17 @@ new class extends Component {
         $this->dispatch('focus-product-name');
     }
 
+    #[On('master.product.toggleActive')]
+    public function toggleActive(string $productId): void
+    {
+        $cur = (string) DB::table('tkmst_products')->where('product_id', $productId)->value('active_status');
+        $next = $cur === '1' ? '0' : '1';
+        DB::table('tkmst_products')->where('product_id', $productId)->update(['active_status' => $next]);
+        $this->dispatch('toast', type: 'success',
+            message: 'Status produk → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
+        $this->dispatch('master.product.saved');
+    }
+
     #[On('master.product.requestDelete')]
     public function deleteProduct(string $productId): void
     {
