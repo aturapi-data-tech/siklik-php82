@@ -189,19 +189,11 @@ new class extends Component {
 ?>
 
 <div>
-    <header class="bg-white shadow dark:bg-gray-800">
-        <div class="w-full px-4 py-2 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-                Master Reference BPJS PCare
-            </h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Cache lokal untuk reference BPJS yg jarang berubah (alergi, kesadaran, prognosa, dll).
-                Klik <span class="font-medium">Update</span> untuk sync per kategori.
-            </p>
-        </div>
-    </header>
+    <x-page-title
+        title="Master Reference BPJS PCare"
+        subtitle="Cache lokal untuk reference BPJS yg jarang berubah (alergi, kesadaran, prognosa, dll). Klik Update untuk sync per kategori." />
 
-    <div class="w-full min-h-[calc(100vh-5rem-72px)] bg-white dark:bg-gray-800">
+    <div class="w-full min-h-[calc(100vh-5rem)] bg-white dark:bg-gray-800">
         <div class="px-6 pt-4 pb-6">
             <div class="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <table class="min-w-full text-sm">

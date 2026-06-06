@@ -185,8 +185,11 @@ new class extends Component {
 
 <div>
     <x-modal name="master-poli-actions" size="full" height="full" focusable>
-        <div class="flex flex-col min-h-[calc(100vh-8rem)]"
-            wire:key="{{ $this->renderKey('modal', [$formMode, $originalPoliId]) }}">
+        <x-dirty-modal-content
+            name="master-poli-actions"
+            event="master.poli.saved"
+            label="Poli"
+            :wireKey="$this->renderKey('modal', [$formMode, $originalPoliId])">
 
             {{-- HEADER --}}
             <div class="relative px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -222,7 +225,7 @@ new class extends Component {
                         </div>
                     </div>
 
-                    <x-icon-button color="gray" type="button" wire:click="closeModal">
+                    <x-icon-button color="gray" type="button" x-on:click="tryClose()">
                         <span class="sr-only">Close</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd"
@@ -293,7 +296,6 @@ new class extends Component {
                     </x-border-form>
                 </div>
             </div>
-        </div>
 
             {{-- FOOTER --}}
             <div
@@ -310,7 +312,7 @@ new class extends Component {
                     </div>
 
                 <div class="flex justify-end gap-2">
-                    <x-secondary-button type="button" wire:click="closeModal">
+                    <x-secondary-button type="button" x-on:click="tryClose()">
                         Batal
                     </x-secondary-button>
 
@@ -321,5 +323,7 @@ new class extends Component {
                 </div>
             </div>
         </div>
+
+        </x-dirty-modal-content>
     </x-modal>
 </div>
