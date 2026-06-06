@@ -225,6 +225,15 @@ Route::middleware(['auth'])->group(function () {
         ->name('keuangan.neraca');
 
     // ===========================================
+    // LAPORAN MANAJEMEN (RJ & Keuangan)
+    // ===========================================
+    Route::livewire('/manajemen/rj/laporan-kunjungan', 'pages::manajemen.rs.rj.laporan-kunjungan-rj.laporan-kunjungan-rj')
+        ->name('manajemen.laporan-kunjungan-rj');
+
+    Route::livewire('/manajemen/keuangan/pendapatan-klinik', 'pages::manajemen.rs.tu.pendapatan-klinik.pendapatan-klinik')
+        ->name('manajemen.pendapatan-klinik');
+
+    // ===========================================
     // GUDANG - PENERIMAAN MEDIS
     // ===========================================
     Route::livewire('/gudang/penerimaan-medis', 'pages::transaksi.gudang.penerimaan-medis.penerimaan-medis')

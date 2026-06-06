@@ -147,11 +147,15 @@ class AppMenu
             $entry(['group' => 'Keuangan', 'groupOrder' => 11, 'order' => 8, 'route' => 'keuangan.laba-rugi',             'title' => 'Laporan Laba Rugi',     'desc' => 'Laba/rugi bulanan & YTD — Penjualan − HPP − Biaya (template L1)',      'roles' => ['admin', 'tu'], 'badge' => 'LR']),
             $entry(['group' => 'Keuangan', 'groupOrder' => 11, 'order' => 9, 'route' => 'keuangan.neraca',                'title' => 'Laporan Neraca',        'desc' => 'Posisi keuangan per tanggal — Aktiva = Hutang + Ekuitas + Laba YTD',   'roles' => ['admin', 'tu'], 'badge' => 'NRC']),
 
+            // ── Laporan Manajemen ─────────────────────────────────────
+            $entry(['group' => 'Laporan', 'groupOrder' => 12, 'order' => 1, 'route' => 'manajemen.laporan-kunjungan-rj', 'title' => 'Laporan Kunjungan RJ', 'desc' => 'Rekap kunjungan rawat jalan bulanan & tahunan — tren, klaim, breakdown poli', 'roles' => ['admin', 'mr', 'tu'], 'badge' => 'LAP-RJ']),
+            $entry(['group' => 'Laporan', 'groupOrder' => 12, 'order' => 2, 'route' => 'manajemen.pendapatan-klinik',    'title' => 'Pendapatan Klinik',    'desc' => 'Rekap pendapatan RJ (jasa, obat, lab, dll) + penjualan bebas apotek — bulanan & tahunan', 'roles' => ['admin', 'tu'], 'badge' => 'LAP-KEU']),
+
             // ── Sistem ────────────────────────────────────────────────
-            $entry(['group' => 'Sistem', 'groupOrder' => 12, 'order' => 1, 'route' => 'database-monitor.monitoring-dashboard',     'title' => 'Oracle Session Monitor', 'desc' => 'Locks, long-running SQL & kill session',         'roles' => ['admin'], 'badge' => 'DB']),
-            $entry(['group' => 'Sistem', 'groupOrder' => 12, 'order' => 2, 'route' => 'database-monitor.monitoring-mount-control', 'title' => 'Mounting Control',       'desc' => 'Mount/unmount share folder jaringan (CIFS/SMB)', 'roles' => ['admin'], 'badge' => 'MNT']),
-            $entry(['group' => 'Sistem', 'groupOrder' => 12, 'order' => 3, 'route' => 'database-monitor.user-control',             'title' => 'User Control',           'desc' => 'Kelola user & hak akses sistem',                 'roles' => ['admin'], 'badge' => 'USR']),
-            $entry(['group' => 'Sistem', 'groupOrder' => 12, 'order' => 4, 'route' => 'database-monitor.role-control',             'title' => 'Role Control',           'desc' => 'Kelola role & permission sistem',                'roles' => ['admin'], 'badge' => 'ROL']),
+            $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 1, 'route' => 'database-monitor.monitoring-dashboard',     'title' => 'Oracle Session Monitor', 'desc' => 'Locks, long-running SQL & kill session',         'roles' => ['admin'], 'badge' => 'DB']),
+            $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 2, 'route' => 'database-monitor.monitoring-mount-control', 'title' => 'Mounting Control',       'desc' => 'Mount/unmount share folder jaringan (CIFS/SMB)', 'roles' => ['admin'], 'badge' => 'MNT']),
+            $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 3, 'route' => 'database-monitor.user-control',             'title' => 'User Control',           'desc' => 'Kelola user & hak akses sistem',                 'roles' => ['admin'], 'badge' => 'USR']),
+            $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 4, 'route' => 'database-monitor.role-control',             'title' => 'Role Control',           'desc' => 'Kelola role & permission sistem',                'roles' => ['admin'], 'badge' => 'ROL']),
         ];
     }
 }
