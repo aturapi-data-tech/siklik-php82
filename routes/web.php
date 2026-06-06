@@ -284,6 +284,12 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('/database-monitor/role-control', 'pages::database-monitor.role-control.role-control')
         ->name('database-monitor.role-control');
 
+    Route::livewire('/database-monitor/user-online', 'pages::database-monitor.user-online.user-online')
+        ->name('database-monitor.user-online');
+
+    Route::livewire('/database-monitor/log-bpjs', 'pages::database-monitor.log-bpjs.log-bpjs')
+        ->name('database-monitor.log-bpjs');
+
 });
 
 
