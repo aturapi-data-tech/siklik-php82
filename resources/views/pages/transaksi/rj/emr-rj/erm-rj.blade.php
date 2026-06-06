@@ -154,6 +154,21 @@ new class extends Component {
     {
         $this->dispatch('emr-rj.administrasi.open', rjNo: $rjNo);
     }
+
+    public function cetakEresep(string $rjNo): void
+    {
+        if (!$rjNo) {
+            $this->dispatch('toast', type: 'error', message: 'Nomor kunjungan tidak ditemukan.');
+            return;
+        }
+        $this->dispatch('cetak-eresep-rj.open', rjNo: $rjNo);
+    }
+
+    public function hasEresep(): bool
+    {
+        return !empty($this->dataDaftarPoliRJ['eresep'])
+            || !empty($this->dataDaftarPoliRJ['eresepRacikan']);
+    }
 };
 
 ?>
@@ -230,7 +245,7 @@ new class extends Component {
                             @endrole
 
                             {{-- Administrasi --}}
-                            @hasanyrole('Admin|Perawat|Casemix')
+                            @hasanyrole('Admin|Perawat|Tu')
                                 <x-outline-button type="button" wire:click="openAdministrasiPasien('{{ $rjNo }}')"
                                     wire:loading.attr="disabled" wire:target="openAdministrasiPasien">
                                     <span wire:loading.remove wire:target="openAdministrasiPasien"
@@ -317,6 +332,25 @@ new class extends Component {
             <div
                 class="sticky bottom-0 z-10 px-6 py-4 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
                 <div class="flex justify-end gap-3">
+                    @hasanyrole('Perawat|Dokter|Admin|Mr')
+                        @if ($this->hasEresep())
+                            <x-outline-button type="button" wire:click="cetakEresep('{{ $rjNo }}')"
+                                wire:loading.attr="disabled" wire:target="cetakEresep">
+                                <span wire:loading.remove wire:target="cetakEresep" class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    Cetak E-Resep
+                                </span>
+                                <span wire:loading wire:target="cetakEresep" class="flex items-center gap-1">
+                                    <x-loading /> Memuat...
+                                </span>
+                            </x-outline-button>
+                        @endif
+                    @endhasanyrole
+
                     <x-secondary-button x-on:click="tryClose()">
                         Tutup
                     </x-secondary-button>
@@ -379,4 +413,7 @@ new class extends Component {
 
         </div>
     </x-modal>
+
+    {{-- Cetak E-Resep PDF (headless: listen event cetak-eresep-rj.open) --}}
+    <livewire:pages::components.rekam-medis.r-j.cetak-eresep.cetak-eresep wire:key="cetak-eresep-rj-emr" />
 </div>
