@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\AppMenu;
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 
@@ -16,113 +17,33 @@ new class extends Component {
     #[Computed]
     public function masterMenus(): array
     {
-        // Helper: build entry hanya kalau route terdaftar — defensive vs route renames/deletions
-        $entry = function (array $m): ?array {
-            if (!\Illuminate\Support\Facades\Route::has($m['route'])) return null;
-            $m['href'] = route($m['route']);
-            return $m;
-        };
-
-        $rows = array_filter([
-            // ── Master Klinik (data pasien & operasional) ─────────────
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 1,  'route' => 'master.poli',         'title' => 'Master Poli',          'desc' => 'Kelola data poli & ruangan klinik',                'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 2,  'route' => 'master.dokter',       'title' => 'Master Dokter',        'desc' => 'Kelola data dokter & spesialis',                   'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 3,  'route' => 'master.pasien',       'title' => 'Master Pasien',        'desc' => 'Kelola data pasien & rekam medis',                 'roles' => ['admin', 'mr'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 4,  'route' => 'master.diagnosa',     'title' => 'Master Diagnosa',      'desc' => 'Diagnosa ICD-10',                                  'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 5,  'route' => 'master.procedure',    'title' => 'Master Prosedur',      'desc' => 'Prosedur medis ICD-9',                             'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 6,  'route' => 'master.radiologis',   'title' => 'Master Radiologi',     'desc' => 'Kelola data radiologi',                            'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 7,  'route' => 'master.others',       'title' => 'Master Lain-lain',     'desc' => 'Item layanan lain-lain (admin, dll)',              'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 8,  'route' => 'master.agama',        'title' => 'Master Agama',         'desc' => 'Referensi agama pasien',                           'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 9,  'route' => 'master.pendidikan',   'title' => 'Master Pendidikan',    'desc' => 'Referensi pendidikan pasien',                      'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 10, 'route' => 'master.pekerjaan',    'title' => 'Master Pekerjaan',     'desc' => 'Referensi pekerjaan pasien',                       'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 11, 'route' => 'master.klaim',        'title' => 'Master Tipe Klaim',    'desc' => 'BPJS, Umum, Asuransi, dll',                        'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 12, 'route' => 'master.cara-masuk',   'title' => 'Master Cara Masuk',    'desc' => 'Datang sendiri, rujukan, emergency',               'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 12, 'route' => 'master.cara-bayar',   'title' => 'Master Cara Bayar',    'desc' => 'Tunai, Transfer, BPJS, dll (tkacc_carabayars)',     'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 13, 'route' => 'master.cara-keluar',  'title' => 'Master Cara Keluar',   'desc' => 'Sembuh, rujuk, pulang paksa, dll',                 'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 14, 'route' => 'master.parameter',    'title' => 'Master Parameter',     'desc' => 'Parameter sistem & konfigurasi',                   'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 15, 'route' => 'master.medik',           'title' => 'Master Alat Medis',      'desc' => 'Tracking alat medis (kondisi, sertifikat, izin)','roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 16, 'route' => 'master.ref-bpjs',        'title' => 'Master Ref BPJS',        'desc' => 'Cache reference BPJS PCare (alergi, kesadaran, prognosa)', 'roles' => ['admin'], 'badge' => 'BPJS']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 17, 'route' => 'master.jadwal-mingguan', 'title' => 'Jadwal Mingguan BPJS',   'desc' => 'Pull jadwal dokter per poli dari BPJS Antrean RS untuk 7 hari ke depan', 'roles' => ['admin', 'mr'], 'badge' => 'BPJS']),
-
-            // ── Master Akuntansi ──────────────────────────────────────
-            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 4, 'order' => 1, 'route' => 'master.group-akun', 'title' => 'Master Group Akun', 'desc' => 'Pengelompokan akun (Aktiva/Pasiva/Modal/Pendapatan/Biaya)',     'roles' => ['admin'], 'badge' => 'Akuntansi']),
-            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 4, 'order' => 2, 'route' => 'master.akun',       'title' => 'Master Akun',       'desc' => 'Chart of accounts (tkacc_accountses)',                          'roles' => ['admin'], 'badge' => 'Akuntansi']),
-            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 4, 'order' => 3, 'route' => 'master.tucico',     'title' => 'Master TUCICO',     'desc' => 'Pos kas transit non-transaksi (setoran/ambil kas)',             'roles' => ['admin'], 'badge' => 'Akuntansi']),
-            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 4, 'order' => 4, 'route' => 'master.konf-akun-trans', 'title' => 'Master Konf. Akun Trx', 'desc' => 'Mapping akun-default per jenis transaksi (tkacc_confacctxns)', 'roles' => ['admin'], 'badge' => 'Akuntansi']),
-
-            // ── Master Tarif Jasa ─────────────────────────────────────
-            $entry(['group' => 'Master Tarif', 'groupOrder' => 2, 'order' => 1, 'route' => 'master.jasa-dokter',    'title' => 'Master Jasa Dokter',    'desc' => 'Tarif jasa dokter untuk billing',                'roles' => ['admin'], 'badge' => 'Tarif']),
-            $entry(['group' => 'Master Tarif', 'groupOrder' => 2, 'order' => 2, 'route' => 'master.jasa-karyawan',  'title' => 'Master Jasa Karyawan',  'desc' => 'Tarif jasa karyawan (admin/RM/kasir)',           'roles' => ['admin'], 'badge' => 'Tarif']),
-            $entry(['group' => 'Master Tarif', 'groupOrder' => 2, 'order' => 3, 'route' => 'master.jasa-paramedis', 'title' => 'Master Jasa Paramedis', 'desc' => 'Tarif jasa paramedis (perawat/bidan/injeksi)',   'roles' => ['admin'], 'badge' => 'Tarif']),
-
-            // ── Master Laboratorium (group sendiri) ───────────────────
-            $entry(['group' => 'Master Laboratorium', 'groupOrder' => 3, 'order' => 1, 'route' => 'master.laborat', 'title' => 'Master Laboratorium', 'desc' => 'Kategori lab & item pemeriksaan + nilai normal',  'roles' => ['admin', 'laboratorium'], 'badge' => 'Lab']),
-
-            // ── Master Apotek ─────────────────────────────────────────
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 1, 'route' => 'master.product',   'title' => 'Master Produk Apotek',    'desc' => 'Inventory obat & alkes',                       'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 2, 'route' => 'master.kategori',  'title' => 'Master Kategori Produk',  'desc' => 'Kategori obat/alkes/BHP',                      'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 3, 'route' => 'master.uom',       'title' => 'Master Satuan (UOM)',     'desc' => 'Satuan ukur (PCS, BOX, TAB, dll)',             'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 4, 'route' => 'master.kemasan',   'title' => 'Master Kemasan',          'desc' => 'Kemasan obat (Tab/Cap/Btl/Box)',               'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 5, 'route' => 'master.kasir',     'title' => 'Master Kasir',            'desc' => 'Data kasir untuk transaksi penjualan',         'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 6, 'route' => 'master.supplier',  'title' => 'Master Supplier',         'desc' => 'Supplier obat & alkes (PBF)',                  'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 7, 'route' => 'master.customer',  'title' => 'Master Customer',         'desc' => 'Customer apotek (luar pasien klinik)',         'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 8, 'route' => 'master.prov-toko', 'title' => 'Provinsi (Apotek)',       'desc' => 'Provinsi untuk address customer/supplier',     'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 9, 'route' => 'master.kota-toko', 'title' => 'Kota (Apotek)',           'desc' => 'Kota untuk address customer/supplier',         'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
-
-            // ── Master Wilayah (Pasien) ───────────────────────────────
-            $entry(['group' => 'Master Wilayah', 'groupOrder' => 5, 'order' => 1, 'route' => 'master.provinsi',  'title' => 'Master Provinsi',  'desc' => 'Provinsi (BPS 2-digit) — wilayah pasien', 'roles' => ['admin'], 'badge' => 'Wilayah']),
-            $entry(['group' => 'Master Wilayah', 'groupOrder' => 5, 'order' => 2, 'route' => 'master.kabupaten', 'title' => 'Master Kabupaten', 'desc' => 'Kabupaten/kota (BPS 4-digit)',            'roles' => ['admin'], 'badge' => 'Wilayah']),
-            $entry(['group' => 'Master Wilayah', 'groupOrder' => 5, 'order' => 3, 'route' => 'master.kecamatan', 'title' => 'Master Kecamatan', 'desc' => 'Kecamatan (BPS 7-digit)',                 'roles' => ['admin'], 'badge' => 'Wilayah']),
-            $entry(['group' => 'Master Wilayah', 'groupOrder' => 5, 'order' => 4, 'route' => 'master.desa',      'title' => 'Master Desa',      'desc' => 'Desa/kelurahan (BPS 10-digit)',           'roles' => ['admin'], 'badge' => 'Wilayah']),
-
-            // ── Rawat Jalan ────────────────────────────────────────────
-            $entry(['group' => 'Rawat Jalan', 'groupOrder' => 6, 'order' => 1, 'route' => 'rawat-jalan.daftar',  'title' => 'Daftar Rawat Jalan', 'desc' => 'Pendaftaran & manajemen pasien rawat jalan', 'roles' => ['admin', 'mr', 'perawat', 'dokter'], 'badge' => 'RJ']),
-
-            // ── Apotek ────────────────────────────────────────────────
-            $entry(['group' => 'Apotek', 'groupOrder' => 7, 'order' => 1, 'route' => 'transaksi.apotek', 'title' => 'Antrian Apotek', 'desc' => 'Telaah resep & pelayanan kefarmasian', 'roles' => ['admin', 'apotek'], 'badge' => 'APT']),
-
-            // ── Penunjang Lab ─────────────────────────────────────────
-            $entry(['group' => 'Penunjang', 'groupOrder' => 8, 'order' => 1, 'route' => 'transaksi.penunjang.laborat', 'title' => 'Transaksi Laboratorium', 'desc' => 'Input hasil pemeriksaan laboratorium pasien', 'roles' => ['admin', 'laboratorium'], 'badge' => 'LAB']),
-
-            // ── Gudang ────────────────────────────────────────────────
-            $entry(['group' => 'Gudang', 'groupOrder' => 9, 'order' => 1, 'route' => 'gudang.penerimaan-medis', 'title' => 'Obat dari PBF', 'desc' => 'Penerimaan obat dari PBF / Supplier (Gudang Medis)', 'roles' => ['admin', 'apotek'], 'badge' => 'RCV']),
-            $entry(['group' => 'Gudang', 'groupOrder' => 9, 'order' => 2, 'route' => 'gudang.kartu-stock',     'title' => 'Kartu Stock',  'desc' => 'Riwayat mutasi stok per produk per tahun',         'roles' => ['admin', 'apotek'], 'badge' => 'STK']),
-
-            // ── Keuangan ──────────────────────────────────────────────
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 1, 'route' => 'keuangan.penerimaan-kas-tu',     'title' => 'Penerimaan Kas TU',      'desc' => 'Catat penerimaan kas di luar transaksi pelayanan',          'roles' => ['admin', 'tu'], 'badge' => 'CI']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 2, 'route' => 'keuangan.pengeluaran-kas-tu',    'title' => 'Pengeluaran Kas TU',     'desc' => 'Catat pengeluaran kas di luar transaksi pelayanan',         'roles' => ['admin', 'tu'], 'badge' => 'CO']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 3, 'route' => 'keuangan.pembayaran-piutang-rj', 'title' => 'Pembayaran Piutang RJ', 'desc' => 'Pelunasan tagihan rawat jalan pasien yang masih piutang',   'roles' => ['admin', 'tu', 'kasir'], 'badge' => 'PYR']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 4, 'route' => 'keuangan.pembayaran-hutang-pbf', 'title' => 'Pembayaran Hutang PBF', 'desc' => 'Pelunasan / angsuran hutang ke supplier obat (PBF)',         'roles' => ['admin', 'tu'], 'badge' => 'HTG']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 5, 'route' => 'keuangan.saldo-kas',             'title' => 'Saldo Kas',              'desc' => 'Posisi saldo kas/bank per tanggal — admin bisa edit saldo awal tahun', 'roles' => ['admin', 'tu', 'kasir'], 'badge' => 'SLD']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 6, 'route' => 'keuangan.buku-besar',            'title' => 'Buku Besar',             'desc' => 'Riwayat mutasi per akun per periode dgn saldo berjalan',              'roles' => ['admin', 'tu'],          'badge' => 'BB']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 7, 'route' => 'keuangan.laba-rugi',            'title' => 'Laporan Laba Rugi',      'desc' => 'Laba/rugi bulanan & YTD — Penjualan − HPP − Biaya (template L1)',     'roles' => ['admin', 'tu'],          'badge' => 'LR']),
-            $entry(['group' => 'Keuangan', 'groupOrder' => 10, 'order' => 8, 'route' => 'keuangan.neraca',               'title' => 'Laporan Neraca',         'desc' => 'Posisi keuangan per tanggal — Aktiva = Hutang + Ekuitas + Laba YTD', 'roles' => ['admin', 'tu'],          'badge' => 'NRC']),
-
-            // ── Sistem ────────────────────────────────────────────────
-            $entry(['group' => 'Sistem', 'groupOrder' => 11, 'order' => 1, 'route' => 'database-monitor.monitoring-dashboard',     'title' => 'Oracle Session Monitor', 'desc' => 'Locks, long-running SQL & kill session',          'roles' => ['admin'], 'badge' => 'DB']),
-            $entry(['group' => 'Sistem', 'groupOrder' => 11, 'order' => 2, 'route' => 'database-monitor.monitoring-mount-control', 'title' => 'Mounting Control',       'desc' => 'Mount/unmount share folder jaringan (CIFS/SMB)',  'roles' => ['admin'], 'badge' => 'MNT']),
-            $entry(['group' => 'Sistem', 'groupOrder' => 11, 'order' => 3, 'route' => 'database-monitor.user-control',             'title' => 'User Control',           'desc' => 'Kelola user & hak akses sistem',                  'roles' => ['admin'], 'badge' => 'USR']),
-            $entry(['group' => 'Sistem', 'groupOrder' => 11, 'order' => 4, 'route' => 'database-monitor.role-control',             'title' => 'Role Control',           'desc' => 'Kelola role & permission sistem',                 'roles' => ['admin'], 'badge' => 'ROL']),
-        ]);
-
-        return array_values($rows);
+        // Definisi menu dipusatkan di App\Services\AppMenu (dipakai dashboard + sidebar).
+        return AppMenu::all();
     }
-
 
     #[Computed]
     public function visibleMenus(): array
     {
-        $userRoles = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r))->toArray();
-
-        return collect($this->masterMenus)->filter(fn($m) => !empty(array_intersect($m['roles'], $userRoles)))->values()->toArray();
+        return AppMenu::forRoles($this->userRoles);
     }
 
     #[Computed]
     public function groupedMenus()
     {
-        return collect($this->visibleMenus)
-            ->sortBy([['groupOrder', 'asc'], ['order', 'asc']])
-            ->groupBy('group');
+        $grouped = AppMenu::grouped($this->userRoles);
+
+        $q = trim(mb_strtolower($this->search));
+        if ($q === '') {
+            return $grouped;
+        }
+
+        // Cari di title / desc / badge / nama group. Group dengan 0 match auto-hidden.
+        return $grouped
+            ->map(fn($items, $groupName) => $items->filter(function ($item) use ($q, $groupName) {
+                $haystack = mb_strtolower(($item['title'] ?? '') . ' ' . ($item['desc'] ?? '') . ' ' . ($item['badge'] ?? '') . ' ' . $groupName);
+                return str_contains($haystack, $q);
+            }))
+            ->filter(fn($items) => $items->isNotEmpty());
     }
 };
 ?>
