@@ -48,6 +48,7 @@
             ['label' => 'Master Kasir',           'route' => 'master.kasir',           'roles' => ['admin', 'apotek']],
             ['label' => 'Master Supplier',        'route' => 'master.supplier',        'roles' => ['admin', 'apotek']],
             ['label' => 'Master Customer',        'route' => 'master.customer',        'roles' => ['admin', 'apotek']],
+            ['label' => 'Master Catatan Signa',   'route' => 'master.signa-catatan',   'roles' => ['admin', 'apotek']],
             ['label' => 'Provinsi (Apotek)',      'route' => 'master.prov-toko',       'roles' => ['admin', 'apotek']],
             ['label' => 'Kota (Apotek)',          'route' => 'master.kota-toko',       'roles' => ['admin', 'apotek']],
         ],

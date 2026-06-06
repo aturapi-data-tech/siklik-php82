@@ -132,6 +132,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('/master/product', 'pages::master.master-apotek.master-product.master-product')
         ->name('master.product');
 
+    Route::livewire('/master/signa-catatan', 'pages::master.master-apotek.master-signa-catatan.master-signa-catatan')
+        ->name('master.signa-catatan');
+
     Route::livewire('/master/medik', 'pages::master.master-klinik.master-medik.master-medik')
         ->name('master.medik');
 
