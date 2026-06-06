@@ -160,9 +160,13 @@ new class extends Component {
 
 <div>
     <x-modal name="rm-perawat-actions" size="full" height="full" focusable>
-        {{-- CONTAINER UTAMA --}}
-        <div class="flex flex-col min-h-[calc(100vh-8rem)]"
-            wire:key="{{ $this->renderKey('modal-emr-rj', [$rjNo ?? 'new']) }}">
+        <x-dirty-modal-content name="rm-perawat-actions" event="refresh-after-rj.saved" label="EMR Rawat Jalan"
+            :save-events="[
+                'save-rm-anamnesa-rj',
+                'save-rm-pemeriksaan-rj',
+                'save-rm-diagnosa-rj',
+                'save-rm-perencanaan-rj',
+            ]" :wireKey="$this->renderKey('modal-emr-rj', [$rjNo ?? 'new'])">
 
             {{-- HEADER --}}
             <div class="relative px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -248,7 +252,7 @@ new class extends Component {
                     </div>
 
                     {{-- Close button --}}
-                    <x-icon-button color="gray" type="button" wire:click="closeModal">
+                    <x-icon-button color="gray" type="button" x-on:click="tryClose()" class="shrink-0">
                         <span class="sr-only">Close</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd"
@@ -313,7 +317,7 @@ new class extends Component {
             <div
                 class="sticky bottom-0 z-10 px-6 py-4 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
                 <div class="flex justify-end gap-3">
-                    <x-secondary-button wire:click="closeModal">
+                    <x-secondary-button x-on:click="tryClose()">
                         Tutup
                     </x-secondary-button>
 
@@ -323,7 +327,7 @@ new class extends Component {
                             <span wire:loading.remove>
                                 <svg class="inline w-4 h-4 mr-1 -ml-1" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linecap="round" stroke-width="2"
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4l-4 4-4-4m4 4V4" />
                                 </svg>
                                 Simpan
@@ -337,7 +341,7 @@ new class extends Component {
                 </div>
             </div>
 
-        </div>
+        </x-dirty-modal-content>
     </x-modal>
 
     {{-- Modal i-Care --}}

@@ -321,11 +321,11 @@ new class extends Component {
                         </p>
                     @endif
                 </div>
-                <button wire:click="closeTelaah" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <x-icon-button color="gray" type="button" wire:click="closeTelaah" class="shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                </button>
+                </x-icon-button>
             </div>
 
             {{-- GRID: TELAAH RESEP (KIRI, 2 unit) | TELAAH OBAT (KANAN, 1 unit) --}}
@@ -374,7 +374,7 @@ new class extends Component {
                                                     </span>
                                                     @if (!empty($racikan['qty']))
                                                         <span class="text-amber-600 dark:text-amber-400 shrink-0">
-                                                            Jml {{ $racikan['qty'] }}
+                                                            Jml Racikan {{ $racikan['qty'] }}{{ !empty($racikan['takar']) ? ' ' . $racikan['takar'] : '' }}
                                                             @if (!empty($racikan['catatan']))
                                                                 ({{ $racikan['catatan'] }})
                                                             @endif
@@ -585,7 +585,7 @@ new class extends Component {
                                                     </span>
                                                     @if (!empty($racikan['qty']))
                                                         <span class="text-amber-600 dark:text-amber-400 shrink-0">
-                                                            Jml {{ $racikan['qty'] }}
+                                                            Jml Racikan {{ $racikan['qty'] }}{{ !empty($racikan['takar']) ? ' ' . $racikan['takar'] : '' }}
                                                             @if (!empty($racikan['catatan']))
                                                                 ({{ $racikan['catatan'] }})
                                                             @endif

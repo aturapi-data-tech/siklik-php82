@@ -13,6 +13,7 @@ new class extends Component {
     public ?int $rjNo = null;
     public array $dataDaftarPoliRJ = [];
     public array $formEresep = [];
+    public array $signaCatatanOptions = [];
 
     // renderVersions
     public array $renderVersions = [];
@@ -24,7 +25,23 @@ new class extends Component {
     public function mount(): void
     {
         $this->registerAreas(['eresep-non-racikan-rj']);
+        $this->loadSignaCatatanOptions();
         $this->findData($this->rjNo);
+    }
+
+    protected function loadSignaCatatanOptions(): void
+    {
+        // Guard: tabel baru (database/sql/create_rsmst_signa_catatans.sql) —
+        // jangan fatal bila belum di-deploy; combobox degrade jadi input bebas.
+        try {
+            $this->signaCatatanOptions = DB::table('rsmst_signa_catatans')
+                ->where('active_status', '1')
+                ->orderBy('catatan')
+                ->pluck('catatan')
+                ->toArray();
+        } catch (\Throwable $e) {
+            $this->signaCatatanOptions = [];
+        }
     }
 
     /* ===============================
@@ -430,28 +447,38 @@ new class extends Component {
                                     <x-input-label for="formEresep.signaHari" :value="__('*')" />
                                     <x-text-input id="formEresep.signaHari" placeholder="Signa2" class="w-full mt-1"
                                         :disabled="$isFormLocked" wire:model="formEresep.signaHari" x-ref="signaHari"
-                                        x-on:keydown.enter.prevent="$refs.catatanKhusus.focus()" />
+                                        x-on:keydown.enter.prevent="document.getElementById('formEresep.catatanKhusus')?.focus()" />
                                 </div>
 
-                                {{-- Catatan Khusus --}}
+                                {{-- Catatan Khusus (Blade combobox Alpine: pilih dari rsmst_signa_catatans, masih bisa diketik) --}}
                                 <div class="flex-[3]">
                                     <x-input-label for="formEresep.catatanKhusus" :value="__('Catatan Khusus')" />
-                                    <x-text-input id="formEresep.catatanKhusus" placeholder="Catatan Khusus"
-                                        class="w-full mt-1" :disabled="$isFormLocked" wire:model="formEresep.catatanKhusus"
-                                        x-ref="catatanKhusus" x-on:keydown.enter.prevent="$wire.insertProduct()" />
+                                    <div class="mt-1">
+                                        <x-catatan-signa-combobox
+                                            wireModel="formEresep.catatanKhusus"
+                                            :options="$signaCatatanOptions"
+                                            :disabled="$isFormLocked"
+                                            inputId="formEresep.catatanKhusus"
+                                            placeholder="Catatan Khusus"
+                                            :maxlength="255"
+                                            enterAction="$wire.insertProduct()" />
+                                    </div>
                                 </div>
 
                                 {{-- Hapus draft --}}
                                 <div class="ml-auto shrink-0">
                                     <x-input-label :value="__('')" />
-                                    <x-secondary-button class="inline-flex mt-1" :disabled="$isFormLocked"
-                                        wire:click="resetFormEresep">
-                                        <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true"
-                                            xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                                            <path
-                                                d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                    <x-outline-button type="button"
+                                        wire:click.prevent="resetFormEresep"
+                                        wire:loading.attr="disabled"
+                                        :disabled="$isFormLocked"
+                                        class="mt-1 !text-red-600 !bg-red-50 !border-red-200 hover:!bg-red-100 hover:!text-red-700 hover:!border-red-300 dark:!text-red-400 dark:!bg-red-900/20 dark:!border-red-800/30 dark:hover:!bg-red-900/30 dark:hover:!text-red-300"
+                                        title="Hapus draft">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                    </x-secondary-button>
+                                    </x-outline-button>
                                 </div>
                             </div>
 
@@ -504,6 +531,7 @@ new class extends Component {
                                                 <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
                                                 <td class="w-20 px-4 py-3">
                                                     <x-text-input placeholder="Jml" :disabled="$isFormLocked"
+                                                        id="eresep-rj-qty-{{ $key }}"
                                                         wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.qty"
                                                         x-ref="qty{{ $key }}"
                                                         x-on:keydown.enter.prevent="$refs.signaX{{ $key }}.focus()" />
@@ -521,37 +549,41 @@ new class extends Component {
                                                             <x-text-input placeholder="Signa2" :disabled="$isFormLocked"
                                                                 wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.signaHari"
                                                                 x-ref="signaHari{{ $key }}"
-                                                                x-on:keydown.enter.prevent="$refs.catatanKhusus{{ $key }}.focus()" />
+                                                                x-on:keydown.enter.prevent="document.getElementById('eresep-rj-catatan-{{ $key }}')?.focus()" />
                                                         </div>
                                                         <div class="flex-1">
-                                                            <x-text-input placeholder="Catatan Khusus"
+                                                            <x-catatan-signa-combobox
+                                                                wireModel="dataDaftarPoliRJ.eresep.{{ $key }}.catatanKhusus"
+                                                                :options="$signaCatatanOptions"
                                                                 :disabled="$isFormLocked"
-                                                                wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.catatanKhusus"
-                                                                x-ref="catatanKhusus{{ $key }}"
-                                                                x-on:keydown.enter.prevent="
-                                                                    $wire.updateProduct(
-                                                                        '{{ $eresep['rjObatDtl'] }}',
-                                                                        $wire.dataDaftarPoliRJ.eresep[{{ $key }}].qty,
-                                                                        $wire.dataDaftarPoliRJ.eresep[{{ $key }}].signaX,
-                                                                        $wire.dataDaftarPoliRJ.eresep[{{ $key }}].signaHari,
-                                                                        $wire.dataDaftarPoliRJ.eresep[{{ $key }}].catatanKhusus
-                                                                    );
-                                                                    $nextTick(() => $refs.qty{{ $key }}.focus())
-                                                                " />
+                                                                inputId="eresep-rj-catatan-{{ $key }}"
+                                                                placeholder="Catatan Khusus"
+                                                                :maxlength="255"
+                                                                enterAction="$wire.updateProduct(
+                                                                    '{{ $eresep['rjObatDtl'] }}',
+                                                                    $wire.dataDaftarPoliRJ.eresep[{{ $key }}].qty,
+                                                                    $wire.dataDaftarPoliRJ.eresep[{{ $key }}].signaX,
+                                                                    $wire.dataDaftarPoliRJ.eresep[{{ $key }}].signaHari,
+                                                                    $wire.dataDaftarPoliRJ.eresep[{{ $key }}].catatanKhusus
+                                                                );
+                                                                $nextTick(() => document.getElementById('eresep-rj-qty-{{ $key }}')?.focus())" />
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td class="w-8 px-4 py-3 text-center">
                                                     @role(['Dokter', 'Admin'])
-                                                        <x-secondary-button class="inline-flex" :disabled="$isFormLocked"
-                                                            wire:click="removeProduct('{{ $eresep['rjObatDtl'] }}')">
-                                                            <svg class="w-5 h-5 text-gray-800 dark:text-white"
-                                                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                                                                fill="currentColor" viewBox="0 0 18 20">
-                                                                <path
-                                                                    d="M17 4h-4V2a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2H1a1 1 0 0 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2ZM7 2h4v2H7V2Zm1 14a1 1 0 1 1-2 0V8a1 1 0 0 1 2 0v8Z" />
+                                                        <x-outline-button type="button"
+                                                            wire:click.prevent="removeProduct('{{ $eresep['rjObatDtl'] }}')"
+                                                            wire:confirm="Hapus obat ini?"
+                                                            wire:loading.attr="disabled"
+                                                            :disabled="$isFormLocked"
+                                                            class="!text-red-600 !bg-red-50 !border-red-200 hover:!bg-red-100 hover:!text-red-700 hover:!border-red-300 dark:!text-red-400 dark:!bg-red-900/20 dark:!border-red-800/30 dark:hover:!bg-red-900/30 dark:hover:!text-red-300"
+                                                            title="Hapus obat">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
-                                                        </x-secondary-button>
+                                                        </x-outline-button>
                                                     @endrole
                                                 </td>
                                             </tr>

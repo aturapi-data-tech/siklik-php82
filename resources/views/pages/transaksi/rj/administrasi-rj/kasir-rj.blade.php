@@ -278,6 +278,7 @@ new class extends Component {
                             'kasir_id'   => $kasirId,
                         ]);
                     $newTxnStatus = 'H';
+                    $this->appendAdminLogRJ($this->rjNo, 'Bayar Cicilan: Rp ' . number_format($bayar, 0, ',', '.') . ' (sisa Rp ' . number_format($dspTotalAll - $bayar, 0, ',', '.') . ')');
                 } else {
                     // LUNAS
                     if ($this->rjTotal > 0) {
@@ -298,6 +299,8 @@ new class extends Component {
                     DB::table('rsmst_pasiens')
                         ->where('reg_no', $rjHdr->reg_no)
                         ->update(['lockstatus' => null]);
+
+                    $this->appendAdminLogRJ($this->rjNo, 'Bayar Lunas: Rp ' . number_format($dspTotalAll, 0, ',', '.'));
                 }
             });
 
@@ -373,6 +376,8 @@ new class extends Component {
                         ->where('reg_no', $hdr->reg_no)
                         ->update(['lockstatus' => null]);
                 }
+
+                $this->appendAdminLogRJ($this->rjNo, 'Batal Transaksi Pembayaran');
             });
 
             $this->txnStatus = null;
@@ -857,7 +862,7 @@ new class extends Component {
                     <x-text-input type="number" wire:model.live.debounce.400ms="bayar"
                         placeholder="0"
                         class="w-full font-mono text-right" min="1" x-ref="inputBayar"
-                        x-on:keyup.enter="$wire.postTransaksi()" />
+                        x-on:keydown.enter.prevent="$el.blur(); $wire.postTransaksi()" />
                     <x-input-error :messages="$errors->get('bayar')" class="mt-1" />
                 </div>
 
@@ -942,7 +947,7 @@ new class extends Component {
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     @forelse ($cashins as $cash)
-                        <tr class="transition hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                        <tr wire:key="cashin-rj-{{ $cash->rjc_dtl ?? $loop->index }}" class="transition hover:bg-gray-50 dark:hover:bg-gray-800/40">
                             <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 {{ Carbon::parse($cash->rjc_date)->format('d/m/Y') }}
                             </td>

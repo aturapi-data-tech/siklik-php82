@@ -22,7 +22,7 @@ new class extends Component {
     ];
 
     /* ===============================
-     | LISTENER — sync lock saat parent klik "Selesai Administrasi"
+     | LISTENER — sync lock saat parent broadcast (post/batal transaksi)
      =============================== */
     #[On('rj.administrasi-selesai')]
     public function onAdministrasiSelesai(int $rjNo): void
@@ -116,6 +116,8 @@ new class extends Component {
                     'labDesc' => $this->formEntryLab['labDesc'],
                     'labPrice' => $this->formEntryLab['labPrice'],
                 ];
+
+                $this->appendAdminLogRJ($this->rjNo, 'Tambah Lab: ' . $this->formEntryLab['labDesc']);
             });
 
             $this->reset(['formEntryLab']);
@@ -202,6 +204,8 @@ new class extends Component {
                         ]);
                     })
                     ->toArray();
+
+                $this->appendAdminLogRJ($this->rjNo, 'Edit Lab #' . $this->editingDtl . ': ' . $this->editRow['labDesc']);
             });
 
             $this->editingDtl = null;
@@ -233,6 +237,8 @@ new class extends Component {
                 DB::table('rstxn_rjlabs')->where('lab_dtl', $labDtl)->delete();
 
                 $this->rjLab = collect($this->rjLab)->where('labDtl', '!=', $labDtl)->values()->toArray();
+
+                $this->appendAdminLogRJ($this->rjNo, 'Hapus Lab #' . $labDtl);
             });
 
             if ($this->editingDtl === $labDtl) {
@@ -285,7 +291,7 @@ new class extends Component {
                 <div class="w-44">
                     <x-input-label value="Tarif Laborat" class="mb-1" />
                     <x-text-input wire:model="formEntryLab.labPrice" placeholder="Tarif" class="w-full text-sm"
-                        x-ref="inputLabPrice" x-on:keyup.enter="$wire.insertLab()" />
+                        x-ref="inputLabPrice" x-on:keydown.enter.prevent="$el.blur(); $wire.insertLab()" />
                     @error('formEntryLab.labPrice')
                         <x-input-error :messages="$message" class="mt-1" />
                     @enderror
@@ -358,7 +364,7 @@ new class extends Component {
                                     <div class="flex justify-end">
                                         <x-text-input wire:model="editRow.labPrice" placeholder="Tarif"
                                             class="text-sm text-right w-44" x-ref="editLabPrice"
-                                            x-on:keyup.enter="$wire.saveEdit()" />
+                                            x-on:keydown.enter.prevent="$el.blur(); $wire.saveEdit()" />
                                     </div>
                                     @error('editRow.labPrice')
                                         <x-input-error :messages="$message" class="mt-1 text-right" />
@@ -391,17 +397,17 @@ new class extends Component {
                                                 wire:click="startEdit({{ $item['labDtl'] }})" class="px-3 py-1 text-xs">
                                                 Edit
                                             </x-secondary-button>
-                                            <button type="button" wire:click.prevent="removeLab({{ $item['labDtl'] }})"
+                                            <x-outline-button type="button" wire:click.prevent="removeLab({{ $item['labDtl'] }})"
                                                 wire:confirm="Hapus data laboratorium ini?" wire:loading.attr="disabled"
                                                 wire:target="removeLab({{ $item['labDtl'] }})"
-                                                class="inline-flex items-center justify-center w-8 h-8 text-red-500 transition rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                class="!text-red-600 !bg-red-50 !border-red-200 hover:!bg-red-100 hover:!text-red-700 hover:!border-red-300 dark:!text-red-400 dark:!bg-red-900/20 dark:!border-red-800/30 dark:hover:!bg-red-900/30 dark:hover:!text-red-300" title="Hapus">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
-                                            </button>
+                                            </x-outline-button>
                                         </div>
                                     @endif
                                 </td>
