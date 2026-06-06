@@ -103,6 +103,7 @@ class AppMenu
             $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 8,  'route' => 'master.signa-catatan', 'title' => 'Master Catatan Khusus Signa', 'desc' => 'LOV catatan khusus signa untuk e-resep',          'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
             $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 9,  'route' => 'master.prov-toko',     'title' => 'Provinsi (Apotek)',           'desc' => 'Provinsi untuk address customer/supplier',        'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
             $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 10, 'route' => 'master.kota-toko',     'title' => 'Kota (Apotek)',               'desc' => 'Kota untuk address customer/supplier',            'roles' => ['admin', 'apotek'], 'badge' => 'Apotek']),
+            $entry(['group' => 'Master Apotek', 'groupOrder' => 4, 'order' => 11, 'route' => 'master.product-non',   'title' => 'Master Produk Non-Medis',     'desc' => 'Barang non-medis (ATK/RT) — stok tunggal',        'roles' => ['admin', 'apotek', 'tu'], 'badge' => 'Apotek']),
 
             // ── Master Akuntansi ──────────────────────────────────────
             $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 1, 'route' => 'master.group-akun',      'title' => 'Master Group Akun',     'desc' => 'Pengelompokan akun (Aktiva/Pasiva/Modal/Pendapatan/Biaya)',    'roles' => ['admin'], 'badge' => 'Akuntansi']),
@@ -131,7 +132,8 @@ class AppMenu
 
             // ── Gudang ────────────────────────────────────────────────
             $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 1, 'route' => 'gudang.penerimaan-medis', 'title' => 'Obat dari PBF', 'desc' => 'Penerimaan obat dari PBF / Supplier (Gudang Medis)', 'roles' => ['admin', 'apotek'], 'badge' => 'RCV']),
-            $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 2, 'route' => 'gudang.kartu-stock',     'title' => 'Kartu Stock',   'desc' => 'Riwayat mutasi stok per produk per tahun',           'roles' => ['admin', 'apotek'], 'badge' => 'STK']),
+            $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 2, 'route' => 'gudang.penerimaan-non-medis', 'title' => 'Barang Non-Medis dari Supplier', 'desc' => 'Penerimaan barang non-medis (ATK/RT) — stok tunggal tanpa transfer', 'roles' => ['admin', 'tu'], 'badge' => 'RCV-N']),
+            $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 3, 'route' => 'gudang.kartu-stock',     'title' => 'Kartu Stock',   'desc' => 'Riwayat mutasi stok per produk per tahun',           'roles' => ['admin', 'apotek'], 'badge' => 'STK']),
 
             // ── Keuangan ──────────────────────────────────────────────
             $entry(['group' => 'Keuangan', 'groupOrder' => 11, 'order' => 1, 'route' => 'keuangan.penerimaan-kas-tu',     'title' => 'Penerimaan Kas TU',     'desc' => 'Catat penerimaan kas di luar transaksi pelayanan',                     'roles' => ['admin', 'tu'], 'badge' => 'CI']),

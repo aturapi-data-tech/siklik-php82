@@ -132,6 +132,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('/master/product', 'pages::master.master-apotek.master-product.master-product')
         ->name('master.product');
 
+    Route::livewire('/master/product-non', 'pages::master.master-apotek.master-product-non.master-product-non')
+        ->name('master.product-non');
+
     Route::livewire('/master/signa-catatan', 'pages::master.master-apotek.master-signa-catatan.master-signa-catatan')
         ->name('master.signa-catatan');
 
@@ -223,6 +226,12 @@ Route::middleware(['auth'])->group(function () {
     // ===========================================
     Route::livewire('/gudang/penerimaan-medis', 'pages::transaksi.gudang.penerimaan-medis.penerimaan-medis')
         ->name('gudang.penerimaan-medis');
+
+    // ===========================================
+    // GUDANG - PENERIMAAN NON-MEDIS (ATK/RT)
+    // ===========================================
+    Route::livewire('/gudang/penerimaan-non-medis', 'pages::transaksi.gudang.penerimaan-non-medis.penerimaan-non-medis')
+        ->name('gudang.penerimaan-non-medis');
 
     // ===========================================
     // GUDANG - KARTU STOCK
