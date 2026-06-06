@@ -917,7 +917,7 @@ new class extends Component {
                                 <x-input-label value="Tanggal" :required="true" />
                                 <x-text-input type="text" wire:model="rcvDate" placeholder="dd/mm/yyyy hh:mm:ss"
                                     class="w-full mt-1" x-ref="inputRcvDate" :disabled="$isReadOnly"
-                                    x-on:keydown.enter.prevent="$refs.lovSupplierWrapper?.querySelector('input')?.focus()" />
+                                    x-on:keydown.enter.prevent="$refs.lovSupplierWrapper?.querySelector('input:not([disabled])')?.focus()" />
                             </div>
                             <div x-ref="lovSupplierWrapper">
                                 <livewire:lov.supplier.lov-supplier target="supplier-rcv" label="Supplier"
