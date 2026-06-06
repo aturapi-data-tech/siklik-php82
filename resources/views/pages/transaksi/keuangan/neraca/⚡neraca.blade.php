@@ -193,23 +193,12 @@ new class extends Component {
 ?>
 
 <div>
-    <header class="bg-white shadow dark:bg-gray-800">
-        <div class="w-full px-4 py-2 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-                Laporan Neraca
-                <span class="px-2 py-0.5 ml-2 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
-                    Beta · Masa Pengembangan
-                </span>
-            </h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Posisi keuangan per tanggal cutoff. Aktiva harus seimbang dengan Hutang + Ekuitas + Laba Tahun Berjalan.
-                Susunan section mengikuti template <span class="font-mono">N1</span>.
-            </p>
-        </div>
-    </header>
+    <x-page-title
+        title="Laporan Neraca (Beta)"
+        subtitle="Posisi keuangan per tanggal cutoff. Aktiva harus seimbang dengan Hutang + Ekuitas + Laba Tahun Berjalan. Susunan section mengikuti template N1." />
 
-    <div class="w-full min-h-[calc(100vh-5rem-72px)] bg-white dark:bg-gray-800">
-        <div class="px-6 pt-4 pb-6">
+    <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
+        <div class="flex flex-col flex-1 min-h-0 px-6 pt-4 pb-6">
             {{-- Notice masa pengembangan --}}
             <div class="p-4 mb-4 border rounded-lg border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700">
                 <div class="flex items-start gap-3">
@@ -265,8 +254,8 @@ new class extends Component {
                 </div>
             </div>
 
-            <div class="mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
-                <div class="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-340px)] rounded-t-2xl">
+            <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
+                <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="min-w-full text-sm">
                         <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
                             <tr class="text-left">
@@ -290,14 +279,14 @@ new class extends Component {
                                             : ($isHutang ? 'bg-amber-100 dark:bg-amber-900/30'
                                             : 'bg-purple-100 dark:bg-purple-900/30');
                                     @endphp
-                                    <tr class="{{ $secColor }}">
+                                    <tr wire:key="neraca-sec-{{ $sec['temp_dtl'] ?? $loop->index }}" class="{{ $secColor }}">
                                         <td colspan="2" class="px-3 py-2 text-xs font-bold tracking-wider uppercase">
                                             {{ $sec['desc'] }}
                                         </td>
                                         <td class="px-3 py-2"></td>
                                     </tr>
                                     @forelse ($sec['accounts'] as $acc)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                        <tr wire:key="neraca-acc-{{ $sec['temp_dtl'] ?? '' }}-{{ $acc['acc_id'] ?? $loop->index }}" class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
                                             <td class="px-3 py-1.5 font-mono text-xs">{{ $acc['acc_id'] }}</td>
                                             <td class="px-3 py-1.5 text-xs">
                                                 {{ $acc['acc_desc'] ?: '—' }}
