@@ -239,6 +239,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('/gudang/kartu-stock', 'pages::transaksi.gudang.kartu-stock.kartu-stock')
         ->name('gudang.kartu-stock');
 
+    Route::livewire('/gudang/kartu-stock-non', 'pages::transaksi.gudang.kartu-stock-non.kartu-stock-non')
+        ->name('gudang.kartu-stock-non');
+
     // ===========================================
     // TRANSAKSI PENUNJANG - LABORATORIUM
     // ===========================================

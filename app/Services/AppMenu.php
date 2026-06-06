@@ -134,6 +134,7 @@ class AppMenu
             $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 1, 'route' => 'gudang.penerimaan-medis', 'title' => 'Obat dari PBF', 'desc' => 'Penerimaan obat dari PBF / Supplier (Gudang Medis)', 'roles' => ['admin', 'apotek'], 'badge' => 'RCV']),
             $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 2, 'route' => 'gudang.penerimaan-non-medis', 'title' => 'Barang Non-Medis dari Supplier', 'desc' => 'Penerimaan barang non-medis (ATK/RT) — stok tunggal tanpa transfer', 'roles' => ['admin', 'tu'], 'badge' => 'RCV-N']),
             $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 3, 'route' => 'gudang.kartu-stock',     'title' => 'Kartu Stock',   'desc' => 'Riwayat mutasi stok per produk per tahun',           'roles' => ['admin', 'apotek'], 'badge' => 'STK']),
+            $entry(['group' => 'Gudang', 'groupOrder' => 10, 'order' => 4, 'route' => 'gudang.kartu-stock-non', 'title' => 'Kartu Stock — Non-Medis', 'desc' => 'Riwayat mutasi stok barang non-medis per produk per tahun', 'roles' => ['admin', 'tu'], 'badge' => 'STK-N']),
 
             // ── Keuangan ──────────────────────────────────────────────
             $entry(['group' => 'Keuangan', 'groupOrder' => 11, 'order' => 1, 'route' => 'keuangan.penerimaan-kas-tu',     'title' => 'Penerimaan Kas TU',     'desc' => 'Catat penerimaan kas di luar transaksi pelayanan',                     'roles' => ['admin', 'tu'], 'badge' => 'CI']),
