@@ -209,6 +209,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('/keuangan/pembayaran-hutang-pbf', 'pages::transaksi.keuangan.pembayaran-hutang-pbf.pembayaran-hutang-pbf')
         ->name('keuangan.pembayaran-hutang-pbf');
 
+    Route::livewire('/keuangan/pembayaran-hutang-non-medis', 'pages::transaksi.keuangan.pembayaran-hutang-non-medis.pembayaran-hutang-non-medis')
+        ->name('keuangan.pembayaran-hutang-non-medis');
+
     Route::livewire('/keuangan/saldo-kas', 'pages::transaksi.keuangan.saldo-kas.saldo-kas')
         ->name('keuangan.saldo-kas');
 

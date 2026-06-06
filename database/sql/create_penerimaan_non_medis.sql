@@ -35,7 +35,7 @@ CREATE TABLE tktxn_rcvhdrnons (
     kasir_id       VARCHAR2(20),                          -- FK logis tkmst_kasirs
     cb_id          VARCHAR2(20),                          -- FK logis tkacc_carabayars
     rcv_desc       VARCHAR2(400),
-    rcv_status     VARCHAR2(1)     DEFAULT 'A' NOT NULL,  -- A=hutang/belum lunas, L=lunas
+    rcv_status     VARCHAR2(1)     DEFAULT 'A' NOT NULL,  -- H=hutang, L=lunas, F=batal, A=daftar tunggu/rollback (aplikasi selalu set eksplisit)
     pay_date       DATE,
     rcv_bayar      NUMBER          DEFAULT 0,
     due_date       DATE,
