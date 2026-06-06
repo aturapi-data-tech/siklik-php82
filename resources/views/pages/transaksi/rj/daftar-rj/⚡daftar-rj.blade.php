@@ -7,19 +7,23 @@ use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Http\Traits\Txn\Rj\EmrCompletenessRJTrait;
 
 new class extends Component {
-    use WithPagination, WithRenderVersioningTrait;
+    use WithPagination, WithRenderVersioningTrait, EmrCompletenessRJTrait;
 
     public array $renderVersions = [];
     protected array $renderAreas = ['daftar-rj-toolbar'];
 
     /* -------------------------
      | Filter & Pagination state
+     | Daftar RJ = view PENDAFTARAN (Mr/Admin). Filter Status pakai rj_status.
+     | Pelayanan EMR (Dokter/Perawat) dipisah ke /rawat-jalan/pelayanan.
      * ------------------------- */
     public string $searchKeyword = '';
     public string $filterTanggal = '';
-    public string $filterStatus = 'A';
+    public string $filterStatus = 'A'; // rj_status: A=Antrian, L=Selesai, F=Batal, I=Rujuk
+    public string $filterKlaim = ''; // '' | 'BPJS' | 'UMUM' — pakai klaim_status di rsmst_klaimtypes (JM dianggap BPJS)
     public string $filterPoli = '';
     public string $filterDokter = '';
     public int $itemsPerPage = 10;
@@ -32,11 +36,18 @@ new class extends Component {
 
     public function updatedSearchKeyword(): void
     {
+        // Tidak incrementVersion — wire:key remount toolbar di tengah ketik bikin
+        // search input kehilangan focus, backspace berikutnya memicu browser back.
+        $this->resetPage();
+    }
+
+    public function updatedFilterStatus(): void
+    {
         $this->resetPage();
         $this->incrementVersion('daftar-rj-toolbar');
     }
 
-    public function updatedFilterStatus(): void
+    public function updatedFilterKlaim(): void
     {
         $this->resetPage();
         $this->incrementVersion('daftar-rj-toolbar');
@@ -65,7 +76,7 @@ new class extends Component {
      * ------------------------- */
     public function resetFilters(): void
     {
-        $this->reset(['searchKeyword', 'filterStatus', 'filterPoli', 'filterDokter']);
+        $this->reset(['searchKeyword', 'filterStatus', 'filterKlaim', 'filterPoli', 'filterDokter']);
         $this->filterStatus = 'A';
         $this->filterTanggal = Carbon::now()->format('d/m/Y');
         $this->incrementVersion('daftar-rj-toolbar');
@@ -83,21 +94,6 @@ new class extends Component {
     public function openEdit(string $rjNo): void
     {
         $this->dispatch('daftar-rj.edit.open', rjNo: $rjNo);
-    }
-
-    public function openRekamMedis(string $rjNo): void
-    {
-        $this->dispatch('emr-rj.rekam-medis.open', rjNo: $rjNo);
-    }
-
-    public function openModulDokumen(int $rjNo): void
-    {
-        $this->dispatch('emr-rj.modul-dokumen.open', rjNo: $rjNo);
-    }
-
-    public function openAdministrasiPasien(string $rjNo): void
-    {
-        $this->dispatch('emr-rj.administrasi.open', rjNo: $rjNo);
     }
 
     public function openSatuSehat(string $rjNo): void
@@ -124,24 +120,14 @@ new class extends Component {
     }
 
     /* -------------------------
-     | Helper: apakah role Dokter/Perawat
-     * ------------------------- */
-    private function isDokterOrPerawat(): bool
-    {
-        return auth()
-            ->user()
-            ->hasAnyRole(['Dokter', 'Perawat']);
-    }
-
-    /* -------------------------
-     | Computed queries
+     | Computed queries — Daftar RJ (pendaftaran): status pakai rj_status
      * ------------------------- */
     #[Computed]
     public function baseQuery()
     {
         [$start, $end] = $this->dateRange();
 
-        $statusColumn = $this->isDokterOrPerawat() ? DB::raw("NVL(h.erm_status, 'A')") : DB::raw("NVL(h.rj_status, 'A')");
+        $statusColumn = DB::raw("NVL(h.rj_status, 'A')");
 
         $labSub = DB::table('lbtxn_checkuphdrs')->select('ref_no', DB::raw('COUNT(*) as lab_status'))->where('status_rjri', 'RJ')->where('checkup_status', '!=', 'B')->groupBy('ref_no');
 
@@ -162,6 +148,21 @@ new class extends Component {
 
         if ($this->filterStatus !== '') {
             $query->where($statusColumn, $this->filterStatus);
+        }
+
+        // Filter Klaim BPJS / UMUM
+        // BPJS = klaim_status='BPJS' (di rsmst_klaimtypes) ATAU klaim_id='JM' (JKN Mobile)
+        // UMUM = bukan keduanya
+        if ($this->filterKlaim === 'BPJS') {
+            $query->where(function ($q) {
+                $q->where('k.klaim_status', 'BPJS')->orWhere('h.klaim_id', 'JM');
+            });
+        } elseif ($this->filterKlaim === 'UMUM') {
+            $query->where(function ($q) {
+                $q->where(function ($w) {
+                    $w->where('k.klaim_status', '!=', 'BPJS')->orWhereNull('k.klaim_status');
+                })->where('h.klaim_id', '!=', 'JM');
+            });
         }
 
         if ($this->filterPoli !== '') {
@@ -193,7 +194,7 @@ new class extends Component {
      * ------------------------- */
     private function queryPendingBookings(string $search): \Illuminate\Support\Collection
     {
-        if ($this->isDokterOrPerawat() || !in_array($this->filterStatus, ['A', ''])) {
+        if (!in_array($this->filterStatus, ['A', ''])) {
             return collect();
         }
 
@@ -250,22 +251,24 @@ new class extends Component {
         $search = trim($this->searchKeyword);
 
         // ── 1. Fetch & transform rstxn_rjhdrs ────────────────────────────
-        $isDokterOrPerawat = $this->isDokterOrPerawat();
         $rjRows = $this->baseQuery()
             ->get()
-            ->map(function ($row) use ($isDokterOrPerawat) {
+            ->map(function ($row) {
                 $row->is_booking_pending = false;
 
-                $json = json_decode($row->datadaftarpolirj_json ?? '{}', true);
-
-                $fields = ['anamnesa', 'pemeriksaan', 'penilaian', 'procedure', 'diagnosis', 'perencanaan'];
-                $filled = 0;
-                foreach ($fields as $f) {
-                    if (isset($json[$f])) {
-                        $filled++;
-                    }
+                // Oracle CLOB bisa di-fetch sebagai OCILob/resource alih-alih string — normalize dulu.
+                $jsonRaw = $row->datadaftarpolirj_json ?? '{}';
+                if (is_object($jsonRaw) && method_exists($jsonRaw, 'load')) {
+                    $jsonRaw = $jsonRaw->load();
+                } elseif (is_resource($jsonRaw)) {
+                    $jsonRaw = stream_get_contents($jsonRaw);
                 }
-                $row->emr_percent = round(($filled / 6) * 100);
+                $json = json_decode($jsonRaw ?: '{}', true) ?? [];
+
+                // EMR completeness — weighted S15/O25/A25/P25/N10. Logic ada di EmrCompletenessRJTrait.
+                $pct = $this->calculateEmrPercentRJ($json);
+                $row->emr_percent = $pct['emr'];
+                $row->emr_sections = $pct['sections'];
                 $row->eresep_percent = isset($json['eresep']) || isset($json['eresepRacikan']) ? 100 : 0;
                 $row->task_id3 = $json['taskIdPelayanan']['taskId3'] ?? null;
                 $row->task_id4 = $json['taskIdPelayanan']['taskId4'] ?? null;
@@ -274,21 +277,11 @@ new class extends Component {
                 $row->pcare_kunjungan_code   = (int) ($json['taskIdPelayanan']['pcareKunjungan']['code'] ?? 0);
                 $row->no_referensi = $json['noReferensi'] ?? null;
 
-                if (isset($json['sep']['reqSep']['request']['t_sep']['rujukan']['tglRujukan'])) {
-                    $tglRujukan = Carbon::parse($json['sep']['reqSep']['request']['t_sep']['rujukan']['tglRujukan']);
-                    $batas = $tglRujukan->copy()->addMonths(3);
-                    $sisaHari = (int) now()->diffInDays($batas, false);
-                    $row->masa_rujukan = 'Masa berlaku Rujukan <br>' . $tglRujukan->format('d/m/Y') . ' s/d ' . $batas->format('d/m/Y') . '<br>Sisa : ' . $sisaHari . ' hari';
-                } else {
-                    $row->masa_rujukan = null;
-                }
-
                 $row->admin_user = isset($json['AdministrasiRj']) ? $json['AdministrasiRj']['userLog'] ?? '✔' : '-';
                 $row->administrasi_detail = $json['AdministrasiRj'] ?? null;
                 $row->tindak_lanjut = $json['perencanaan']['tindakLanjut']['tindakLanjut'] ?? '-';
                 $row->tindak_lanjut_detail = $json['perencanaan']['tindakLanjut'] ?? null;
                 $row->tgl_kontrol = $json['kontrol']['tglKontrol'] ?? '-';
-                $row->no_skdp_bpjs = $json['kontrol']['noSKDPBPJS'] ?? '-';
                 $row->kontrol_detail = $json['kontrol'] ?? null;
 
                 $row->diagnosis = isset($json['diagnosis']) && is_array($json['diagnosis']) ? implode('# ', array_column($json['diagnosis'], 'icdX')) : '-';
@@ -318,13 +311,8 @@ new class extends Component {
                     $row->umur_format = '-';
                 }
 
-                if ($isDokterOrPerawat) {
-                    $row->status_text = ['A' => 'Belum Dilayani', 'L' => 'Selesai'][$row->erm_status] ?? 'Pelayanan';
-                    $row->status_variant = ['A' => 'warning', 'L' => 'success'][$row->erm_status] ?? 'gray';
-                } else {
-                    $row->status_text = ['A' => 'Antrian', 'L' => 'Selesai', 'F' => 'Batal', 'I' => 'Inap/Rujuk'][$row->rj_status] ?? 'Pelayanan';
-                    $row->status_variant = ['A' => 'warning', 'L' => 'success', 'F' => 'danger', 'I' => 'brand'][$row->rj_status] ?? 'gray';
-                }
+                $row->status_text = ['A' => 'Antrian', 'L' => 'Selesai', 'F' => 'Batal', 'I' => 'Rujuk'][$row->rj_status] ?? 'Pelayanan';
+                $row->status_variant = ['A' => 'warning', 'L' => 'success', 'F' => 'danger', 'I' => 'brand'][$row->rj_status] ?? 'gray';
 
                 return $row;
             });
@@ -339,13 +327,11 @@ new class extends Component {
             $row->task_id4 = null;
             $row->task_id5 = null;
             $row->no_referensi = null;
-            $row->masa_rujukan = null;
             $row->admin_user = '-';
             $row->administrasi_detail = null;
             $row->tindak_lanjut = '-';
             $row->tindak_lanjut_detail = null;
             $row->tgl_kontrol = '-';
-            $row->no_skdp_bpjs = '-';
             $row->kontrol_detail = null;
             $row->diagnosis = '-';
             $row->diagnosis_free_text = '-';
@@ -423,8 +409,7 @@ new class extends Component {
         $query = DB::table('rstxn_rjhdrs')->select('rstxn_rjhdrs.dr_id', DB::raw('MAX(rsmst_doctors.dr_name) as dr_name'), 'rstxn_rjhdrs.poli_id', DB::raw('MAX(rsmst_polis.poli_desc) as poli_desc'), DB::raw('COUNT(DISTINCT rstxn_rjhdrs.rj_no) as total_pasien'))->join('rsmst_doctors', 'rsmst_doctors.dr_id', '=', 'rstxn_rjhdrs.dr_id')->join('rsmst_polis', 'rsmst_polis.poli_id', '=', 'rstxn_rjhdrs.poli_id')->where(DB::raw("to_char(rstxn_rjhdrs.rj_date, 'dd/mm/yyyy')"), '=', $this->filterTanggal);
 
         if (!empty($this->filterStatus)) {
-            $statusColumn = $this->isDokterOrPerawat() ? 'rstxn_rjhdrs.erm_status' : 'rstxn_rjhdrs.rj_status';
-            $query->where($statusColumn, $this->filterStatus);
+            $query->where('rstxn_rjhdrs.rj_status', $this->filterStatus);
         }
 
         if (!empty($this->searchKeyword) && strlen($this->searchKeyword) >= 2) {
@@ -453,19 +438,12 @@ new class extends Component {
 {{-- ✅ wire:key di level paling atas — seluruh halaman re-render saat filter berubah --}}
 {{-- Child components aman karena punya static wire:key masing-masing              --}}
 <div>
-    <header class="bg-white shadow dark:bg-gray-800">
-        <div class="w-full px-4 py-2 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-                Daftar Rawat Jalan
-            </h2>
-            <p class="text-base text-gray-700 dark:text-gray-700">
-                Kelola pendaftaran pasien rawat jalan
-            </p>
-        </div>
-    </header>
+    <x-page-title
+        title="Daftar Rawat Jalan"
+        subtitle="Kelola pendaftaran pasien rawat jalan" />
 
-    <div class="w-full min-h-[calc(100vh-5rem-72px)] bg-white dark:bg-gray-800">
-        <div class="px-6 pt-2 pb-6">
+    <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
+        <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">
 
             {{-- TOOLBAR --}}
             <div
@@ -504,22 +482,25 @@ new class extends Component {
                         </div>
                     </div>
 
-                    {{-- FILTER STATUS — opsi berbeda berdasarkan role --}}
+                    {{-- FILTER STATUS — rj_status (pendaftaran) --}}
                     <div class="w-full sm:w-auto">
                         <x-input-label value="Status" />
                         <x-select-input wire:model.live="filterStatus" class="w-full mt-1 sm:w-36">
                             <option value="">Semua</option>
-                            @if (auth()->user()->hasAnyRole(['Dokter', 'Perawat']))
-                                {{-- Berdasarkan erm_status --}}
-                                <option value="A">Belum Dilayani</option>
-                                <option value="L">Selesai</option>
-                            @else
-                                {{-- Berdasarkan rj_status --}}
-                                <option value="A">Antrian</option>
-                                <option value="L">Selesai</option>
-                                <option value="F">Batal</option>
-                                <option value="I">Rujuk</option>
-                            @endif
+                            <option value="A">Antrian</option>
+                            <option value="L">Selesai</option>
+                            <option value="F">Batal</option>
+                            <option value="I">Rujuk</option>
+                        </x-select-input>
+                    </div>
+
+                    {{-- FILTER KLAIM — BPJS / UMUM --}}
+                    <div class="w-full sm:w-auto">
+                        <x-input-label value="Klaim" />
+                        <x-select-input wire:model.live="filterKlaim" class="w-full mt-1 sm:w-32">
+                            <option value="">Semua</option>
+                            <option value="BPJS">BPJS</option>
+                            <option value="UMUM">UMUM</option>
                         </x-select-input>
                     </div>
 
@@ -569,9 +550,9 @@ new class extends Component {
 
             {{-- TABLE WRAPPER --}}
             <div
-                class="mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
+                class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
 
-                <div class="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-320px)] rounded-t-2xl">
+                <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="min-w-full text-base border-separate border-spacing-y-3">
 
                         <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
@@ -665,8 +646,19 @@ new class extends Component {
                                             </div>
 
                                             <div class="grid grid-cols-2 gap-2">
-                                                <div class="text-base text-gray-700 dark:text-gray-400">
-                                                    EMR : {{ $row->emr_percent ?? 0 }}%
+                                                <div
+                                                    class="flex items-center gap-1 text-base text-gray-700 dark:text-gray-400">
+                                                    <span>EMR : {{ $row->emr_percent ?? 0 }}%</span>
+                                                    <button type="button"
+                                                        x-on:click.stop="$dispatch('open-info-kelengkapan-emr-rj', { rjNo: {{ $row->rj_no }} })"
+                                                        class="inline-flex items-center justify-center w-4 h-4 text-gray-400 transition rounded-full hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300"
+                                                        title="Lihat status & kriteria kelengkapan EMR">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
                                                 <div class="text-base text-gray-700 dark:text-gray-400">
                                                     E-Resep : {{ $row->eresep_percent ?? 0 }}%
@@ -692,13 +684,6 @@ new class extends Component {
                                             @if (!empty($row->no_referensi))
                                                 <div class="text-base text-gray-700 dark:text-gray-400">
                                                     No Ref : {{ $row->no_referensi }}
-                                                </div>
-                                            @endif
-
-                                            @if (!empty($row->masa_rujukan))
-                                                <div
-                                                    class="px-2 py-1 text-sm text-yellow-700 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-300">
-                                                    {!! $row->masa_rujukan !!}
                                                 </div>
                                             @endif
 
@@ -759,12 +744,6 @@ new class extends Component {
                                         <div class="text-sm text-gray-700 dark:text-gray-300">
                                             Tanggal Kontrol : {{ $row->tgl_kontrol ?? '-' }}
                                         </div>
-
-                                        @if ($row->no_skdp_bpjs && $row->no_skdp_bpjs != '-')
-                                            <div class="text-xs text-gray-600 dark:text-gray-400">
-                                                No SKDP BPJS: {{ $row->no_skdp_bpjs }}
-                                            </div>
-                                        @endif
 
                                         @if ($row->kontrol_detail)
                                             <div class="text-xs text-gray-700 dark:text-gray-400">
@@ -865,71 +844,6 @@ new class extends Component {
                                                                             </svg>
                                                                             <span>
                                                                                 Pendaftaran Ubah <br>
-                                                                                <span
-                                                                                    class="font-semibold">{{ $row->reg_name }}</span>
-                                                                            </span>
-                                                                        </div>
-                                                                    </x-dropdown-link>
-                                                                @endhasanyrole
-
-                                                                {{-- Rekam Medis — Perawat, Dokter & Admin --}}
-                                                                @hasanyrole('Perawat|Dokter|Admin')
-                                                                    <x-dropdown-link href="#"
-                                                                        wire:click.prevent="openRekamMedis('{{ $row->rj_no }}')"
-                                                                        class="px-3 py-2 text-sm rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40">
-                                                                        <div class="flex items-start gap-2">
-                                                                            <svg class="w-5 h-5 mt-0.5 shrink-0"
-                                                                                fill="none" stroke="currentColor"
-                                                                                viewBox="0 0 24 24" stroke-width="2">
-                                                                                <path stroke-linecap="round"
-                                                                                    stroke-linejoin="round"
-                                                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                                                            </svg>
-                                                                            <span>
-                                                                                Rekam Medis <br>
-                                                                                <span class="font-semibold">Pasien</span>
-                                                                            </span>
-                                                                        </div>
-                                                                    </x-dropdown-link>
-                                                                @endhasanyrole
-
-                                                                {{-- Modul Dokumen — Admin, Perawat, Casemix --}}
-                                                                @hasanyrole('Admin|Perawat|Casemix')
-                                                                    <x-dropdown-link href="#"
-                                                                        wire:click.prevent="openModulDokumen('{{ $row->rj_no }}')"
-                                                                        class="px-3 py-2 text-sm rounded-lg bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40">
-                                                                        <div class="flex items-start gap-2">
-                                                                            <svg class="w-5 h-5 mt-0.5 shrink-0"
-                                                                                fill="none" stroke="currentColor"
-                                                                                viewBox="0 0 24 24" stroke-width="2">
-                                                                                <path stroke-linecap="round"
-                                                                                    stroke-linejoin="round"
-                                                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                            </svg>
-                                                                            <span>
-                                                                                Modul Dokumen <br>
-                                                                                <span class="font-semibold">Suket Sehat /
-                                                                                    Sakit</span>
-                                                                            </span>
-                                                                        </div>
-                                                                    </x-dropdown-link>
-                                                                @endhasanyrole
-
-                                                                {{-- Administrasi — Admin, Perawat, Casemix --}}
-                                                                @hasanyrole('Admin|Perawat|Casemix')
-                                                                    <x-dropdown-link href="#"
-                                                                        wire:click.prevent="openAdministrasiPasien('{{ $row->rj_no }}')"
-                                                                        class="px-3 py-2 text-sm rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40">
-                                                                        <div class="flex items-start gap-2">
-                                                                            <svg class="w-5 h-5 mt-0.5 shrink-0"
-                                                                                fill="none" stroke="currentColor"
-                                                                                viewBox="0 0 24 24" stroke-width="2">
-                                                                                <path stroke-linecap="round"
-                                                                                    stroke-linejoin="round"
-                                                                                    d="M2 8h20v12a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 0V6a1 1 0 011-1h18a1 1 0 011 1v2M12 14a2 2 0 100-4 2 2 0 000 4z" />
-                                                                            </svg>
-                                                                            <span>
-                                                                                Administrasi <br>
                                                                                 <span
                                                                                     class="font-semibold">{{ $row->reg_name }}</span>
                                                                             </span>
@@ -1080,6 +994,13 @@ new class extends Component {
                                                                 class="my-1 border-t border-gray-200 dark:border-gray-700">
                                                             </div>
 
+                                                            {{-- Batal Antrean (Task ID 99) — Admin only --}}
+                                                            @role('Admin')
+                                                                <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-99
+                                                                    :rjNo="$row->rj_no"
+                                                                    wire:key="taskid99-{{ $row->rj_no }}" />
+                                                            @endrole
+
                                                             {{-- Hapus — Admin only --}}
                                                             @role('Admin')
                                                                 <x-dropdown-link href="#"
@@ -1129,18 +1050,17 @@ new class extends Component {
             </div>
 
             {{-- Child components — static wire:key agar tidak ikut re-mount saat filter berubah --}}
+            {{-- Daftar RJ = pendaftaran only; EMR/Modul Dokumen/Administrasi pindah ke /rawat-jalan/pelayanan --}}
             <livewire:pages::transaksi.rj.daftar-rj.daftar-rj-actions wire:key="daftar-rj-actions" />
-            <livewire:pages::transaksi.rj.emr-rj.erm-rj wire:key="rm-perawat-rj-actions" />
-            <livewire:pages::transaksi.rj.administrasi-rj.administrasi-rj wire:key="administrasi-rj-actions" />
 
             {{-- Modal Satu Sehat (sibling, listen ke event daftar-rj.satu-sehat.open) --}}
             <livewire:pages::transaksi.rj.daftar-rj.satu-sehat-rj-actions wire:key="satu-sehat-rj-actions" />
 
-            {{-- Modul Dokumen RJ --}}
-            <livewire:pages::transaksi.rj.emr-rj.modul-dokumen.modul-dokumen-rj wire:key="modul-dokumen-rj" />
-
             {{-- Cetak Etiket --}}
             <livewire:pages::components.rekam-medis.etiket.cetak-etiket wire:key="cetak-etiket-pasien" />
+
+            {{-- Info Kelengkapan EMR (modal kriteria & status per-pasien) --}}
+            <livewire:pages::transaksi.rj.daftar-rj.info-kelengkapan-emr wire:key="info-kelengkapan-emr-rj" />
 
         </div>
     </div>

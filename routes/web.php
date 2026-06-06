@@ -151,6 +151,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('rawat-jalan.daftar');
 
     // ===========================================
+    // RAWAT JALAN (RJ) - PELAYANAN (EMR dokter/perawat)
+    // ===========================================
+    Route::livewire('/rawat-jalan/pelayanan', 'pages::transaksi.rj.pelayanan-rj.pelayanan-rj')
+        ->name('rawat-jalan.pelayanan');
+
+    // ===========================================
     // RAWAT JALAN (RJ) - BOOKING (Mobile JKN)
     // ===========================================
     Route::livewire('/rawat-jalan/booking', 'pages::transaksi.rj.booking-rj.booking-rj')
@@ -161,6 +167,12 @@ Route::middleware(['auth'])->group(function () {
     // ===========================================
     Route::livewire('/transaksi/rj/antrian-apotek-rj', 'pages::transaksi.rj.antrian-apotek-rj.antrian-apotek-rj')
         ->name('transaksi.rj.antrian-apotek-rj');
+
+    // ===========================================
+    // TRANSAKSI RJ - ANTRIAN KASIR
+    // ===========================================
+    Route::livewire('/transaksi/rj/antrian-kasir-rj', 'pages::transaksi.rj.antrian-kasir-rj.antrian-kasir-rj')
+        ->name('transaksi.rj.antrian-kasir-rj');
 
 
     // ===========================================
