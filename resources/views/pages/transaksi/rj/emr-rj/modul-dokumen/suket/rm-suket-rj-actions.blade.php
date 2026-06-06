@@ -62,6 +62,16 @@ new class extends Component {
         // Initialize suket data jika belum ada
         $this->dataDaftarPoliRJ['suket'] ??= $this->getDefaultSuket();
 
+        // Normalisasi data legacy:
+        // - Regenerate mulaiIstirahatOptions ke struktur baru ([value, label])
+        // - Strip suffix " (Hari Ini)"/" (Besok)" dari mulaiIstirahat agar Carbon parse aman
+        $fresh = $this->getDefaultSuket();
+        $this->dataDaftarPoliRJ['suket']['suketIstirahat']['mulaiIstirahatOptions']
+            = $fresh['suketIstirahat']['mulaiIstirahatOptions'];
+        $mulai = (string) ($this->dataDaftarPoliRJ['suket']['suketIstirahat']['mulaiIstirahat'] ?? '');
+        $this->dataDaftarPoliRJ['suket']['suketIstirahat']['mulaiIstirahat']
+            = trim(preg_replace('/\s*\(.+?\)\s*$/', '', $mulai)) ?: $fresh['suketIstirahat']['mulaiIstirahat'];
+
         // 🔥 INCREMENT: Refresh seluruh modal suket
         $this->incrementVersion('modal-suket-rj');
 
@@ -94,7 +104,11 @@ new class extends Component {
             'suketIstirahatTab' => 'Suket Istirahat',
             'suketIstirahat' => [
                 'mulaiIstirahat' => $hariIni,
-                'mulaiIstirahatOptions' => [['mulaiIstirahat' => $hariIni . ' (Hari Ini)'], ['mulaiIstirahat' => $besok . ' (Besok)']],
+                // Options dipisah value (d/m/Y murni untuk Carbon::createFromFormat) dan label (tampilan)
+                'mulaiIstirahatOptions' => [
+                    ['value' => $hariIni, 'label' => "{$hariIni} (Hari Ini)"],
+                    ['value' => $besok, 'label' => "{$besok} (Besok)"],
+                ],
                 'suketIstirahatHari' => '2',
                 'suketIstirahat' => '',
             ],
@@ -161,12 +175,17 @@ new class extends Component {
                     return;
                 }
 
+                // Tangkap status baru/lama sebelum overwrite (key suket belum ada saat pertama disimpan)
+                $isBaru = empty($data['suket']);
+
                 // 7. Set hanya key 'suket' — key lain tidak tersentuh
                 $data['suket'] = $this->dataDaftarPoliRJ['suket'] ?? [];
 
                 // 8. Persist + sync properti lokal
                 $this->updateJsonRJ($this->rjNo, $data);
                 $this->dataDaftarPoliRJ = $data;
+
+                $this->appendAdminLogRJ((int) $this->rjNo, ($isBaru ? 'Buat' : 'Update') . ' Surat Keterangan — mulai istirahat ' . ($data['suket']['suketIstirahat']['mulaiIstirahat'] ?? '-'), 'MR');
             });
 
             $this->afterSave('Surat Keterangan berhasil disimpan.');
@@ -208,6 +227,8 @@ new class extends Component {
     {
         $this->incrementVersion('modal-suket-rj');
         $this->dispatch('toast', type: 'success', message: $message);
+        // Reset dirty state di EMR RJ parent (<x-dirty-modal-content>).
+        $this->dispatch('refresh-after-rj.saved');
     }
 
     protected function resetForm(): void

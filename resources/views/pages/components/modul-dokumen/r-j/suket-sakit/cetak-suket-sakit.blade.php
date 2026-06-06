@@ -47,13 +47,22 @@ new class extends Component {
         }
 
         // Ambil data dokter langsung dari DB berdasarkan drId
-        $dokter = DB::table('rsmst_doctors')
-            ->where('dr_id', $dataRJ['drId'] ?? '')
-            ->select('dr_name')
-            ->first();
+        $drId = $dataRJ['drId'] ?? '';
+        $dokter = DB::table('rsmst_doctors')->where('dr_id', $drId)->select('dr_name')->first();
+
+        // TTD dokter dari storage (users.myuser_code == rsmst_doctors.dr_id)
+        $ttdDokterPath = null;
+        if ($drId) {
+            $ttdPath = DB::table('users')->where('myuser_code', $drId)->value('myuser_ttd_image');
+            if (!empty($ttdPath) && file_exists(public_path('storage/' . $ttdPath))) {
+                $ttdDokterPath = public_path('storage/' . $ttdPath);
+            }
+        }
 
         // Hitung tgl selesai istirahat
-        $mulai = $suketIstirahat['mulaiIstirahat'] ?? Carbon::now()->format('d/m/Y');
+        $mulaiRaw = (string) ($suketIstirahat['mulaiIstirahat'] ?? Carbon::now()->format('d/m/Y'));
+        // Strip suffix legacy " (Hari Ini)" / " (Besok)" supaya Carbon parse aman
+        $mulai = trim(preg_replace('/\s*\(.+?\)\s*$/', '', $mulaiRaw)) ?: Carbon::now()->format('d/m/Y');
         $lamaHari = (int) ($suketIstirahat['suketIstirahatHari'] ?? 1);
         $tglSelesai = Carbon::createFromFormat('d/m/Y', $mulai)
             ->copy()
@@ -65,6 +74,7 @@ new class extends Component {
             'tglMulai' => $mulai,
             'tglSelesai' => $tglSelesai,
             'namaDokter' => $dokter->dr_name ?? null,
+            'ttdDokterPath' => $ttdDokterPath,
             'tglCetak' => Carbon::now()->translatedFormat('d F Y'),
         ]);
 

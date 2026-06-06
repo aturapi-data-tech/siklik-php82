@@ -3,52 +3,30 @@
 <x-pdf.layout-a4 title="SURAT KETERANGAN SAKIT">
 
     {{-- IDENTITAS PASIEN --}}
-    <table class="w-full mb-4" cellpadding="0" cellspacing="0">
-        <tr>
-            <td class="w-44 py-0.5 text-[11px] text-gray-500">No. Rekam Medis</td>
-            <td class="w-4  py-0.5 text-[11px]">:</td>
-            <td class="py-0.5 text-[11px] font-bold">{{ $data['regNo'] ?? '-' }}</td>
-        </tr>
-        <tr>
-            <td class="py-0.5 text-[11px] text-gray-500">Nama Pasien</td>
-            <td class="py-0.5 text-[11px]">:</td>
-            <td class="py-0.5 text-[11px] font-bold">{{ $data['regName'] ?? '-' }}</td>
-        </tr>
-        <tr>
-            <td class="py-0.5 text-[11px] text-gray-500">Jenis Kelamin</td>
-            <td class="py-0.5 text-[11px]">:</td>
-            <td class="py-0.5 text-[11px]">{{ $data['jenisKelamin']['jenisKelaminDesc'] ?? '-' }}</td>
-        </tr>
-        <tr>
-            <td class="py-0.5 text-[11px] text-gray-500">Tempat, Tgl. Lahir</td>
-            <td class="py-0.5 text-[11px]">:</td>
-            <td class="py-0.5 text-[11px]">
-                {{ $data['tempatLahir'] ?? '-' }}, {{ $data['tglLahir'] ?? '-' }}
-                ({{ $data['thn'] ?? '-' }})
-            </td>
-        </tr>
-        <tr>
-            <td class="py-0.5 text-[11px] text-gray-500 align-top">Alamat</td>
-            <td class="py-0.5 text-[11px] align-top">:</td>
-            <td class="py-0.5 text-[11px]">
-                @php
-                    $alamat = $data['identitas']['alamat'] ?? '-';
-                    $rt = $data['identitas']['rt'] ?? '';
-                    $rw = $data['identitas']['rw'] ?? '';
-                    $desa = $data['identitas']['desaName'] ?? '';
-                    $kec = $data['identitas']['kecamatanName'] ?? '';
-                    $full = trim(
-                        $alamat .
-                            ($rt ? ' RT ' . $rt : '') .
-                            ($rw ? '/RW ' . $rw : '') .
-                            ($desa ? ', ' . $desa : '') .
-                            ($kec ? ', ' . $kec : ''),
-                    );
-                @endphp
-                {{ $full }}
-            </td>
-        </tr>
-    </table>
+    @php
+        $alamat = $data['identitas']['alamat'] ?? '-';
+        $rt = $data['identitas']['rt'] ?? '';
+        $rw = $data['identitas']['rw'] ?? '';
+        $desa = $data['identitas']['desaName'] ?? '';
+        $kec = $data['identitas']['kecamatanName'] ?? '';
+        $alamatPasien = trim(
+            $alamat .
+                ($rt ? ' RT ' . $rt : '') .
+                ($rw ? '/RW ' . $rw : '') .
+                ($desa ? ', ' . $desa : '') .
+                ($kec ? ', ' . $kec : ''),
+        );
+    @endphp
+    <div class="mb-4">
+        <x-pdf.identitas-pasien
+            :rm="$data['regNo'] ?? null"
+            :nama="$data['regName'] ?? null"
+            :jenisKelamin="$data['jenisKelamin']['jenisKelaminDesc'] ?? null"
+            :tempatLahir="$data['tempatLahir'] ?? null"
+            :tglLahir="$data['tglLahir'] ?? null"
+            :umur="$data['thn'] ?? null"
+            :alamat="$alamatPasien" />
+    </div>
 
     {{-- GARIS PEMBATAS --}}
     <hr class="mb-4 border-gray-300">
@@ -83,7 +61,13 @@
             <td class="w-7/12"></td>
             <td class="text-[12px] text-center">
                 Tulungagung, {{ $data['tglCetak'] ?? \Carbon\Carbon::now()->translatedFormat('d F Y') }}
-                <br><br><br><br><br>
+                <div class="text-center my-1.5">
+                    @if (!empty($data['ttdDokterPath']))
+                        <img class="h-16" src="{{ $data['ttdDokterPath'] }}" alt="TTD Dokter" />
+                    @else
+                        <div class="h-16">&nbsp;</div>
+                    @endif
+                </div>
                 <div class="inline-block pt-1 border-t border-black" style="min-width:140px;">
                     <span class="text-[11px]">
                         {{ $data['namaDokter'] ?? 'dr. ............................................' }}
