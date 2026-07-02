@@ -11,7 +11,7 @@ new class extends Component {
     #[Computed]
     public function userRoles(): array
     {
-        return auth()->user()->getRoleNames()->map(fn($r) => strtolower($r))->values()->toArray();
+        return auth()->user()->getRoleNames()->map(fn($r) => trim(strtolower($r)))->values()->toArray();
     }
 
     #[Computed]
@@ -49,93 +49,82 @@ new class extends Component {
 ?>
 
 <div>
-    {{-- HEADER (harus di sini, jangan di dalam div) --}}
-    <header class="bg-white shadow dark:bg-gray-800">
-        <div class="w-full px-4 py-2 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-                Dashboard
-            </h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Pusat menu aplikasi —
-                <span class="font-medium">
-                    Role Aktif : {{ auth()->user()->getRoleNames()->implode(', ') }}
-                </span>
-            </p>
-        </div>
-    </header>
 
-    {{-- BODY WRAPPER: SAMA kayak Master Poli --}}
-    <div class="w-full min-h-[calc(100vh-5rem-72px)] bg-white dark:bg-gray-800">
-        <div class="px-6 pt-2 pb-6">
+    {{-- Judul di topbar (sebelah logo) — pola master --}}
+    <x-page-title
+        title="Dashboard"
+        subtitle="Pusat menu aplikasi — Role Aktif : {{ auth()->user()->getRoleNames()->implode(', ') }}" />
 
-            {{-- TOOLBAR: mirip sticky toolbar poli (optional) --}}
+    <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-surface-soft dark:bg-gray-900">
+        <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">
+
+            {{-- TOOLBAR (persis master poli: sticky py-3) --}}
             <div
-                class="sticky z-30 px-4 py-3 bg-white border-b border-gray-200 top-20 dark:bg-gray-900 dark:border-gray-700">
+                class="sticky z-30 px-4 py-3 bg-surface-soft border-b border-hairline top-20 dark:bg-gray-900 dark:border-gray-700">
                 <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-
                     {{-- SEARCH --}}
                     <div class="w-full lg:max-w-md">
-                        <x-input-label value="Cari Menu" class="sr-only" />
-                        <x-text-input wire:model.live.debounce.250ms="search" placeholder="Cari menu..."
+                        <x-input-label for="search" value="Cari Menu" class="sr-only" />
+                        <x-text-input id="search" wire:model.live.debounce.250ms="search" placeholder="Cari menu..."
                             class="block w-full" />
                     </div>
-
-                    {{-- (optional) right side action kalau mau nanti --}}
                     <div class="hidden lg:block"></div>
                 </div>
             </div>
 
-            {{-- GRID MENU — Accordion --}}
-            <div x-data="{ activeGroup: null }">
+            {{-- GRID MENU — Accordion (area scroll, jarak mt-4 spt kartu master) --}}
+            <div class="flex-1 min-h-0 mt-4 overflow-y-auto" x-data="{ activeGroup: null }">
 
                 @forelse ($this->groupedMenus as $groupName => $menus)
                     <div x-data="{ group: '{{ $groupName }}' }">
 
-                        {{-- GROUP HEADER --}}
+                        {{-- GROUP HEADER (eyebrow) --}}
                         <button type="button" @click="activeGroup = (activeGroup === group) ? null : group"
-                            class="flex items-center gap-3 w-full mt-6 mb-3 group/header">
-                            <h2 class="text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-colors
-                    text-gray-400 dark:text-gray-500
-                    group-hover/header:text-gray-600 dark:group-hover/header:text-gray-300"
-                                :class="activeGroup === group ? 'text-gray-700 dark:text-gray-200' : ''">
+                            class="flex items-center w-full gap-3 mt-6 mb-3 group/header">
+                            <h2 class="text-xs font-semibold uppercase tracking-[0.12em] whitespace-nowrap transition-colors
+                                       text-muted group-hover/header:text-ink dark:text-gray-500 dark:group-hover/header:text-gray-300"
+                                :class="activeGroup === group ? 'text-brand-green dark:text-brand-lime' : ''">
                                 {{ $groupName }}
                             </h2>
-                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-                            <svg class="w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200"
-                                :class="activeGroup === group ? 'rotate-0' : '-rotate-90'" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7" />
+                            {{-- Ornamen garis lime + hairline (Graphic Standard Manual) --}}
+                            <div class="flex items-center flex-1 gap-2">
+                                <span class="w-7 h-[3px] rounded-full bg-brand-lime shrink-0 transition-all duration-500 ease-out group-hover/header:w-24"></span>
+                                <span class="flex-1 h-px bg-hairline dark:bg-gray-700"></span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200 shrink-0 text-muted"
+                                :class="activeGroup === group ? 'rotate-0 text-brand-green dark:text-brand-lime' : '-rotate-90'"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
 
-                        {{-- GRID --}}
+                        {{-- GRID KARTU --}}
                         <div x-show="activeGroup === group" x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 -translate-y-2"
                             x-transition:enter-end="opacity-100 translate-y-0"
                             x-transition:leave="transition ease-in duration-150"
                             x-transition:leave-start="opacity-100 translate-y-0"
                             x-transition:leave-end="opacity-0 -translate-y-2"
-                            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                            class="grid grid-cols-1 gap-4 mb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
 
                             @foreach ($menus as $m)
                                 <a href="{{ $m['href'] }}" wire:navigate
-                                    class="flex flex-col gap-3 p-4 transition-colors duration-200 bg-white border border-gray-200 group rounded-xl hover:bg-brand-green/10 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-brand-lime/15">
-                                    <div class="grid grid-cols-4 gap-2">
+                                    class="relative block p-4 pt-5 overflow-hidden transition-all duration-200 border group bg-surface-elevated border-hairline rounded-xl shadow-sm hover:border-brand-green/40 hover:shadow-md hover:-translate-y-0.5 dark:bg-gray-800/40 dark:border-gray-700 dark:hover:border-brand-lime/40">
+                                    {{-- Ornamen aksen lime (Graphic Standard Manual) — memanjang saat hover --}}
+                                    <span class="absolute top-0 left-0 h-1 transition-all duration-500 ease-out rounded-b w-9 bg-brand-lime group-hover:w-full"></span>
+                                    <div class="flex items-start justify-between gap-2">
+                                        <h3 class="text-base font-semibold leading-snug transition-colors text-ink group-hover:text-brand-green dark:text-gray-100 dark:group-hover:text-brand-lime">
+                                            {{ $m['title'] }}
+                                        </h3>
                                         @if (!empty($m['badge']))
-                                            <span
-                                                class="col-span-1 self-start inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full
-                                    bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                            <span class="shrink-0 inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-brand-green/10 text-brand-green dark:bg-brand-lime/15 dark:text-brand-lime">
                                                 {{ $m['badge'] }}
                                             </span>
                                         @endif
-                                        <div class="flex-1 min-w-0 col-span-3">
-                                            <h3 class="font-semibold text-gray-900 dark:text-gray-100">
-                                                {{ $m['title'] }}</h3>
-                                            <p class="mt-0.5 text-xs text-gray-500 truncate dark:text-gray-400">
-                                                {{ $m['desc'] }}</p>
-                                        </div>
                                     </div>
+                                    <p class="mt-1 text-sm leading-snug line-clamp-2 text-muted dark:text-gray-400">
+                                        {{ $m['desc'] }}
+                                    </p>
                                 </a>
                             @endforeach
 
@@ -143,7 +132,7 @@ new class extends Component {
                     </div>
 
                 @empty
-                    <div class="py-10 text-center text-gray-500 dark:text-gray-400">
+                    <div class="py-10 text-sm text-center text-muted dark:text-gray-400">
                         Menu tidak ditemukan / tidak ada akses.
                     </div>
                 @endforelse

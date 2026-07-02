@@ -38,7 +38,8 @@ class AppMenu
      */
     public static function forRoles(array $userRoles): array
     {
-        $roles = array_map('strtolower', $userRoles);
+        // trim() defensif: data role historis di DB bisa punya trailing space.
+        $roles = array_map(fn($r) => trim(strtolower($r)), $userRoles);
         return array_values(array_filter(self::all(), fn($m) => !empty(array_intersect($m['roles'], $roles))));
     }
 

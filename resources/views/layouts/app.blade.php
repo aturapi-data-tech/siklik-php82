@@ -150,6 +150,7 @@
             return {
                 sidebarOpen: false,
                 openMenus: {},
+                menuQuery: '',
 
                 topNavOpen: false,
                 topDropdownOpen: false,
