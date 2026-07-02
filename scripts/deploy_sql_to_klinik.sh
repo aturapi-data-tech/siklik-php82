@@ -3,9 +3,10 @@
 # Transfer SQL bundle files ke server klinik via SCP.
 #
 # File yang dikirim:
-#   - database/sql/install_bundle.sql            (Laravel + klinik pratama)
-#   - database/sql/install_bundle_satusehat.sql  (LOINC + SNOMED, opsional)
-#   - database/sql/README.md                     (dokumentasi urutan run)
+#   - database/sql/install_bundle.sql                 (Laravel + klinik pratama)
+#   - database/sql/install_bundle_satusehat.sql       (LOINC + SNOMED, opsional)
+#   - database/sql/install_bundle_fitur_lanjutan.sql  (signa, non-medis, user online)
+#   - database/sql/README.md                          (dokumentasi urutan run)
 #
 # Usage:
 #   ./scripts/deploy_sql_to_klinik.sh
@@ -22,6 +23,7 @@
 #   cd sql_deploy
 #   sqlplus siklik/<pwd>@//<host>:1521/<service> @install_bundle.sql
 #   sqlplus siklik/<pwd>@//<host>:1521/<service> @install_bundle_satusehat.sql
+#   sqlplus siklik/<pwd>@//<host>:1521/<service> @install_bundle_fitur_lanjutan.sql
 # =============================================================================
 
 set -euo pipefail
@@ -53,6 +55,7 @@ SQL_DIR="$ROOT/database/sql"
 FILES=(
     "$SQL_DIR/install_bundle.sql"
     "$SQL_DIR/install_bundle_satusehat.sql"
+    "$SQL_DIR/install_bundle_fitur_lanjutan.sql"
     "$SQL_DIR/README.md"
 )
 

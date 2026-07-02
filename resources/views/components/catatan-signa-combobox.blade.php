@@ -1,6 +1,6 @@
 @props([
     'wireModel',                       // contoh: 'formEresep.catatanKhusus' atau 'dataDaftarPoliRJ.eresep.0.catatanKhusus'
-    'options' => [],                   // array string catatan (dari rsmst_signa_catatans active)
+    'options' => [],                   // array string catatan (dari tkmst_signa_catatans active)
     'disabled' => false,
     'placeholder' => 'Catatan Khusus',
     'inputId' => null,                 // id input — dipakai parent untuk focus via document.getElementById

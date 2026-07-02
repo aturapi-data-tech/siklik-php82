@@ -37,7 +37,7 @@ new class extends Component {
     #[On('master.signa-catatan.openEdit')]
     public function openEdit(string $catatan): void
     {
-        $row = DB::table('rsmst_signa_catatans')
+        $row = DB::table('tkmst_signa_catatans')
             ->where('catatan', $catatan)
             ->first();
         if (!$row) {
@@ -60,7 +60,7 @@ new class extends Component {
     #[On('master.signa-catatan.requestDelete')]
     public function deleteCatatan(string $catatan): void
     {
-        $deleted = DB::table('rsmst_signa_catatans')->where('catatan', $catatan)->delete();
+        $deleted = DB::table('tkmst_signa_catatans')->where('catatan', $catatan)->delete();
         if ($deleted === 0) {
             $this->dispatch('toast', type: 'error', message: 'Data catatan tidak ditemukan.');
             return;
@@ -75,8 +75,8 @@ new class extends Component {
             'form.catatan' => [
                 'required', 'string', 'max:255',
                 $this->formMode === 'create'
-                    ? Rule::unique('rsmst_signa_catatans', 'catatan')
-                    : Rule::unique('rsmst_signa_catatans', 'catatan')->ignore($this->originalCatatan, 'catatan'),
+                    ? Rule::unique('tkmst_signa_catatans', 'catatan')
+                    : Rule::unique('tkmst_signa_catatans', 'catatan')->ignore($this->originalCatatan, 'catatan'),
             ],
             'form.active_status' => 'required|in:0,1',
         ];
@@ -99,12 +99,12 @@ new class extends Component {
         $activeStatus  = $this->form['active_status'] === '0' ? '0' : '1';
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_signa_catatans')->insert([
+            DB::table('tkmst_signa_catatans')->insert([
                 'catatan'       => $catatan,
                 'active_status' => $activeStatus,
             ]);
         } else {
-            DB::table('rsmst_signa_catatans')
+            DB::table('tkmst_signa_catatans')
                 ->where('catatan', $this->originalCatatan)
                 ->update([
                     'catatan'       => $catatan,

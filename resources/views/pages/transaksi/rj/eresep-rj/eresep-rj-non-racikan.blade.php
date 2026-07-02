@@ -31,10 +31,10 @@ new class extends Component {
 
     protected function loadSignaCatatanOptions(): void
     {
-        // Guard: tabel baru (database/sql/create_rsmst_signa_catatans.sql) —
+        // Guard: tabel baru (database/sql/create_tkmst_signa_catatans.sql) —
         // jangan fatal bila belum di-deploy; combobox degrade jadi input bebas.
         try {
-            $this->signaCatatanOptions = DB::table('rsmst_signa_catatans')
+            $this->signaCatatanOptions = DB::table('tkmst_signa_catatans')
                 ->where('active_status', '1')
                 ->orderBy('catatan')
                 ->pluck('catatan')
@@ -450,7 +450,7 @@ new class extends Component {
                                         x-on:keydown.enter.prevent="document.getElementById('formEresep.catatanKhusus')?.focus()" />
                                 </div>
 
-                                {{-- Catatan Khusus (Blade combobox Alpine: pilih dari rsmst_signa_catatans, masih bisa diketik) --}}
+                                {{-- Catatan Khusus (Blade combobox Alpine: pilih dari tkmst_signa_catatans, masih bisa diketik) --}}
                                 <div class="flex-[3]">
                                     <x-input-label for="formEresep.catatanKhusus" :value="__('Catatan Khusus')" />
                                     <div class="mt-1">

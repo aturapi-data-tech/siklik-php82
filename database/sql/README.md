@@ -45,6 +45,23 @@ Run hanya kalau klinik mau aktifkan integrasi SatuSehat (kirim FHIR ke Kemenkes)
 
 > Untuk fitur SatuSehat aktif di app, butuh juga setup credentials di `.env` (`SATUSEHAT_*`).
 
+### 🆕 `install_bundle_fitur_lanjutan.sql` — fitur lanjutan (Juni 2026)
+
+Gabungan idempotent dari 4 file referensi (file aslinya tetap ada sbg dokumentasi:
+`create_tkmst_signa_catatans.sql`, `create_penerimaan_non_medis.sql`,
+`create_kartu_stock_non_medis.sql`, `alter_users_add_last_seen.sql`).
+
+| Section | Object | Dipakai oleh | Idempotency |
+|---------|--------|--------------|-------------|
+| Signa catatan | `TKMST_SIGNA_CATATANS` + index | Master Catatan Signa + combobox e-resep | ✅ skip kalau sudah ada |
+| Penerimaan non-medis | `TKMST_PRODUCTNONS`, `TKTXN_RCVHDRNONS`, `TKTXN_RCVDTLNONS`, `TKTXN_RCVPAYMENTNONS`, `TKTXN_CASHOUTHDRNONS`, `TKTXN_CASHOUTDTLNONS` + 5 sequence | Master Produk Non-Medis, Penerimaan Non-Medis, Pembayaran Hutang Non-Medis | ✅ skip per-object |
+| Kartu stock non-medis | `TKTXN_SALDOAWALSTOCKSNON`, `TKTXN_SOWHSNON`, view `TKVIEW_IOSTOCKWHSNON` | Kartu Stock — Non-Medis | ✅ table skip; view selalu `CREATE OR REPLACE` |
+| User tracking | `USERS.LAST_SEEN_AT` + `LAST_SEEN_ROUTE` | Sistem → User Online (middleware `TrackUserActivity`) | ✅ per-kolom check |
+
+> Catatan stok non-medis: stok TUNGGAL di `TKMST_PRODUCTNONS.QTY_BOX` (tanpa
+> lokasi/transfer). Tabel baru TANPA trigger legacy — `qty_box` di-update
+> aplikasi (penerimaan & opname) dalam transaksi yang sama.
+
 ---
 
 ## Cara jalanin
@@ -57,6 +74,9 @@ sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/install_bundle.sql
 
 # Optional — SatuSehat
 sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/install_bundle_satusehat.sql
+
+# Fitur lanjutan (signa e-resep, non-medis, user online)
+sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/install_bundle_fitur_lanjutan.sql
 ```
 
 Bundle SatuSehat aman di-run setelah `install_bundle.sql` (atau independen, asal tabel core siklik `LBMST_CLABITEMS` & `RSMST_RADIOLOGIS` sudah ada).
