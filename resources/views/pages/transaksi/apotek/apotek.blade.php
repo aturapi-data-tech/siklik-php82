@@ -12,15 +12,8 @@ new class extends Component {
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <div class="px-4 py-4 mx-auto max-w-[1920px]">
 
-        {{-- HEADER --}}
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Antrian Apotek</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Telaah resep &amp; pelayanan kefarmasian — Rawat Jalan
-                </p>
-            </div>
-        </div>
+        {{-- Judul di topbar (sebelah logo) — pola master --}}
+        <x-page-title title="Antrian Apotek" subtitle="Telaah resep & pelayanan kefarmasian — Rawat Jalan" />
 
         {{-- CONTENT — langsung antrian RJ --}}
         <div class="mt-4">

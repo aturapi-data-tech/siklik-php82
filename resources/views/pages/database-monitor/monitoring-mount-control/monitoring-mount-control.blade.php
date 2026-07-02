@@ -157,18 +157,10 @@ new class extends Component {
 
 <div>
     {{-- PAGE HEADER --}}
-    <header class="bg-white shadow dark:bg-gray-800">
-        <div class="w-full px-4 py-2 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-                Mounting Control
-            </h2>
-            <p class="text-base text-gray-700 dark:text-gray-400">
-                Manajemen mount/unmount share folder jaringan (CIFS/SMB)
-            </p>
-        </div>
-    </header>
+    {{-- Judul di topbar (sebelah logo) — pola master --}}
+    <x-page-title title="Mounting Control" subtitle="Manajemen mount/unmount share folder jaringan (CIFS/SMB)" />
 
-    <div class="w-full min-h-[calc(100vh-5rem-72px)] bg-white dark:bg-gray-800">
+    <div class="w-full min-h-[calc(100vh-5rem)] bg-white dark:bg-gray-800">
         <div class="px-6 pt-2 pb-6">
 
             {{-- ================================================================ --}}
