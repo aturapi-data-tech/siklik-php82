@@ -6,8 +6,8 @@
         <x-action-edit wire:click="openEdit('{{ $row->id }}')" />
         <x-action-edit wire:click="openEdit('{{ $row->id }}')">Ubah</x-action-edit>
 --}}
-<x-secondary-button type="button" {{ $attributes->merge(['class' => 'px-2 py-1 text-xs']) }}>
-    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+<x-secondary-button type="button" {{ $attributes->merge(['class' => 'px-2.5 py-1.5 text-sm']) }}>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
     </svg>
     {{ $slot->isEmpty() ? 'Edit' : $slot }}

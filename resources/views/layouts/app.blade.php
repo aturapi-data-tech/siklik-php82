@@ -59,9 +59,9 @@
 
                     <a wire:navigate href="{{ url('/') }}" class="flex items-center gap-3">
                         <img src="{{ asset('images/Logo Horizontal.png') }}" alt="SIKlinik"
-                            class="block h-16 dark:hidden">
+                            class="block h-12 dark:hidden">
                         <img src="{{ asset('images/Logo Horizontal white.png') }}" alt="SIKlinik"
-                            class="hidden h-16 dark:block">
+                            class="hidden h-12 dark:block">
                     </a>
 
                     {{-- Page title — di-set per-page via x-init $store.pageTitle = {...} --}}
