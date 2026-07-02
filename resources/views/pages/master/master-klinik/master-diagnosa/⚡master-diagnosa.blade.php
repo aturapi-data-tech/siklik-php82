@@ -26,6 +26,13 @@ new class extends Component {
         $this->resetPage();
     }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->resetPage();
+    }
+
     /* -------------------------
      | Child modal triggers
      * ------------------------- */
@@ -205,6 +212,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah Data Diagnosa Baru
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

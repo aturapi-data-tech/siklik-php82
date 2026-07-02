@@ -27,6 +27,13 @@ new class extends Component {
         $this->resetPage('pageItem');
     }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchItem = '';
+        $this->resetPage('pageItem');
+    }
+
     /* --- Terima CLAB terpilih --- */
     #[On('clab.selected')]
     public function onClabSelected(string $clabId, string $clabDesc): void
@@ -143,6 +150,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreateClabitem">
                             + Tambah Pemeriksaan
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

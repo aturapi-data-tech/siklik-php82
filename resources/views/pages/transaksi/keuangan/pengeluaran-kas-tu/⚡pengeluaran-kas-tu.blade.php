@@ -23,6 +23,14 @@ new class extends Component {
     public function updatedItemsPerPage(): void { $this->resetPage(); }
     public function updatedFilterBulan(): void { $this->resetPage(); }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->filterBulan = Carbon::now()->format('m/Y');
+        $this->resetPage();
+    }
+
     /* ── Child modal triggers ── */
     public function openCreate(): void
     {
@@ -128,6 +136,8 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah Pengeluaran Kas
                         </x-primary-button>
+
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

@@ -17,6 +17,14 @@ new class extends Component {
     public function updatedItemsPerPage(): void  { $this->resetPage(); }
     public function updatedParentFilter(): void  { $this->resetPage(); }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->parentFilter  = '';
+        $this->resetPage();
+    }
+
     public function openCreate(): void
     {
         $this->dispatch('master.kabupaten.openCreate');
@@ -116,6 +124,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah Kabupaten
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

@@ -15,6 +15,13 @@ new class extends Component {
     public function updatedSearchKeyword(): void { $this->resetPage(); }
     public function updatedItemsPerPage(): void  { $this->resetPage(); }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->resetPage();
+    }
+
     public function openCreate(): void
     {
         $this->dispatch('master.procedure.openCreate');
@@ -77,6 +84,7 @@ new class extends Component {
                     </div>
 
                     <div class="flex items-center justify-end gap-2">
+
                         <div class="w-28">
                             <x-input-label for="itemsPerPage" value="Per halaman" class="sr-only" />
                             <x-select-input id="itemsPerPage" wire:model.live="itemsPerPage">
@@ -90,6 +98,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah Prosedur Baru
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

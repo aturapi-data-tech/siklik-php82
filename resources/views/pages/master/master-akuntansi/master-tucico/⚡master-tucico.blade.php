@@ -15,6 +15,13 @@ new class extends Component {
     public function updatedSearchKeyword(): void { $this->resetPage(); }
     public function updatedItemsPerPage(): void  { $this->resetPage(); }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->resetPage();
+    }
+
     public function openCreate(): void { $this->dispatch('master.tucico.openCreate'); }
     public function openEdit(string $id): void { $this->dispatch('master.tucico.openEdit', tucicoId: $id); }
     public function requestDelete(string $id): void { $this->dispatch('master.tucico.requestDelete', tucicoId: $id); }
@@ -82,6 +89,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah TUCICO
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

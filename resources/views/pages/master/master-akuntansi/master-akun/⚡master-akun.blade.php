@@ -146,13 +146,6 @@ new class extends Component {
                             </x-select-input>
                         </div>
 
-                        @if ($filterActive)
-                            <div>
-                                <x-secondary-button type="button" wire:click="resetFilters" class="px-3 py-2 text-xs">
-                                    Reset Filter
-                                </x-secondary-button>
-                            </div>
-                        @endif
                     </div>
 
                     <div class="flex items-end justify-end gap-2">
@@ -169,6 +162,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah Akun
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

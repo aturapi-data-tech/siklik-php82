@@ -37,6 +37,15 @@ new class extends Component {
         $this->resetPage();
     }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->filterStatus = '';
+        $this->filterBulan = Carbon::now()->format('m/Y');
+        $this->resetPage();
+    }
+
     /* ── Child modal triggers ── */
     public function openCreate(): void
     {
@@ -195,6 +204,7 @@ new class extends Component {
                             </svg>
                             Tambah Barang Non-Medis
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

@@ -21,6 +21,16 @@ new class extends Component {
     public function updatedCatFilter(): void     { $this->resetPage(); }
     public function updatedSuppFilter(): void    { $this->resetPage(); }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->statusFilter  = 'all';
+        $this->catFilter     = '';
+        $this->suppFilter    = '';
+        $this->resetPage();
+    }
+
     public function openCreate(): void
     {
         $this->dispatch('master.product.openCreate');
@@ -153,6 +163,7 @@ new class extends Component {
                             </div>
                         </div>
                         <x-primary-button type="button" wire:click="openCreate">+ Tambah Produk</x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>

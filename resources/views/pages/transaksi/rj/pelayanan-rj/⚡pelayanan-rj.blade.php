@@ -427,9 +427,6 @@ new class extends Component {
 
                     {{-- RIGHT ACTIONS --}}
                     <div class="flex items-center gap-2 ml-auto">
-                        {{-- Tombol standar Refresh + Reset (komponen; tanpa label kolom) --}}
-                        <x-toolbar-refresh-reset :label="null" />
-
                         <div class="w-20">
                             <x-select-input wire:model.live="itemsPerPage" class="text-sm" title="Per halaman">
                                 <option value="5">5</option>
@@ -441,6 +438,8 @@ new class extends Component {
                             </x-select-input>
                         </div>
 
+                        {{-- Tombol standar Refresh + Reset (komponen; tanpa label kolom) --}}
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
 
                 </div>

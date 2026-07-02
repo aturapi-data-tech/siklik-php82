@@ -17,6 +17,13 @@ new class extends Component {
     public function updatedTanggal(): void { /* recompute saldo */ }
     public function updatedSearchKeyword(): void { /* refilter */ }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->tanggal = now()->toDateString();
+        $this->searchKeyword = '';
+    }
+
     public function openEdit(string $cbId): void
     {
         if (!auth()->user()?->hasRole('Admin')) {
@@ -141,6 +148,7 @@ new class extends Component {
                                 placeholder="Kode / nama cara bayar / akun..."
                                 class="block w-full" />
                         </div>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
 
                     <div class="px-4 py-2 text-right border rounded-lg bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">

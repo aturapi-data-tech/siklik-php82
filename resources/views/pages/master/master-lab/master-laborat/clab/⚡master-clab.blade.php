@@ -97,6 +97,13 @@ new class extends Component {
         $this->resetPage();
     }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchClab = '';
+        $this->resetPage();
+    }
+
     /* --- Dispatch ke actions --- */
     public function openCreateClab(): void
     {
@@ -198,6 +205,7 @@ new class extends Component {
                                 <x-primary-button type="button" wire:click="openCreateClab">
                                     + Tambah Kategori
                                 </x-primary-button>
+                                <x-toolbar-refresh-reset :label="null" />
                             </div>
                         </div>
                     </div>

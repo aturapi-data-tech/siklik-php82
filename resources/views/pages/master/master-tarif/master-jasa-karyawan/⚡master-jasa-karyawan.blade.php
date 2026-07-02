@@ -17,6 +17,14 @@ new class extends Component {
     public function updatedItemsPerPage(): void  { $this->resetPage(); }
     public function updatedStatusFilter(): void  { $this->resetPage(); }
 
+    // Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset).
+    public function resetFilters(): void
+    {
+        $this->searchKeyword = '';
+        $this->statusFilter  = 'all';
+        $this->resetPage();
+    }
+
     public function openCreate(): void
     {
         $this->dispatch('master.jasa-karyawan.openCreate');
@@ -110,6 +118,7 @@ new class extends Component {
                         <x-primary-button type="button" wire:click="openCreate">
                             + Tambah Jasa Karyawan
                         </x-primary-button>
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
                 </div>
             </div>
