@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===== Design-system utility (selaras sirus-php82) ===== */
+:root {
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Angka pada input numerik: mono renggang + tabular (dipakai x-text-input-number v2) */
+.input-num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+/* Label kecil uppercase (judul kartu x-border-form v2) */
+.ds-caption-up {
+    @apply font-sans font-semibold text-caption-up uppercase text-muted;
+}

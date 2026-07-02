@@ -20,6 +20,7 @@
 @props([
     'disabled' => false,
     'error' => false,
+    'extraBlur' => null,
 ])
 
 @php
@@ -35,28 +36,39 @@
         } catch (\Throwable) {
         }
     }
-    $modelValue = $modelValue ?? $attributes->get('value');
+    $modelValue ??= $attributes->get('value');
 
     $initialValue = $modelValue ? number_format((int) $modelValue, 0, '.', ',') : '';
 
     // Strip wire:model dan value dari attributes — kita handle sendiri
     $attrs = $attributes->whereDoesntStartWith('wire:model')->whereDoesntStartWith('value');
 
-    $baseClass = 'border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100
-        focus:border-brand-lime focus:ring-brand-lime
-        rounded-md shadow-sm disabled:opacity-60 disabled:cursor-not-allowed w-full tabular-nums text-right';
-    $errorClass = 'border-red-500 focus:border-red-500 focus:ring-red-500
-        dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400';
+    // Samakan dengan <x-text-input>. v2: fokus ring brand + angka pakai .input-num (mono renggang, tabular).
+    // Border & focus-ring dipisah dari $baseClass supaya saat error tidak bentrok
+    // dgn border-gray (border-gray-300 ada SETELAH border-error di CSS build → gray menang).
+    $baseClass = 'bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100
+        rounded-lg shadow-sm disabled:opacity-90 disabled:bg-gray-100 disabled:cursor-not-allowed w-full input-num text-right';
+    $normalClass = 'border-gray-300 dark:border-gray-700
+        focus:border-brand-green focus:ring-brand-green/40
+        dark:focus:border-brand-lime dark:focus:ring-brand-lime/40';
+    $errorClass = 'border-error focus:border-error focus:ring-error/40
+        dark:border-error dark:focus:border-error dark:focus:ring-error/40';
 @endphp
 
 <input @disabled($disabled) value="{{ $initialValue }}" inputmode="numeric"
+    @if ($wireModel) x-init="$wire.$watch('{{ $wireModel }}', (val) => {
+            if (document.activeElement === $el) return;
+            let raw = parseInt(val) || 0;
+            $el.value = raw > 0 ? new Intl.NumberFormat('en-US').format(raw) : '';
+        })" @endif
     x-on:focus="$el.value = $el.value.replace(/,/g, '')"
     x-on:input="$el.value = $el.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
     x-on:blur="
         let raw = parseInt($el.value.replace(/,/g, '')) || 0;
         @if ($wireModel) $wire.set('{{ $wireModel }}', raw); @endif
+        @if ($extraBlur) {!! $extraBlur !!}; @endif
         $el.value = raw > 0 ? new Intl.NumberFormat('en-US').format(raw) : '';
     "
     {{ $attrs->merge([
-        'class' => $error ? "$baseClass $errorClass" : $baseClass,
+        'class' => $error ? "$baseClass $errorClass" : "$baseClass $normalClass",
     ]) }}>

@@ -27,8 +27,8 @@
     // Tambahkan class untuk state error jika diperlukan
     $hasError = $errors->has($name);
     if ($hasError && !$disabled) {
-        $containerClasses .= ' border-red-300 dark:border-red-700';
-        $inputClasses .= ' border-red-500 text-red-600 focus:ring-red-500';
+        $containerClasses .= ' border-error/40 dark:border-error/40';
+        $inputClasses .= ' border-error text-error focus:ring-error/40';
     }
 @endphp
 

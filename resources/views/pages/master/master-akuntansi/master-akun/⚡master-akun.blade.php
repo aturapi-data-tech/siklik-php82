@@ -229,18 +229,11 @@ new class extends Component {
                                     </td>
                                     <td class="px-4 py-3 align-middle">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <x-secondary-button type="button"
-                                                wire:click="openEdit('{{ $row->acc_id }}')" class="px-3 py-1.5 text-sm">
-                                                Edit
-                                            </x-secondary-button>
-                                            <x-confirm-button variant="danger"
+                                            <x-action-edit wire:click="openEdit('{{ $row->acc_id }}')" />
+                                            <x-action-delete
                                                 :action="'requestDelete(\'' . $row->acc_id . '\')'"
                                                 title="Hapus Akun"
-                                                message="Yakin hapus akun {{ $row->acc_desc }}?"
-                                                confirmText="Ya, hapus" cancelText="Batal"
-                                                class="px-3 py-1.5 text-sm">
-                                                Hapus
-                                            </x-confirm-button>
+                                                message="Yakin hapus akun {{ $row->acc_desc }}?" />
                                         </div>
                                     </td>
                                 </tr>

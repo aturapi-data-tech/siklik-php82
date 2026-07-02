@@ -12,14 +12,62 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                // Brand inti
                 brand: {
                     DEFAULT: "#157547",
                     green: "#157547",
                     lime: "#A1CD3A",
+                    "green-active": "#0f5634", // hover/press hijau
+                    "green-soft": "#4f9e6a", // indikator/aksen hijau-soft
+                    "green-pale": "#cfe0d3", // disabled hijau
+                },
+                // Teks di atas permukaan gelap
+                on: {
+                    dark: "#f6f8f5",
+                    "dark-soft": "#9aa89e",
+                },
+                // Semantic (v2: DEFAULT + -tint utk badge/alert bg + -deep utk teks) — hex eksak dari style guide v2
+                success: { DEFAULT: "#3fae6a", tint: "#e2f3e8", deep: "#23744a" },
+                warning: { DEFAULT: "#d4a017", tint: "#faf1d9", deep: "#8a6a0e" },
+                error: { DEFAULT: "#c64545", tint: "#fae7e7", deep: "#9c3232" },
+                info: { DEFAULT: "#2e7da6", tint: "#e3eff5", deep: "#205d7d" },
+                // ===== Design system tokens (selaras sirus-php82) =====
+                // Pakai sebagai utility: bg-canvas, text-ink, border-hairline, dst.
+                canvas: "#f6f8f5", // kanvas terang halaman
+                surface: {
+                    soft: "#eef2ec", // pembatas band
+                    elevated: "#ffffff", // kartu data / modal (v2: di atas canvas)
+                    card: "#e6ece4", // kartu fitur
+                    strong: "#dbe6d6", // tab terpilih / band ditekankan
+                    dark: "#14201a", // panel data / footer (forest)
+                    "dark-elevated": "#1e2b23", // kartu di atas dark
+                    "dark-soft": "#18241d", // blok kode di dalam dark
+                },
+                ink: "#13201a", // judul & teks utama
+                body: {
+                    DEFAULT: "#3c463f", // teks berjalan
+                    strong: "#233029", // paragraf lead
+                },
+                muted: {
+                    DEFAULT: "#69736b", // sub-judul
+                    soft: "#8b948c", // caption / fine-print
+                },
+                hairline: {
+                    DEFAULT: "#dde4d8", // garis 1px di permukaan terang
+                    soft: "#e7ece4", // divider sangat halus
                 },
             },
             fontFamily: {
-                sans: ["Inter", ...defaultTheme.fontFamily.sans],
+                // v2: Source Sans 3 (keterbacaan, selaras sirus); Inter/sistem fallback
+                sans: ['"Source Sans 3"', "Inter", ...defaultTheme.fontFamily.sans],
+            },
+            // Skala custom DS (hanya ukuran yg TIDAK ada di Tailwind default) — selaras sirus-php82
+            fontSize: {
+                "display-xl": ["52px", { lineHeight: "1.1", letterSpacing: "0.2px" }],
+                "display-lg": ["38px", { lineHeight: "1.15", letterSpacing: "0.2px" }],
+                "title-sm": ["15px", { lineHeight: "1.45" }],
+                "caption": ["13px", { lineHeight: "1.4" }],
+                "caption-up": ["11.5px", { lineHeight: "1.4", letterSpacing: "1px" }],
             },
         },
     },

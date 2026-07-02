@@ -41,7 +41,7 @@
         @if ($accept) accept="{{ $accept }}" @endif
         @disabled($disabled)
         {{ $attributes->merge([
-            'class' => 'block w-full mt-1 text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-brand-green/10 file:text-brand-green hover:file:bg-brand-green/20 disabled:opacity-60 disabled:cursor-not-allowed' . ($hasError ? ' ring-1 ring-red-500 rounded-md' : ''),
+            'class' => 'block w-full mt-1 text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-brand-green/10 file:text-brand-green hover:file:bg-brand-green/20 disabled:opacity-60 disabled:cursor-not-allowed' . ($hasError ? ' ring-1 ring-error rounded-md' : ''),
         ]) }}
     />
 
@@ -57,7 +57,7 @@
 
     @if ($showError)
         @error($name)
-            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            <p class="mt-1 text-xs text-error dark:text-red-400">{{ $message }}</p>
         @enderror
     @endif
 </div>

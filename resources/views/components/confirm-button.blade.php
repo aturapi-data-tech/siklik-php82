@@ -23,7 +23,7 @@
         'outline'
             => $base . ' text-brand-green bg-brand-green/10 border border-brand-green/30 hover:bg-brand-green hover:text-white hover:border-brand-green focus:outline-none focus:ring-4 focus:ring-brand-green/20 dark:text-brand-lime dark:bg-brand-lime/10 dark:border-brand-lime/30 dark:hover:bg-brand-lime dark:hover:text-gray-900',
         default
-            => $base . ' text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900',
+            => $base . ' text-white bg-error hover:bg-error-deep focus:outline-none focus:ring-4 focus:ring-error/30 dark:bg-error dark:hover:bg-error-deep dark:focus:ring-error/40',
     };
 @endphp
 

@@ -253,17 +253,11 @@ new class extends Component {
                                             {{-- AKSI --}}
                                             <td class="px-5 py-4 align-top" wire:click.stop>
                                                 <div class="flex flex-wrap gap-2">
-                                                    <x-secondary-button type="button"
-                                                        wire:click="openEditClab('{{ $clab->clab_id }}')" class="px-2 py-1 text-xs">
-                                                        Edit
-                                                    </x-secondary-button>
-                                                    <x-confirm-button variant="danger" :action="'requestDeleteClab(\'' . $clab->clab_id . '\')'"
+                                                    <x-action-edit wire:click="openEditClab('{{ $clab->clab_id }}')" />
+
+                                                    <x-action-delete :action="'requestDeleteClab(\'' . $clab->clab_id . '\')'"
                                                         title="Hapus Kategori Lab"
-                                                        message="Yakin hapus kategori {{ $clab->clab_desc }}?"
-                                                        confirmText="Ya, hapus" cancelText="Batal"
-                                                class="px-2 py-1 text-xs">
-                                                        Hapus
-                                                    </x-confirm-button>
+                                                        message="Yakin hapus kategori {{ $clab->clab_desc }}?" />
                                                 </div>
                                             </td>
                                         </tr>

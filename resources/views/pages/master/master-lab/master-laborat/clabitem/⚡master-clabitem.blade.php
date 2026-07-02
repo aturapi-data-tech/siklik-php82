@@ -300,19 +300,11 @@ new class extends Component {
                                     {{-- AKSI --}}
                                     <td class="px-5 py-3 align-top">
                                         <div class="flex flex-wrap gap-2">
-                                            <x-secondary-button type="button"
-                                                wire:click="openEditClabitem('{{ $item->clabitem_id }}', '{{ $item->clab_id }}', '{{ $item->product_id }}')"
-                                                class="px-2 py-1 text-xs">
-                                                Edit
-                                            </x-secondary-button>
-                                            <x-confirm-button variant="danger"
-                                                :action="'requestDeleteClabitem(\'' . $item->clabitem_id . '\', \'' . $item->clab_id . '\', \'' . $item->product_id . '\')'"
+                                            <x-action-edit wire:click="openEditClabitem('{{ $item->clabitem_id }}', '{{ $item->clab_id }}', '{{ $item->product_id }}')" />
+
+                                            <x-action-delete :action="'requestDeleteClabitem(\'' . $item->clabitem_id . '\', \'' . $item->clab_id . '\', \'' . $item->product_id . '\')'"
                                                 title="Hapus Item"
-                                                message="Yakin hapus item {{ $item->clabitem_desc }}?"
-                                                confirmText="Ya, hapus" cancelText="Batal"
-                                                class="px-2 py-1 text-xs">
-                                                Hapus
-                                            </x-confirm-button>
+                                                message="Yakin hapus item {{ $item->clabitem_desc }}?" />
                                         </div>
                                     </td>
                                 </tr>

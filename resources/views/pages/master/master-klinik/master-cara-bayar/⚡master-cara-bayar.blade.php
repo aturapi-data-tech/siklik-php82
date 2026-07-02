@@ -153,22 +153,13 @@ new class extends Component {
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-wrap gap-2">
-                                            <x-secondary-button type="button"
-                                                wire:click="openEdit('{{ $row->cb_id }}')" class="px-2 py-1 text-xs">
-                                                Edit
-                                            </x-secondary-button>
+                                            <x-action-edit wire:click="openEdit('{{ $row->cb_id }}')" />
                                             <x-secondary-button type="button"
                                                 wire:click="toggleActive('{{ $row->cb_id }}')" class="px-2 py-1 text-xs">
                                                 {{ (string) $row->active_status === '1' ? 'Non-aktifkan' : 'Aktifkan' }}
                                             </x-secondary-button>
-                                            <x-confirm-button variant="danger"
-                                                :action="'requestDelete(\'' . $row->cb_id . '\')'"
-                                                title="Hapus Cara Bayar"
-                                                message="Yakin hapus cara bayar {{ $row->cb_desc }}?"
-                                                confirmText="Ya, hapus" cancelText="Batal"
-                                                class="px-2 py-1 text-xs">
-                                                Hapus
-                                            </x-confirm-button>
+                                            <x-action-delete :action="'requestDelete(\'' . $row->cb_id . '\')'" title="Hapus Cara Bayar"
+                                                message="Yakin hapus cara bayar {{ $row->cb_desc }}?" />
                                         </div>
                                     </td>
                                 </tr>

@@ -22,7 +22,7 @@
             {{ $attributes->except(['class'])->merge([
                 'class' =>
                     'w-4 h-4 text-brand-green bg-gray-100 border-gray-300 rounded focus:ring-brand-green/50 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 ' .
-                    ($error ? 'border-red-500 dark:border-red-500' : ''),
+                    ($error ? 'border-error dark:border-error' : ''),
             ]) }}>
 
         @if ($label)

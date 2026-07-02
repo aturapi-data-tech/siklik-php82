@@ -34,13 +34,13 @@ new class extends Component {
 
     public function toggleActive(string $catatan): void
     {
-        $row = DB::table('rsmst_signa_catatans')->where('catatan', $catatan)->first();
+        $row = DB::table('tkmst_signa_catatans')->where('catatan', $catatan)->first();
         if (!$row) {
             $this->dispatch('toast', type: 'error', message: 'Catatan tidak ditemukan.');
             return;
         }
         $new = (string) $row->active_status === '1' ? '0' : '1';
-        DB::table('rsmst_signa_catatans')->where('catatan', $catatan)->update(['active_status' => $new]);
+        DB::table('tkmst_signa_catatans')->where('catatan', $catatan)->update(['active_status' => $new]);
         $this->dispatch('toast', type: 'success', message: $new === '1' ? 'Catatan diaktifkan.' : 'Catatan dinonaktifkan.');
         unset($this->rows);
     }
@@ -54,7 +54,7 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('rsmst_signa_catatans')
+        $q = DB::table('tkmst_signa_catatans')
             ->select('catatan', 'active_status')
             ->orderBy('catatan');
 
@@ -77,7 +77,7 @@ new class extends Component {
 <div>
     <x-page-title
         title="Master Catatan Khusus Signa"
-        subtitle="LOV catatan khusus untuk signa e-resep. Sumber: rsmst_signa_catatans." />
+        subtitle="LOV catatan khusus untuk signa e-resep. Sumber: tkmst_signa_catatans." />
 
     <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
         <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">
@@ -143,19 +143,12 @@ new class extends Component {
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex items-center gap-2 whitespace-nowrap">
-                                            <x-secondary-button type="button"
-                                                wire:click="openEdit({{ json_encode($row->catatan) }})"
-                                                class="px-2 py-1 text-xs">
-                                                Edit
-                                            </x-secondary-button>
-                                            <x-confirm-button variant="danger"
+                                            <x-action-edit wire:click="openEdit({{ json_encode($row->catatan) }})" />
+
+                                            <x-action-delete
                                                 :action="'requestDelete(' . json_encode($row->catatan) . ')'"
                                                 title="Hapus Catatan"
-                                                message="Yakin hapus catatan ini?"
-                                                confirmText="Ya, hapus" cancelText="Batal"
-                                                class="px-2 py-1 text-xs">
-                                                Hapus
-                                            </x-confirm-button>
+                                                message="Yakin hapus catatan ini?" />
                                         </div>
                                     </td>
                                 </tr>

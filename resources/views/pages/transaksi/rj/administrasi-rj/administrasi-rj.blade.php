@@ -503,18 +503,15 @@ new class extends Component {
                         <div x-data="{ tab: @entangle('activeTabAdministrasi') }"
                             class="overflow-hidden bg-white border border-gray-200 rounded-2xl dark:border-gray-700 dark:bg-gray-900">
 
-                            <div class="flex flex-wrap p-2 border-b border-gray-200 dark:border-gray-700">
+                            {{-- Standar UI v2: x-tabs/x-tab (underline, mode Alpine) --}}
+                            <x-tabs variant="underline" class="flex-wrap p-2">
                                 @foreach ($EmrMenuAdministrasi as $menu)
-                                    <button type="button" x-on:click="tab = '{{ $menu['ermMenuId'] }}'"
-                                        x-bind:class="tab === '{{ $menu['ermMenuId'] }}'
-                                            ?
-                                            'border-b-2 border-brand-green text-brand-green dark:border-brand-lime dark:text-brand-lime font-semibold bg-brand-green/5 dark:bg-brand-lime/5' :
-                                            'border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'"
-                                        class="px-4 py-2.5 -mb-px text-sm transition-all whitespace-nowrap rounded-t-lg">
+                                    <x-tab active-expr="tab === '{{ $menu['ermMenuId'] }}'"
+                                        x-on:click="tab = '{{ $menu['ermMenuId'] }}'">
                                         {{ $menu['ermMenuName'] }}
-                                    </button>
+                                    </x-tab>
                                 @endforeach
-                            </div>
+                            </x-tabs>
 
                             <div class="p-4 min-h-[300px]">
 

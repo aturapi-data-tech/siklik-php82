@@ -349,19 +349,10 @@ new class extends Component {
                                     {{-- AKSI --}}
                                     <td class="px-3 py-2 align-top">
                                         <div class="flex flex-wrap justify-end gap-2">
-                                            <x-secondary-button type="button"
-                                                wire:click="openEdit('{{ $row->dr_id }}')" class="px-2 py-1 text-xs">
-                                                Edit
-                                            </x-secondary-button>
+                                            <x-action-edit wire:click="openEdit('{{ $row->dr_id }}')" />
 
-                                            <x-confirm-button variant="danger"
-                                                :action="'requestDelete(\'' . $row->dr_id . '\')'"
-                                                title="Hapus Dokter"
-                                                :message="'Yakin hapus dokter ' . $row->dr_name . '?'"
-                                                confirmText="Ya, hapus" cancelText="Batal"
-                                                class="px-2 py-1 text-xs">
-                                                Hapus
-                                            </x-confirm-button>
+                                            <x-action-delete :action="'requestDelete(\'' . $row->dr_id . '\')'" title="Hapus Dokter"
+                                                :message="'Yakin hapus dokter ' . $row->dr_name . '?'" />
                                         </div>
                                     </td>
                                 </tr>
