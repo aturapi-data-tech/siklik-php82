@@ -195,18 +195,34 @@ new class extends Component {
     {
         // Pelayanan RJ: tidak include pending booking — dokter hanya lihat pasien
         // yang sudah checkin (rstxn_rjhdrs). Pending booking ada di daftar-rj (pendaftaran).
-        $rjRows = $this->baseQuery()
+        // PERF: ambil header dulu (CLOB datadaftarpolirj_json = locator lazy, body BELUM
+        // dibaca via OCI = murah), sort by kolom header, slice ke halaman aktif, BARU baca
+        // CLOB + decode JSON hanya utk baris yg tampil. Hindari N× baca CLOB seluruh pasien
+        // hari itu padahal hanya ~itemsPerPage yg dirender. Urutan & count tetap identik.
+        $all = $this->baseQuery()
             ->get()
+            ->sort(function ($a, $b) {
+                $drCmp = strcmp($b->dr_name ?? '', $a->dr_name ?? '');
+                if ($drCmp !== 0) {
+                    return $drCmp;
+                }
+                return (int) ($a->no_antrian ?? 0) - (int) ($b->no_antrian ?? 0);
+            })
+            ->values();
+
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $perPage = $this->itemsPerPage;
+
+        $pageRows = $all->slice(($page - 1) * $perPage, $perPage)->values()
             ->map(function ($row) {
                 $row->is_booking_pending = false;
 
-                // Oracle CLOB bisa di-fetch sebagai OCILob/resource alih-alih string — normalize dulu.
-                $jsonRaw = $row->datadaftarpolirj_json ?? '{}';
-                if (is_object($jsonRaw) && method_exists($jsonRaw, 'load')) {
-                    $jsonRaw = $jsonRaw->load();
-                } elseif (is_resource($jsonRaw)) {
-                    $jsonRaw = stream_get_contents($jsonRaw);
-                }
+                // Oracle CLOB di-fetch sebagai locator lazy; baca via OracleLob (tahan
+                // ORA-01555/ORA-22924 saat locator basi setelah save EMR).
+                $jsonRaw = \App\Support\OracleLob::read(
+                    $row->datadaftarpolirj_json ?? null,
+                    'rstxn_rjhdrs', 'rj_no', $row->rj_no, 'datadaftarpolirj_json'
+                );
                 $json = json_decode($jsonRaw ?: '{}', true) ?? [];
 
                 // EMR completeness — weighted S15/O25/A25/P25/N10. Logic ada di EmrCompletenessRJTrait.
@@ -283,21 +299,9 @@ new class extends Component {
                 }
 
                 return $row;
-            })
-            ->sort(function ($a, $b) {
-                $drCmp = strcmp($b->dr_name ?? '', $a->dr_name ?? '');
-                if ($drCmp !== 0) {
-                    return $drCmp;
-                }
-                return (int) ($a->no_antrian ?? 0) - (int) ($b->no_antrian ?? 0);
-            })
-            ->values();
+            });
 
-        // Manual paginate
-        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
-        $perPage = $this->itemsPerPage;
-
-        return new \Illuminate\Pagination\LengthAwarePaginator($rjRows->slice(($page - 1) * $perPage, $perPage)->values(), $rjRows->count(), $perPage, $page, ['path' => request()->url()]);
+        return new \Illuminate\Pagination\LengthAwarePaginator($pageRows, $all->count(), $perPage, $page, ['path' => request()->url()]);
     }
 
     /* -------------------------
