@@ -11,6 +11,8 @@ new class extends Component {
     public ?string $rjNo = null;
     public array $dataDaftarPoliRJ = [];
     public array $dataPasien = [];
+    // TTV & alergi bisa disembunyikan (mis. di preview RM yg sudah menampilkan TTV di bawah).
+    public bool $showTtv = true;
 
     public function openDisplay(string $rjNo): void
     {
@@ -147,7 +149,8 @@ new class extends Component {
             </div>
             {{-- end KANAN --}}
 
-            {{-- ===== TTV: full width di bawah ===== --}}
+            {{-- ===== TTV: full width di bawah (bisa disembunyikan via :showTtv=false) ===== --}}
+            @if ($showTtv)
             <div class="col-span-full flex flex-wrap items-center gap-1.5 5 border-brand/20 dark:border-brand/30">
 
                 @if (!empty($rj['anamnesa']['alergi']['alergi']))
@@ -191,6 +194,7 @@ new class extends Component {
                 @endif
 
             </div>
+            @endif
             {{-- end TTV --}}
 
         </div>
