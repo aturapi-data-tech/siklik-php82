@@ -516,6 +516,20 @@ new class extends Component {
 
                 {{-- PENUNJANG + DIAGNOSIS + PROSEDUR --}}
                 <x-border-form class="mb-4">
+                    @php
+                        // Diagnosis: prioritas freetext dokter; kalau kosong fallback ke keterangan
+                        // ICD-10 (diagDesc, kode disembunyikan). Prosedur: procedureDesc (ICD-9-CM).
+                        $diagnosisDisplay = trim((string) ($txn['diagnosisFreeText'] ?? ''));
+                        if ($diagnosisDisplay === '') {
+                            $diagDescs = collect($txn['diagnosis'] ?? [])->pluck('diagDesc')->map(fn($d) => trim((string) $d))->filter()->values()->all();
+                            $diagnosisDisplay = $diagDescs ? implode("\n", $diagDescs) : '-';
+                        }
+                        $prosedurDisplay = trim((string) ($txn['procedureFreeText'] ?? ''));
+                        if ($prosedurDisplay === '') {
+                            $procDescs = collect($txn['procedure'] ?? [])->pluck('procedureDesc')->map(fn($d) => trim((string) $d))->filter()->values()->all();
+                            $prosedurDisplay = $procDescs ? implode("\n", $procDescs) : '-';
+                        }
+                    @endphp
                     <div class="space-y-2">
                         <p class="text-sm">
                             <span class="text-sm text-gray-400">Penunjang : </span>
@@ -525,12 +539,12 @@ new class extends Component {
                         <p class="text-sm">
                             <span class="text-sm text-gray-400">Diagnosis : </span>
                             <span
-                                class="font-semibold text-gray-900 dark:text-gray-100">{{ $txn['diagnosisFreeText'] ?? '-' }}</span>
+                                class="font-semibold text-gray-900 dark:text-gray-100">{!! nl2br(e($diagnosisDisplay)) !!}</span>
                         </p>
                         <p class="text-sm">
                             <span class="text-sm text-gray-400">Prosedur : </span>
                             <span
-                                class="text-gray-700 dark:text-gray-300">{{ $txn['procedureFreeText'] ?? '-' }}</span>
+                                class="text-gray-700 dark:text-gray-300">{!! nl2br(e($prosedurDisplay)) !!}</span>
                         </p>
                     </div>
                 </x-border-form>
