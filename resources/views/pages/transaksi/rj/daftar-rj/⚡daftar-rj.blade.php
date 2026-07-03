@@ -808,15 +808,9 @@ new class extends Component {
                                                             @if (auth()->user()->hasAnyRole(['Admin', 'Perawat']) ||
                                                                     (auth()->user()->hasRole('Mr') && ($row->lab_status || $row->rad_status)))
                                                                 <div class="flex space-x-1">
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-4
+                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
                                                                         :rjNo="$row->rj_no"
-                                                                        wire:key="'taskid4--'.{{ $row->rj_no }}" />
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-5
-                                                                        :rjNo="$row->rj_no"
-                                                                        wire:key="'taskid5--'.{{ $row->rj_no }}" />
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.get-task-id
-                                                                        :rjNo="$row->rj_no"
-                                                                        wire:key="'gettaskid--'.{{ $row->rj_no }}" />
+                                                                        wire:key="taskid-poli-{{ $row->rj_no }}" />
                                                                 </div>
                                                             @endif
 

@@ -792,17 +792,11 @@ new class extends Component {
                                                             {{-- Task ID 4/5 + Get — Perawat saja (Admin otomatis via super-user) --}}
                                                             @hasanyrole('Perawat|Admin')
                                                                 <div class="flex space-x-1">
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-4
+                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
                                                                         :rjNo="$row->rj_no"
-                                                                        :isDone="(bool) $row->task_id4"
-                                                                        wire:key="taskid4-{{ $row->rj_no }}" />
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-5
-                                                                        :rjNo="$row->rj_no"
-                                                                        :isDone="(bool) $row->task_id5"
-                                                                        wire:key="taskid5-{{ $row->rj_no }}" />
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.get-task-id
-                                                                        :rjNo="$row->rj_no"
-                                                                        wire:key="gettaskid-{{ $row->rj_no }}" />
+                                                                        :isDone4="(bool) $row->task_id4"
+                                                                        :isDone5="(bool) $row->task_id5"
+                                                                        wire:key="taskid-poli-{{ $row->rj_no }}" />
                                                                 </div>
                                                             @endhasanyrole
 
