@@ -14,13 +14,19 @@ new class extends Component {
     public array $dataDaftarPoliRJ = [];
     public bool $isLoading = false;
 
+    // Posisi navigasi antar-kunjungan (dikirim rekam-medis-display saat open).
+    public int $navPos = 0;
+    public int $navTotal = 0;
+
     /* =====================================================
      | OPEN → load ke property, buka modal preview
      ===================================================== */
     #[On('cetak-rekam-medis.open')]
-    public function open(int $rjNo): void
+    public function open(int $rjNo, int $navPos = 0, int $navTotal = 0): void
     {
         $this->rjNo = $rjNo;
+        $this->navPos = $navPos;
+        $this->navTotal = $navTotal;
         $this->isLoading = true;
         $this->dataDaftarPoliRJ = [];
 
@@ -81,6 +87,19 @@ new class extends Component {
     }
 
     /* =====================================================
+     | NAV antar-kunjungan → diteruskan ke rekam-medis-display
+     ===================================================== */
+    public function navNext(): void
+    {
+        $this->dispatch('rm-display-nav', dir: 'next');
+    }
+
+    public function navPrev(): void
+    {
+        $this->dispatch('rm-display-nav', dir: 'prev');
+    }
+
+    /* =====================================================
      | CLOSE
      ===================================================== */
     public function closeModal(): void
@@ -105,7 +124,8 @@ new class extends Component {
             $lastGizi = !empty($txn['penilaian']['gizi']) ? end($txn['penilaian']['gizi']) : null;
         @endphp
 
-        <div class="flex flex-col min-h-[calc(100vh-4rem)]" wire:key="preview-rekam-medis-{{ $rjNo }}">
+        <div class="flex flex-col min-h-[calc(100vh-4rem)]" wire:key="preview-rekam-medis-{{ $rjNo }}"
+            x-data="{ tab: 'assessment' }">
 
             {{-- ── HEADER ──────────────────────────────────────────────── --}}
             <div class="relative px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -150,52 +170,29 @@ new class extends Component {
                 </div>
             </div>
 
-            {{-- ── BODY ────────────────────────────────────────────────── --}}
-            <div class="flex-1 px-6 py-5 overflow-y-auto bg-gray-50/70 dark:bg-gray-950/20">
+            {{-- ── TAB BAR ─────────────────────────────────────────────── --}}
+            <div class="flex gap-1 px-6 pt-3 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+                <button type="button" @click="tab='assessment'"
+                    :class="tab === 'assessment' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="px-4 py-2 -mb-px text-sm font-medium border-b-2 transition-colors">Assesment</button>
+                <button type="button" @click="tab='dokumen'"
+                    :class="tab === 'dokumen' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="px-4 py-2 -mb-px text-sm font-medium border-b-2 transition-colors">Modul Dokumen</button>
+                <button type="button" @click="tab='penunjang'"
+                    :class="tab === 'penunjang' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="px-4 py-2 -mb-px text-sm font-medium border-b-2 transition-colors">Hasil Penunjang</button>
+            </div>
 
-                {{-- IDENTITAS PASIEN --}}
-                <x-border-form title="Identitas Pasien" class="mb-4">
-                    @php
-                        $id = $d['identitas'] ?? [];
-                        $alamatFull = trim(
-                            ($id['alamat'] ?? '-') .
-                                (!empty($id['rt']) ? ' RT ' . $id['rt'] : '') .
-                                (!empty($id['rw']) ? '/RW ' . $id['rw'] : '') .
-                                (!empty($id['desaName']) ? ', ' . $id['desaName'] : '') .
-                                (!empty($id['kecamatanName']) ? ', ' . $id['kecamatanName'] : ''),
-                        );
-                    @endphp
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2">
-                        <p class="text-sm">
-                            <span class="text-sm text-gray-400">No. Rekam Medis : </span>
-                            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ $d['regNo'] ?? '-' }}</span>
-                        </p>
-                        <p class="text-sm">
-                            <span class="text-sm text-gray-400">Nama Pasien : </span>
-                            <span
-                                class="font-semibold text-gray-900 dark:text-gray-100">{{ strtoupper($d['regName'] ?? '-') }}</span>
-                        </p>
-                        <p class="text-sm">
-                            <span class="text-sm text-gray-400">Tanggal Masuk : </span>
-                            <span class="text-gray-700 dark:text-gray-300">{{ $txn['rjDate'] ?? '-' }}</span>
-                        </p>
-                        <p class="text-sm">
-                            <span class="text-sm text-gray-400">Jenis Kelamin : </span>
-                            <span
-                                class="text-gray-700 dark:text-gray-300">{{ $d['jenisKelamin']['jenisKelaminDesc'] ?? '-' }}</span>
-                        </p>
-                        <p class="text-sm">
-                            <span class="text-sm text-gray-400">Tempat, Tgl. Lahir : </span>
-                            <span class="text-gray-700 dark:text-gray-300">
-                                {{ ($d['tempatLahir'] ?? '-') . ', ' . ($d['tglLahir'] ?? '-') . ' (' . ($d['thn'] ?? '-') . ')' }}
-                            </span>
-                        </p>
-                        <p class="col-span-2 text-sm">
-                            <span class="text-sm text-gray-400">Alamat : </span>
-                            <span class="text-gray-700 dark:text-gray-300">{{ $alamatFull }}</span>
-                        </p>
+            {{-- ── BODY: Assesment ─────────────────────────────────────── --}}
+            <div x-show="tab === 'assessment'" class="flex-1 px-6 py-5 overflow-y-auto bg-gray-50/70 dark:bg-gray-950/20">
+
+                {{-- IDENTITAS PASIEN — komponen display-pasien-rj (TTV disembunyikan, sudah ada di bawah) --}}
+                @if ($rjNo)
+                    <div class="mb-4">
+                        <livewire:pages::transaksi.rj.display-pasien-rj.display-pasien-rj
+                            :rjNo="(string) $rjNo" :showTtv="false" wire:key="rm-display-pasien-{{ $rjNo }}" />
                     </div>
-                </x-border-form>
+                @endif
 
                 {{-- PERAWAT --}}
                 <x-border-form title="Perawat" class="mb-4">
@@ -624,15 +621,56 @@ new class extends Component {
                     </div>
                 </x-border-form>
 
-            </div>{{-- end body --}}
+            </div>{{-- end body Assesment --}}
+
+            {{-- ── TAB: Modul Dokumen ──────────────────────────────────── --}}
+            <div x-show="tab === 'dokumen'" style="display:none"
+                class="flex-1 px-6 py-5 space-y-4 overflow-y-auto bg-gray-50/70 dark:bg-gray-950/20">
+                @if ($rjNo)
+                    <livewire:pages::components.rekam-medis.r-j.dokumen-view.inform-consent-view-rj
+                        :rjNo="$rjNo" :entries="$txn['informConsentPasienRJ'] ?? []" wire:key="ic-view-{{ $rjNo }}" />
+                    <livewire:pages::components.rekam-medis.r-j.dokumen-view.general-consent-view-rj
+                        :rjNo="$rjNo" :consent="$txn['generalConsentPasienRJ'] ?? []" wire:key="gc-view-{{ $rjNo }}" />
+                @endif
+            </div>
+
+            {{-- ── TAB: Hasil Penunjang ─────────────────────────────────── --}}
+            <div x-show="tab === 'penunjang'" style="display:none" x-data="{ sub: 'lab' }"
+                class="flex flex-col flex-1 min-h-0 overflow-hidden bg-gray-50/70 dark:bg-gray-950/20">
+                <div class="flex gap-1 px-6 pt-3 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+                    <button type="button" @click="sub='lab'"
+                        :class="sub === 'lab' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500'"
+                        class="px-3 py-1.5 -mb-px text-sm font-medium border-b-2">Laboratorium</button>
+                    <button type="button" @click="sub='rad'"
+                        :class="sub === 'rad' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500'"
+                        class="px-3 py-1.5 -mb-px text-sm font-medium border-b-2">Radiologi</button>
+                    <button type="button" @click="sub='upload'"
+                        :class="sub === 'upload' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500'"
+                        class="px-3 py-1.5 -mb-px text-sm font-medium border-b-2">Upload Penunjang</button>
+                </div>
+                <div class="flex-1 px-6 py-5 overflow-y-auto">
+                    @if ($rjNo)
+                        <div x-show="sub === 'lab'">
+                            <livewire:pages::components.rekam-medis.penunjang.laboratorium-display.laboratorium-display
+                                :regNo="$d['regNo'] ?? ''" wire:key="rm-lab-{{ $rjNo }}" />
+                        </div>
+                        <div x-show="sub === 'rad'" style="display:none">
+                            <livewire:pages::components.rekam-medis.penunjang.radiologi-display.radiologi-display
+                                :regNo="$d['regNo'] ?? ''" wire:key="rm-rad-{{ $rjNo }}" />
+                        </div>
+                        <div x-show="sub === 'upload'" style="display:none">
+                            <livewire:pages::components.rekam-medis.penunjang.upload-penunjang-display.upload-penunjang-display
+                                :regNo="$d['regNo'] ?? ''" wire:key="rm-upload-{{ $rjNo }}" />
+                        </div>
+                    @endif
+                </div>
+            </div>
 
             {{-- ── FOOTER ──────────────────────────────────────────────── --}}
             <div
                 class="sticky bottom-0 z-10 px-6 py-4 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Preview rekam medis — data belum dicetak.
-                    </p>
+                    <x-rm.record-nav :pos="$navPos" :total="$navTotal" />
                     <div class="flex gap-2">
                         <x-secondary-button type="button" wire:click="closeModal">
                             Tutup

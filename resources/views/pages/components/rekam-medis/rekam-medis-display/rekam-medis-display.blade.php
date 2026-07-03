@@ -6,6 +6,7 @@ use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use Livewire\Attributes\Reactive;
+use Livewire\Attributes\On;
 
 new class extends Component {
     use WithPagination, EmrRJTrait;
@@ -295,7 +296,17 @@ new class extends Component {
             return collect();
         }
 
-        return $this->baseQuery()->paginate($this->itemsPerPage);
+        $rows = $this->baseQuery()->paginate($this->itemsPerPage);
+
+        // Halaman di luar jangkauan (mis. setelah ganti pasien via :regNo reactive
+        // atau filter mengecilkan hasil) → reset ke halaman 1 lalu paginate ulang,
+        // supaya tidak tampil "kosong padahal total > 0".
+        if ($rows->currentPage() > $rows->lastPage() && $rows->lastPage() >= 1) {
+            $this->resetPage();
+            $rows = $this->baseQuery()->paginate($this->itemsPerPage);
+        }
+
+        return $rows;
     }
 
     /* =======================
@@ -328,9 +339,65 @@ new class extends Component {
         ];
     }
 
+    /** txn_no kunjungan yg sedang dibuka di modal RM (untuk navigasi Prev/Next). */
+    public $navTxnNo = null;
+
     public function OpenRekamMedisRj($rjNo): void
     {
-        $this->dispatch('cetak-rekam-medis.open', rjNo: $rjNo);
+        $this->openRekamMedis($rjNo, 'RJ');
+    }
+
+    /**
+     * Buka modal RM untuk satu kunjungan + kirim posisi navigasi (pos/total)
+     * berdasar urutan daftar halaman aktif, sehingga modal bisa Prev/Next
+     * tanpa buka-tutup. Klinik pratama: hanya RJ.
+     */
+    /**
+     * Daftar txn_no SELURUH kunjungan (bukan hanya halaman aktif), urut sama dgn daftar,
+     * mengikuti filter tahun/keyword. Tanpa membaca CLOB (buang subquery datadaftar_json)
+     * → ringan. Dipakai nav Prev/Next di modal RM supaya bisa menelusuri semua kunjungan.
+     */
+    private function navTxnIds(): array
+    {
+        if (!$this->regNo) {
+            return [];
+        }
+
+        return collect(
+            $this->baseQuery()
+                ->select('txn_no', DB::raw("to_char(txn_date,'yyyymmddhh24miss') AS txn_date1"), 'layanan_status', 'poli')
+                ->get()
+        )->pluck('txn_no')->map(fn($id) => (string) $id)->all();
+    }
+
+    public function openRekamMedis($txnNo, string $layananStatus = 'RJ'): void
+    {
+        $this->navTxnNo = (string) $txnNo;
+
+        $ids = $this->navTxnIds();
+        $pos = array_search((string) $txnNo, $ids, true);
+        $navPos = $pos === false ? 0 : $pos + 1;
+        $navTotal = count($ids);
+
+        $this->dispatch('cetak-rekam-medis.open', rjNo: (int) $txnNo, navPos: $navPos, navTotal: $navTotal);
+    }
+
+    /** Navigasi ke kunjungan sebelum/berikutnya SELURUH daftar (dipicu dari modal RM). */
+    #[On('rm-display-nav')]
+    public function rmDisplayNav(string $dir): void
+    {
+        $ids = $this->navTxnIds();
+        $pos = array_search((string) $this->navTxnNo, $ids, true);
+        if ($pos === false) {
+            return;
+        }
+        // Daftar urut txn_date DESC (terbaru di atas). "Sebelumnya" (lebih lama) = pos+1,
+        // "Berikutnya" (lebih baru) = pos-1.
+        $target = $dir === 'next' ? $pos - 1 : $pos + 1;
+        if ($target < 0 || $target >= count($ids)) {
+            return;
+        }
+        $this->openRekamMedis($ids[$target], 'RJ');
     }
 };
 
