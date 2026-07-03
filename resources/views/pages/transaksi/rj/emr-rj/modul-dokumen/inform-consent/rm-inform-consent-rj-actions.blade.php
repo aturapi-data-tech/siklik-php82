@@ -128,6 +128,7 @@ new class extends Component {
             'newConsent.resiko' => 'nullable|string',
             'newConsent.alternatif' => 'nullable|string',
             'newConsent.dokter' => 'nullable|string',
+            'newConsent.petugasPemeriksa' => 'required|string|max:150',
             'newConsent.wali' => 'required|string|max:200',
             'newConsent.waliHubungan' => 'required|string|max:50',
             'newConsent.saksi' => 'nullable|string|max:200',
@@ -226,30 +227,19 @@ new class extends Component {
     }
 
     /* ===============================
-     | LOV PPA (Profesional Pemberi Asuhan) — listener; masih pakai LOV dokter
+     | PPA (Profesional Pemberi Asuhan) — combobox sumber tabel users
+     | Nama ditulis langsung ke petugasPemeriksa via wire:model (combobox).
+     | Tombol "Saya" mengisi PPA = akun login. Kode di-resolve saat simpan.
      =============================== */
-    #[On('lov.selected.icRjDokterTindakan')]
-    public function onDokterTindakanSelected(string $target, array $payload): void
+    public function isiPpaSebagaiSaya(): void
     {
         if ($this->isFormLocked) {
             return;
         }
 
-        $this->newConsent['petugasPemeriksa'] = $payload['dr_name'] ?? '';
-        $this->newConsent['petugasPemeriksaCode'] = $payload['dr_id'] ?? '';
+        $this->newConsent['petugasPemeriksa'] = auth()->user()->myuser_name ?? '';
+        $this->newConsent['petugasPemeriksaCode'] = auth()->user()->myuser_code ?? '';
         $this->newConsent['petugasPemeriksaDate'] = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
-    }
-
-    #[On('lov.cleared.icRjDokterTindakan')]
-    public function onDokterTindakanCleared(string $target): void
-    {
-        if ($this->isFormLocked) {
-            return;
-        }
-
-        $this->newConsent['petugasPemeriksa'] = '';
-        $this->newConsent['petugasPemeriksaCode'] = '';
-        $this->newConsent['petugasPemeriksaDate'] = '';
     }
 
     /* ===============================
@@ -271,6 +261,17 @@ new class extends Component {
         $this->validate();
 
         $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
+
+        // PPA (combobox): resolve kode dari nama (users.myuser_code); tanggal = waktu entri.
+        // Nama ketik-bebas tanpa match → kode kosong (cetak fallback ke nama, aman).
+        $namaPpa = trim($this->newConsent['petugasPemeriksa'] ?? '');
+        if ($namaPpa !== '') {
+            $this->newConsent['petugasPemeriksaCode'] = DB::table('users')->where('myuser_name', $namaPpa)->value('myuser_code') ?? '';
+            $this->newConsent['petugasPemeriksaDate'] = $now;
+        } else {
+            $this->newConsent['petugasPemeriksaCode'] = '';
+            $this->newConsent['petugasPemeriksaDate'] = '';
+        }
 
         $consentEntry = [
             'tindakan' => $this->newConsent['tindakan'],
@@ -579,12 +580,21 @@ new class extends Component {
                             <div>
                                 <x-input-label value="PPA — Profesional Pemberi Asuhan *" class="mb-1" />
                                 @if (!$isFormLocked)
-                                    <livewire:lov.dokter.lov-dokter target="icRjDokterTindakan" label=""
-                                        :initialDrId="$newConsent['petugasPemeriksaCode'] ?? null"
-                                        wire:key="lov-dokter-ic-rj-tindakan-{{ $rjNo ?? 'init' }}-{{ $renderVersions['modal-inform-consent-rj'] ?? 0 }}" />
-                                    @if (!empty($newConsent['petugasPemeriksaDate']))
+                                    <div class="flex items-start gap-2"
+                                        wire:key="ppa-ic-rj-{{ $rjNo ?? 'init' }}-{{ $renderVersions['modal-inform-consent-rj'] ?? 0 }}">
+                                        <div class="flex-1">
+                                            <x-ppa-combobox wireModel="newConsent.petugasPemeriksa"
+                                                :disabled="$isFormLocked"
+                                                inputId="ppa-ic-rj-{{ $rjNo ?? 'init' }}" />
+                                        </div>
+                                        <x-secondary-button type="button" wire:click="isiPpaSebagaiSaya"
+                                            class="!py-2 shrink-0" title="Isi PPA sebagai akun saya (login)">
+                                            Saya
+                                        </x-secondary-button>
+                                    </div>
+                                    @if (!empty($newConsent['petugasPemeriksa']))
                                         <p class="mt-1 text-sm text-gray-500">
-                                            Dipilih: {{ $newConsent['petugasPemeriksaDate'] }}
+                                            Dipilih: {{ $newConsent['petugasPemeriksa'] }}@if (!empty($newConsent['petugasPemeriksaCode'])) (ID: {{ $newConsent['petugasPemeriksaCode'] }})@endif
                                         </p>
                                     @endif
                                 @elseif (!empty($newConsent['petugasPemeriksa']))
