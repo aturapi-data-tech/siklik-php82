@@ -244,24 +244,6 @@ new class extends Component {
                                 @endif
                             @endrole
 
-                            {{-- Administrasi --}}
-                            @hasanyrole('Admin|Perawat|Tu')
-                                <x-outline-button type="button" wire:click="openAdministrasiPasien('{{ $rjNo }}')"
-                                    wire:loading.attr="disabled" wire:target="openAdministrasiPasien">
-                                    <span wire:loading.remove wire:target="openAdministrasiPasien"
-                                        class="flex items-center gap-1">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M2 8h20v12a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 0V6a1 1 0 011-1h18a1 1 0 011 1v2M12 14a2 2 0 100-4 2 2 0 000 4z" />
-                                        </svg>
-                                        Administrasi
-                                    </span>
-                                    <span wire:loading wire:target="openAdministrasiPasien" class="flex items-center gap-1">
-                                        <x-loading /> Memuat...
-                                    </span>
-                                </x-outline-button>
-                            @endhasanyrole
                         </div>
 
                     </div>
@@ -331,31 +313,81 @@ new class extends Component {
             {{-- FOOTER --}}
             <div
                 class="sticky bottom-0 z-10 px-6 py-4 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-                <div class="flex justify-end gap-3">
-                    @hasanyrole('Perawat|Dokter|Admin|Mr')
-                        @if ($this->hasEresep())
-                            <x-outline-button type="button" wire:click="cetakEresep('{{ $rjNo }}')"
-                                wire:loading.attr="disabled" wire:target="cetakEresep">
-                                <span wire:loading.remove wire:target="cetakEresep" class="flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                <div class="flex items-center justify-between gap-3">
+                    {{-- KIRI: Administrasi + Modul Dokumen (selaras sirus) --}}
+                    <div class="flex items-center gap-2">
+                        {{-- Administrasi --}}
+                        @hasanyrole('Admin|Perawat|Tu')
+                            <x-primary-button type="button" wire:click="openAdministrasiPasien('{{ $rjNo }}')"
+                                wire:loading.attr="disabled" wire:target="openAdministrasiPasien"
+                                class="gap-1 !bg-teal-600 hover:!bg-teal-700 !text-white focus:!ring-teal-300 dark:!bg-teal-600 dark:!text-white dark:hover:!bg-teal-700 dark:focus:!ring-teal-900">
+                                <span wire:loading.remove wire:target="openAdministrasiPasien" class="flex items-center gap-1">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                         stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                            d="M2 8h20v12a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 0V6a1 1 0 011-1h18a1 1 0 011 1v2M12 14a2 2 0 100-4 2 2 0 000 4z" />
                                     </svg>
-                                    Cetak E-Resep
+                                    Administrasi
                                 </span>
-                                <span wire:loading wire:target="cetakEresep" class="flex items-center gap-1">
+                                <span wire:loading wire:target="openAdministrasiPasien" class="flex items-center gap-1">
                                     <x-loading /> Memuat...
                                 </span>
-                            </x-outline-button>
-                        @endif
-                    @endhasanyrole
+                            </x-primary-button>
+                        @endhasanyrole
 
-                    <x-secondary-button x-on:click="tryClose()">
-                        Tutup
-                    </x-secondary-button>
+                        {{-- Modul Dokumen --}}
+                        @hasanyrole('Admin|Perawat|Dokter|Mr')
+                            <x-primary-button type="button"
+                                wire:click="$dispatch('emr-rj.modul-dokumen.open', { rjNo: '{{ $rjNo }}' })"
+                                class="gap-1 !bg-indigo-600 hover:!bg-indigo-700 !text-white focus:!ring-indigo-300 dark:!bg-indigo-600 dark:!text-white dark:hover:!bg-indigo-700 dark:focus:!ring-indigo-900">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>Modul Dokumen
+                            </x-primary-button>
+                        @endhasanyrole
 
-                    @if (!$isFormLocked)
+                        {{-- Log Aktivitas (audit jejak — Admin & Mr) --}}
+                        @hasanyrole('Admin|Mr')
+                            <x-primary-button type="button"
+                                wire:click="$dispatch('emr-rj.log-aktivitas.open', { rjNo: '{{ $rjNo }}' })"
+                                class="gap-1 !bg-slate-600 hover:!bg-slate-700 !text-white focus:!ring-slate-300 dark:!bg-slate-600 dark:!text-white dark:hover:!bg-slate-700 dark:focus:!ring-slate-900">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>Log Aktivitas
+                            </x-primary-button>
+                        @endhasanyrole
+                    </div>
+
+                    {{-- KANAN: Cetak E-Resep + Tutup + Simpan --}}
+                    <div class="flex items-center gap-3">
+                        @hasanyrole('Perawat|Dokter|Admin|Mr')
+                            @if ($this->hasEresep())
+                                <x-outline-button type="button" wire:click="cetakEresep('{{ $rjNo }}')"
+                                    wire:loading.attr="disabled" wire:target="cetakEresep">
+                                    <span wire:loading.remove wire:target="cetakEresep" class="flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                            stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                        </svg>
+                                        Cetak E-Resep
+                                    </span>
+                                    <span wire:loading wire:target="cetakEresep" class="flex items-center gap-1">
+                                        <x-loading /> Memuat...
+                                    </span>
+                                </x-outline-button>
+                            @endif
+                        @endhasanyrole
+
+                        <x-secondary-button x-on:click="tryClose()">
+                            Tutup
+                        </x-secondary-button>
+
+                        @if (!$isFormLocked)
                         <x-primary-button wire:click.prevent="save()" class="min-w-[120px]"
                             wire:loading.attr="disabled">
                             <span wire:loading.remove>
@@ -372,6 +404,7 @@ new class extends Component {
                             </span>
                         </x-primary-button>
                     @endif
+                    </div>
                 </div>
             </div>
 
