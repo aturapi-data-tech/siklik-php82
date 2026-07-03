@@ -250,54 +250,13 @@ new class extends Component {
     {
         $search = trim($this->searchKeyword);
 
-        // ── 1. Fetch & transform rstxn_rjhdrs ────────────────────────────
+        // ── 1. Header rstxn_rjhdrs — CLOB (datadaftarpolirj_json) locator lazy, BELUM
+        //       dibaca. Hanya set field header (umur, status dari rj_status) yg dipakai
+        //       sort/merge. Field JSON-derived di-set nanti hanya utk baris halaman aktif.
         $rjRows = $this->baseQuery()
             ->get()
             ->map(function ($row) {
                 $row->is_booking_pending = false;
-
-                // Oracle CLOB bisa di-fetch sebagai OCILob/resource alih-alih string — normalize dulu.
-                $jsonRaw = $row->datadaftarpolirj_json ?? '{}';
-                if (is_object($jsonRaw) && method_exists($jsonRaw, 'load')) {
-                    $jsonRaw = $jsonRaw->load();
-                } elseif (is_resource($jsonRaw)) {
-                    $jsonRaw = stream_get_contents($jsonRaw);
-                }
-                $json = json_decode($jsonRaw ?: '{}', true) ?? [];
-
-                // EMR completeness — weighted S15/O25/A25/P25/N10. Logic ada di EmrCompletenessRJTrait.
-                $pct = $this->calculateEmrPercentRJ($json);
-                $row->emr_percent = $pct['emr'];
-                $row->emr_sections = $pct['sections'];
-                $row->eresep_percent = isset($json['eresep']) || isset($json['eresepRacikan']) ? 100 : 0;
-                $row->task_id3 = $json['taskIdPelayanan']['taskId3'] ?? null;
-                $row->task_id4 = $json['taskIdPelayanan']['taskId4'] ?? null;
-                $row->task_id5 = $json['taskIdPelayanan']['taskId5'] ?? null;
-                $row->pcare_pendaftaran_code = (int) ($json['taskIdPelayanan']['pcarePendaftaran']['code'] ?? 0);
-                $row->pcare_kunjungan_code   = (int) ($json['taskIdPelayanan']['pcareKunjungan']['code'] ?? 0);
-                $row->no_referensi = $json['noReferensi'] ?? null;
-
-                $row->admin_user = isset($json['AdministrasiRj']) ? $json['AdministrasiRj']['userLog'] ?? '✔' : '-';
-                $row->administrasi_detail = $json['AdministrasiRj'] ?? null;
-                $row->tindak_lanjut = $json['perencanaan']['tindakLanjut']['tindakLanjut'] ?? '-';
-                $row->tindak_lanjut_detail = $json['perencanaan']['tindakLanjut'] ?? null;
-                $row->tgl_kontrol = $json['kontrol']['tglKontrol'] ?? '-';
-                $row->kontrol_detail = $json['kontrol'] ?? null;
-
-                $row->diagnosis = isset($json['diagnosis']) && is_array($json['diagnosis']) ? implode('# ', array_column($json['diagnosis'], 'icdX')) : '-';
-                $row->diagnosis_free_text = $json['diagnosisFreeText'] ?? '-';
-                $row->diagnosis_detail = $json['diagnosis'] ?? null;
-                $row->procedure = isset($json['procedure']) && is_array($json['procedure']) ? implode('# ', array_column($json['procedure'], 'procedureId')) : '-';
-                $row->procedure_free_text = $json['procedureFreeText'] ?? '-';
-                $row->procedure_detail = $json['procedure'] ?? null;
-
-                $row->status_resep = $json['statusResep']['status'] ?? null;
-                $row->status_resep_label = $row->status_resep === 'DITUNGGU' ? 'Ditunggu' : ($row->status_resep === 'DITINGGAL' ? 'Ditinggal' : '-');
-                $row->status_resep_color = $row->status_resep === 'DITUNGGU' ? 'green' : ($row->status_resep === 'DITINGGAL' ? 'yellow' : 'gray');
-                $row->no_booking = $json['noBooking'] ?? ($row->nobooking ?? '-');
-                $row->rj_no_json = $json['rjNo'] ?? '-';
-                $row->is_json_valid = $row->rj_no == $row->rj_no_json;
-                $row->bg_check_json = $row->is_json_valid ? 'bg-green-100' : 'bg-red-100';
 
                 if (!empty($row->birth_date)) {
                     try {
@@ -386,11 +345,63 @@ new class extends Component {
             })
             ->values();
 
-        // ── 4. Manual paginate ─────────────────────────────────────────────
+        // ── 4. Slice ke halaman, BARU baca CLOB + set field JSON hanya utk baris
+        //       rjhdrs yg tampil (booking pending tak punya JSON). ────────────────
         $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
         $perPage = $this->itemsPerPage;
 
-        return new \Illuminate\Pagination\LengthAwarePaginator($allRows->slice(($page - 1) * $perPage, $perPage)->values(), $allRows->count(), $perPage, $page, ['path' => request()->url()]);
+        $pageRows = $allRows->slice(($page - 1) * $perPage, $perPage)->values()
+            ->map(function ($row) {
+                if (!empty($row->is_booking_pending)) {
+                    return $row; // booking: field sudah lengkap, tanpa JSON EMR
+                }
+
+                // Oracle CLOB di-fetch sebagai locator lazy; baca via OracleLob (tahan
+                // ORA-01555/ORA-22924 saat locator basi setelah save EMR).
+                $jsonRaw = \App\Support\OracleLob::read(
+                    $row->datadaftarpolirj_json ?? null,
+                    'rstxn_rjhdrs', 'rj_no', $row->rj_no, 'datadaftarpolirj_json'
+                );
+                $json = json_decode($jsonRaw ?: '{}', true) ?? [];
+
+                // EMR completeness — weighted S15/O25/A25/P25/N10 (EmrCompletenessRJTrait).
+                $pct = $this->calculateEmrPercentRJ($json);
+                $row->emr_percent = $pct['emr'];
+                $row->emr_sections = $pct['sections'];
+                $row->eresep_percent = isset($json['eresep']) || isset($json['eresepRacikan']) ? 100 : 0;
+                $row->task_id3 = $json['taskIdPelayanan']['taskId3'] ?? null;
+                $row->task_id4 = $json['taskIdPelayanan']['taskId4'] ?? null;
+                $row->task_id5 = $json['taskIdPelayanan']['taskId5'] ?? null;
+                $row->pcare_pendaftaran_code = (int) ($json['taskIdPelayanan']['pcarePendaftaran']['code'] ?? 0);
+                $row->pcare_kunjungan_code = (int) ($json['taskIdPelayanan']['pcareKunjungan']['code'] ?? 0);
+                $row->no_referensi = $json['noReferensi'] ?? null;
+
+                $row->admin_user = isset($json['AdministrasiRj']) ? $json['AdministrasiRj']['userLog'] ?? '✔' : '-';
+                $row->administrasi_detail = $json['AdministrasiRj'] ?? null;
+                $row->tindak_lanjut = $json['perencanaan']['tindakLanjut']['tindakLanjut'] ?? '-';
+                $row->tindak_lanjut_detail = $json['perencanaan']['tindakLanjut'] ?? null;
+                $row->tgl_kontrol = $json['kontrol']['tglKontrol'] ?? '-';
+                $row->kontrol_detail = $json['kontrol'] ?? null;
+
+                $row->diagnosis = isset($json['diagnosis']) && is_array($json['diagnosis']) ? implode('# ', array_column($json['diagnosis'], 'icdX')) : '-';
+                $row->diagnosis_free_text = $json['diagnosisFreeText'] ?? '-';
+                $row->diagnosis_detail = $json['diagnosis'] ?? null;
+                $row->procedure = isset($json['procedure']) && is_array($json['procedure']) ? implode('# ', array_column($json['procedure'], 'procedureId')) : '-';
+                $row->procedure_free_text = $json['procedureFreeText'] ?? '-';
+                $row->procedure_detail = $json['procedure'] ?? null;
+
+                $row->status_resep = $json['statusResep']['status'] ?? null;
+                $row->status_resep_label = $row->status_resep === 'DITUNGGU' ? 'Ditunggu' : ($row->status_resep === 'DITINGGAL' ? 'Ditinggal' : '-');
+                $row->status_resep_color = $row->status_resep === 'DITUNGGU' ? 'green' : ($row->status_resep === 'DITINGGAL' ? 'yellow' : 'gray');
+                $row->no_booking = $json['noBooking'] ?? ($row->nobooking ?? '-');
+                $row->rj_no_json = $json['rjNo'] ?? '-';
+                $row->is_json_valid = $row->rj_no == $row->rj_no_json;
+                $row->bg_check_json = $row->is_json_valid ? 'bg-green-100' : 'bg-red-100';
+
+                return $row;
+            });
+
+        return new \Illuminate\Pagination\LengthAwarePaginator($pageRows, $allRows->count(), $perPage, $page, ['path' => request()->url()]);
     }
 
     /* -------------------------
