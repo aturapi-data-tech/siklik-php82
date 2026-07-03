@@ -125,6 +125,9 @@ new class extends Component {
                 // 7. Persist + sync properti lokal
                 $this->updateJsonRJ($this->rjNo, $data);
                 $this->dataDaftarPoliRJ = $data;
+
+                // 8. Audit log (kategori Rekam Medis)
+                $this->appendAdminLogRJ((int) $this->rjNo, 'Update Penilaian RJ (nyeri/risiko jatuh/gizi/dekubitus)', 'MR');
             });
 
             $this->incrementVersion('modal-penilaian-rj');
