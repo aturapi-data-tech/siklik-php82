@@ -66,6 +66,7 @@ class AppMenu
     {
         return [
             // ── Master Klinik (data pasien & operasional) ─────────────
+            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 0,  'route' => 'master.identitas-klinik', 'title' => 'Identitas Klinik',    'desc' => 'Kop identitas klinik untuk header cetakan',        'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 1,  'route' => 'master.poli',            'title' => 'Master Poli',          'desc' => 'Kelola data poli & ruangan klinik',                'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 2,  'route' => 'master.dokter',          'title' => 'Master Dokter',        'desc' => 'Kelola data dokter & spesialis',                   'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 3,  'route' => 'master.pasien',          'title' => 'Master Pasien',        'desc' => 'Kelola data pasien & rekam medis',                 'roles' => ['admin', 'mr'], 'badge' => 'Klinik']),

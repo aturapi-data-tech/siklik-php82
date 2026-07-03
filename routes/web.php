@@ -18,6 +18,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 Route::middleware(['auth'])->group(function () {
+    Route::livewire('/master/identitas-klinik', 'pages::master.master-klinik.master-identitas.master-identitas')
+        ->name('master.identitas-klinik');
+
     Route::livewire('/master/poli', 'pages::master.master-klinik.master-poli.master-poli')
         ->name('master.poli');
 
