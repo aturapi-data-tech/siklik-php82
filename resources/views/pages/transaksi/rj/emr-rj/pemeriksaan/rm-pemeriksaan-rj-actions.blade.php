@@ -339,12 +339,18 @@ new class extends Component {
                     return;
                 }
 
+                // Tangkap status baru/lama sebelum overwrite
+                $isBaru = empty($data['pemeriksaan']);
+
                 // 7. Set hanya key 'pemeriksaan' — key lain tidak tersentuh
                 $data['pemeriksaan'] = $this->dataDaftarPoliRJ['pemeriksaan'] ?? [];
 
                 // 8. Persist + sync properti lokal
                 $this->updateJsonRJ($this->rjNo, $data);
                 $this->dataDaftarPoliRJ = $data;
+
+                // 9. Audit log (kategori Rekam Medis)
+                $this->appendAdminLogRJ((int) $this->rjNo, ($isBaru ? 'Buat' : 'Update') . ' Pemeriksaan RJ', 'MR');
             });
 
             $this->afterSave('Pemeriksaan berhasil disimpan.');

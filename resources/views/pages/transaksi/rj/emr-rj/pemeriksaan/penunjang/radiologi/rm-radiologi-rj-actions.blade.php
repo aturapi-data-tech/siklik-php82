@@ -161,6 +161,9 @@ new class extends Component {
                 $data['pemeriksaan']['pemeriksaanPenunjang']['rad'] = $radList;
 
                 $this->updateJsonRJ($this->rjNo, $data);
+
+                // Audit log (kategori Rekam Medis)
+                $this->appendAdminLogRJ((int) $this->rjNo, 'Order Radiologi — ' . collect($this->selectedItems)->pluck('rad_desc')->implode(', '), 'MR');
             });
 
             // 7. Notify parent agar refresh dataDaftarPoliRJ — DI LUAR transaksi

@@ -165,6 +165,9 @@ new class extends Component {
                 $data['pemeriksaan']['pemeriksaanPenunjang']['lab'] = $labList;
 
                 $this->updateJsonRJ($this->rjNo, $data);
+
+                // Audit log (kategori Rekam Medis)
+                $this->appendAdminLogRJ((int) $this->rjNo, 'Order Lab — ' . collect($this->selectedItems)->pluck('clabitem_desc')->implode(', '), 'MR');
             });
 
             // 8. Notify parent agar refresh dataDaftarPoliRJ
