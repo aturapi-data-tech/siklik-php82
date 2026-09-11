@@ -223,29 +223,28 @@ new class extends Component {
 
                 {{-- TABLE SCROLL AREA --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
+                    <table class="ds-table">
                         {{-- TABLE HEAD --}}
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">KODE ICD X</th>
-                                <th class="px-4 py-3 font-semibold">NAMA DIAGNOSA</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>KODE ICD X</th>
+                                <th>NAMA DIAGNOSA</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
 
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
-                                <tr wire:key="diagnosa-row-{{ $row->diag_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3">{{ $row->diag_id }}</td>
-                                    <td class="px-4 py-3">
+                                <tr wire:key="diagnosa-row-{{ $row->diag_id }}">
+                                    <td>{{ $row->diag_id }}</td>
+                                    <td>
                                         <x-badge variant="info" class="font-mono">
                                             {{ $row->icdx }}
                                         </x-badge>
                                     </td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->diag_desc }}</td>
-                                    <td class="px-4 py-3">
+                                    <td class="ds-td-strong">{{ $row->diag_desc }}</td>
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->diag_id }}')" />
 
@@ -267,7 +266,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

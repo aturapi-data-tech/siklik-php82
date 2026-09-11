@@ -100,23 +100,22 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">DESKRIPSI</th>
-                                <th class="px-4 py-3 font-semibold w-28 text-center">DEBIT/KREDIT</th>
-                                <th class="px-4 py-3 font-semibold w-32 text-center">LAPORAN</th>
-                                <th class="px-4 py-3 font-semibold w-40">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>DESKRIPSI</th>
+                                <th class="w-28 ds-c">DEBIT/KREDIT</th>
+                                <th class="w-32 ds-c">LAPORAN</th>
+                                <th class="w-40">AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="gr-akun-{{ $row->gra_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $row->gra_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->gra_desc }}</td>
-                                    <td class="px-4 py-3 text-center">
+                                <tr wire:key="gr-akun-{{ $row->gra_id }}">
+                                    <td class="ds-td-token">{{ $row->gra_id }}</td>
+                                    <td class="ds-td-strong">{{ $row->gra_desc }}</td>
+                                    <td class="ds-c">
                                         @if ((string) $row->dk_status === 'D')
                                             <span class="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">Debit</span>
                                         @elseif ((string) $row->dk_status === 'K')
@@ -125,7 +124,7 @@ new class extends Component {
                                             <span class="text-xs text-gray-400">{{ $row->dk_status ?: '—' }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="ds-c">
                                         @if ((string) $row->gra_status === 'N')
                                             <span class="px-2 py-0.5 text-xs rounded-full bg-sky-100 text-sky-800">Neraca</span>
                                         @elseif ((string) $row->gra_status === 'L')
@@ -134,7 +133,7 @@ new class extends Component {
                                             <span class="text-xs text-gray-400">{{ $row->gra_status ?: '—' }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->gra_id }}')" />
                                             <x-action-delete
@@ -154,7 +153,7 @@ new class extends Component {
                         </tbody>
                     </table>
                 </div>
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

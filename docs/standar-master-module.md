@@ -329,9 +329,12 @@ Di luar empat varian ini, WAJIB ikut pola §1–§7.
 
 ## 9. Backlog deviasi (audit 11 Sep 2026)
 
-Hasil pemeriksaan seluruh 42 modul master. **Dicatat, belum diperbaiki.**
+Hasil pemeriksaan seluruh 42 modul master. Status per 11 Sep 2026 (sapuan `feat/master-standar-sirus`):
+✅ `ds-table` diterapkan ke 41 LIST, ✅ `master-signa-catatan` sudah menangkap `ORA-02292`, ✅ `master-cara-bayar`
+memakai `x-toggle` per baris & `master-jadwal-mingguan` memakai `x-confirm-button` (bukan `wire:confirm`).
+Sisanya di bawah **masih terbuka**.
 
-### 🔴 Delete tanpa catch `ORA-02292` (§6)
+### ✅ Delete tanpa catch `ORA-02292` (§6) — sudah diperbaiki
 
 | Modul | Berkas |
 |---|---|
@@ -386,11 +389,11 @@ kebetulan menyentuh berkas itu.
 LIST 390 · `master-product` FORM 486. `master-pasien` sudah dipecah 9 partial — sisanya blok kelas
 Volt, jadi memecah markup lagi tidak menolong (lihat `standar-struktur-folder.md` §5).
 
-### 🟢 Kelas tabel `ds-*` belum dipakai
+### ✅ Kelas tabel `ds-*` — sudah diterapkan
 
-`.ds-table`, `.ds-td-token`, `.ds-td-strong`, `.ds-c` sudah ada di `resources/css/app.css` tetapi
-**0 modul master memakainya**; semua masih menulis kelas header/sel manual. Bagian dari pekerjaan
-standardisasi UI yang sedang berjalan — ikuti `docs/standar-ui-komponen.md`.
+41 LIST master memakai `<table class="ds-table">` + `<thead class="sticky top-0 z-10">` + `ds-td-token`/`ds-td-strong`/
+`ds-td-meta`/`ds-c`; sel dengan kelas khusus (grid `master-jadwal-mingguan`, 2 sel `master-pasien`) sengaja
+dibiarkan. Tabel BARU wajib langsung memakai skema ini — lihat §"Markup LIST".
 
 ### Modul yang lolos seluruh titik audit
 

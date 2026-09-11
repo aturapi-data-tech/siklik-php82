@@ -164,33 +164,32 @@ new class extends Component {
 
                 {{-- TABLE SCROLL AREA (yang boleh scroll) --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
+                    <table class="ds-table">
                         {{-- TABLE HEAD (sticky) --}}
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">NAMA TINDAKAN</th>
-                                <th class="px-4 py-3 font-semibold">HARGA</th>
-                                <th class="px-4 py-3 font-semibold">STATUS</th>
-                                <th class="px-4 py-3 font-semibold">RAD JD</th>
-                                <th class="px-4 py-3 font-semibold text-center">AKSI</th>
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>NAMA TINDAKAN</th>
+                                <th>HARGA</th>
+                                <th>STATUS</th>
+                                <th>RAD JD</th>
+                                <th class="ds-c">AKSI</th>
                             </tr>
                         </thead>
 
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
-                                <tr wire:key="radiologis-row-{{ $row->rad_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono">{{ $row->rad_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->rad_desc }}</td>
-                                    <td class="px-4 py-3">{{ $this->formatRupiah($row->rad_price) }}</td>
-                                    <td class="px-4 py-3">
+                                <tr wire:key="radiologis-row-{{ $row->rad_id }}">
+                                    <td class="ds-td-token">{{ $row->rad_id }}</td>
+                                    <td class="ds-td-strong">{{ $row->rad_desc }}</td>
+                                    <td>{{ $this->formatRupiah($row->rad_price) }}</td>
+                                    <td>
                                         <x-badge :variant="$row->active_status === '1' ? 'success' : 'danger'">
                                             {{ $row->active_status === '1' ? 'Aktif' : 'Tidak Aktif' }}
                                         </x-badge>
                                     </td>
-                                    <td class="px-4 py-3">{{ $row->rad_jd ?? '-' }}</td>
-                                    <td class="px-4 py-3">
+                                    <td>{{ $row->rad_jd ?? '-' }}</td>
+                                    <td>
                                         <div class="flex flex-wrap justify-center gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->rad_id }}')" />
 
@@ -222,7 +221,7 @@ new class extends Component {
 
                 {{-- ==================== PAGINATION STICKY di bawah card ==================== --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

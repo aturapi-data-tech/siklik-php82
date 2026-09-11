@@ -158,24 +158,23 @@ new class extends Component {
 
                 {{-- TABLE SCROLL AREA --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
+                    <table class="ds-table">
                         {{-- TABLE HEAD --}}
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-3 py-2 font-semibold">NO RM</th>
-                                <th class="px-3 py-2 font-semibold">PASIEN</th>
-                                <th class="px-3 py-2 font-semibold">TELEPON</th>
-                                <th class="px-3 py-2 font-semibold">ALAMAT</th>
-                                <th class="px-3 py-2 font-semibold">AKSI</th>
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>NO RM</th>
+                                <th>PASIEN</th>
+                                <th>TELEPON</th>
+                                <th>ALAMAT</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
 
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($rows as $row)
-                                <tr wire:key="pasien-row-{{ $row->reg_no }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <tr wire:key="pasien-row-{{ $row->reg_no }}">
                                     <td class="px-3 py-2 font-mono text-brand dark:text-brand-lime whitespace-nowrap">{{ $row->reg_no }}</td>
-                                    <td class="px-3 py-2">
+                                    <td>
                                         <div class="font-semibold text-gray-900 dark:text-white">{{ $row->reg_name }}</div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">
                                             {{ $row->sex === 'L' ? 'L' : ($row->sex === 'P' ? 'P' : '-') }}
@@ -195,9 +194,9 @@ new class extends Component {
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-3 py-2 whitespace-nowrap">{{ $row->phone ?? '-' }}</td>
+                                    <td class="whitespace-nowrap">{{ $row->phone ?? '-' }}</td>
                                     <td class="px-3 py-2 max-w-xs truncate text-xs text-gray-600 dark:text-gray-400">{{ $row->address ?? '-' }}</td>
-                                    <td class="px-3 py-2">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->reg_no }}')" />
 
@@ -219,7 +218,7 @@ new class extends Component {
 
                     {{-- PAGINATION --}}
                     <div
-                        class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                        class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                         {{ $rows->links() }}
                     </div>
                 </div>

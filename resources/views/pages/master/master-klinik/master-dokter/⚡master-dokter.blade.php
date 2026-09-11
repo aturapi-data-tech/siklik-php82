@@ -250,24 +250,23 @@ new class extends Component {
                 {{-- Scroll area — pola tampilan padat mirip master-pasien:
                      setiap cell multi-baris dengan label kecil di subtitle. --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
                             <tr class="text-center">
-                                <th class="px-3 py-2 font-semibold">DOKTER &amp; POLI</th>
-                                <th class="px-3 py-2 font-semibold">KONTAK</th>
-                                <th class="px-3 py-2 font-semibold">TARIF &amp; ADMIN</th>
-                                <th class="px-3 py-2 font-semibold">STATUS</th>
-                                <th class="px-3 py-2 font-semibold">AKSI</th>
+                                <th>DOKTER &amp; POLI</th>
+                                <th>KONTAK</th>
+                                <th>TARIF &amp; ADMIN</th>
+                                <th>STATUS</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
 
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="dokter-row-{{ $row->dr_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <tr wire:key="dokter-row-{{ $row->dr_id }}">
 
                                     {{-- DOKTER & POLI: setiap data ada label-nya biar jelas --}}
-                                    <td class="px-3 py-2 align-top">
+                                    <td class="align-top">
                                         <div class="text-sm text-gray-600 dark:text-gray-300">ID Dokter</div>
                                         <div class="font-mono font-bold text-brand dark:text-brand-lime whitespace-nowrap">{{ $row->dr_id }}</div>
 
@@ -307,7 +306,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- KONTAK: telepon + alamat dengan label --}}
-                                    <td class="px-3 py-2 align-top">
+                                    <td class="align-top">
                                         <div class="text-sm text-gray-600 dark:text-gray-300">Telepon</div>
                                         <div class="font-mono text-gray-900 dark:text-gray-100 whitespace-nowrap">{{ $row->dr_phone ?? '-' }}</div>
 
@@ -318,7 +317,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- TARIF & ADMIN: kelompokkan biar jelas (Umum vs BPJS) --}}
-                                    <td class="px-3 py-2 align-top text-right whitespace-nowrap">
+                                    <td class="text-right align-top whitespace-nowrap">
                                         {{-- Gaji & Administrasi RS --}}
                                         <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
                                             <span class="text-gray-600 dark:text-gray-300 text-left">Gaji Pokok</span>
@@ -343,7 +342,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS: toggle inline (rata tengah) --}}
-                                    <td class="px-3 py-2 align-top">
+                                    <td class="align-top">
                                         @php $isActive = (string) $row->active_status === '1'; @endphp
                                         <div class="flex justify-center">
                                             <x-toggle wire:key="dokter-toggle-{{ $row->dr_id }}-{{ $isActive ? 1 : 0 }}"
@@ -355,7 +354,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-3 py-2 align-top">
+                                    <td class="align-top">
                                         <div class="flex flex-wrap justify-end gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->dr_id }}')" />
 
@@ -377,7 +376,7 @@ new class extends Component {
 
                 {{-- Pagination sticky bawah card --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>
