@@ -5,6 +5,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
+use App\Support\KolomSatuSehat;
 
 new class extends Component {
     use WithPagination;
@@ -72,13 +73,32 @@ new class extends Component {
      | Computed queries
      * ========================= */
 
+    /**
+     * Kolom LOINC sudah ada di skmst_radiologis?
+     *
+     * Kolomnya ditambahkan lewat SQL manual (install_bundle_satusehat.sql atau
+     * 2026_09_11_alter_skmst_radiologis_add_loinc.sql), bukan migration — menyebutnya di
+     * SELECT sebelum SQL-nya jalan berarti ORA-00904 dan seluruh halaman mati.
+     */
+    #[Computed]
+    public function kolomLoincAda(): bool
+    {
+        return KolomSatuSehat::radiologiPunyaLoinc();
+    }
+
     // ==================== BASE QUERY ====================
     #[Computed]
     public function baseQuery()
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('skmst_radiologis')->select('rad_id', 'rad_desc', 'rad_price', 'active_status', 'rad_jd')->orderBy('rad_desc', 'asc');
+        $kolomList = ['rad_id', 'rad_desc', 'rad_price', 'active_status', 'rad_jd'];
+        if ($this->kolomLoincAda) {
+            $kolomList[] = 'loinc_code';
+            $kolomList[] = 'loinc_display';
+        }
+
+        $queryBuilder = DB::table('skmst_radiologis')->select($kolomList)->orderBy('rad_desc', 'asc');
 
         if ($searchKeyword !== '') {
             $uppercaseKeyword = mb_strtoupper($searchKeyword);
@@ -181,7 +201,22 @@ new class extends Component {
                             @forelse($this->rows as $row)
                                 <tr wire:key="radiologis-row-{{ $row->rad_id }}">
                                     <td class="ds-td-token">{{ $row->rad_id }}</td>
-                                    <td class="ds-td-strong">{{ $row->rad_desc }}</td>
+                                    <td class="ds-td-strong">
+                                        {{ $row->rad_desc }}
+                                        @if ($this->kolomLoincAda)
+                                            @if (!empty($row->loinc_code))
+                                                <div class="text-[11px] font-normal text-emerald-600 dark:text-emerald-400"
+                                                    title="Kode LOINC SATUSEHAT — {{ $row->loinc_display ?: $row->rad_desc }}">
+                                                    LOINC <span class="font-mono">{{ $row->loinc_code }}</span>
+                                                </div>
+                                            @else
+                                                <div class="text-[11px] font-normal text-amber-600 dark:text-amber-400"
+                                                    title="Tanpa LOINC, pemeriksaan ini dikirim ke SATUSEHAT dengan kode generik 18748-4">
+                                                    LOINC belum diisi — dikirim generik 18748-4
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td>{{ $this->formatRupiah($row->rad_price) }}</td>
                                     <td>
                                         <x-badge :variant="$row->active_status === '1' ? 'success' : 'danger'">

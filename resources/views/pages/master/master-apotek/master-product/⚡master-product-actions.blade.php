@@ -6,6 +6,7 @@ use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Support\KolomSatuSehat;
 
 new class extends Component {
     use WithRenderVersioningTrait;
@@ -14,6 +15,16 @@ new class extends Component {
     public string $originalId = '';
     public array  $renderVersions = [];
     protected array $renderAreas  = ['modal'];
+
+    /**
+     * Kolom pemetaan KFA sudah ada di skmst_products?
+     *
+     * Kolomnya datang dari SQL manual (database/sql/2026_09_11_alter_skmst_products_add_satusehat.sql),
+     * bukan migration — jadi ada jendela waktu ketika halaman ini sudah terpasang tapi
+     * kolomnya belum dibuat. Tanpa penjaga ini SELECT/UPDATE-nya ORA-00904 dan seluruh
+     * modal mati; dengan penjaga, bagian KFA sekadar disembunyikan sampai SQL-nya jalan.
+     */
+    public bool $kolomKfaAda = false;
 
     public array $form = [
         'product_id'    => '',
@@ -29,11 +40,15 @@ new class extends Component {
         'qty_box'       => '0',
         'limit_stock'   => '0',
         'active_status' => '1',
+        // SATUSEHAT — kode & nama KFA (Kamus Farmasi & Alkes Kemenkes).
+        'product_id_satusehat'   => '',
+        'product_name_satusehat' => '',
     ];
 
     public function mount(): void
     {
         $this->registerAreas(['modal']);
+        $this->kolomKfaAda = KolomSatuSehat::produkPunyaKfa();
     }
 
     #[Computed]
@@ -83,6 +98,7 @@ new class extends Component {
     #[On('master.product.openCreate')]
     public function openCreate(): void
     {
+        $this->kolomKfaAda = KolomSatuSehat::produkPunyaKfa();
         $this->resetForm();
         $this->formMode   = 'create';
         $this->originalId = '';
@@ -94,6 +110,8 @@ new class extends Component {
     #[On('master.product.openEdit')]
     public function openEdit(string $productId): void
     {
+        $this->kolomKfaAda = KolomSatuSehat::produkPunyaKfa();
+
         $row = DB::table('skmst_products')->where('product_id', $productId)->first();
         if (!$row) return;
 
@@ -114,6 +132,8 @@ new class extends Component {
             'qty_box'       => (string) ($row->qty_box ?? '0'),
             'limit_stock'   => (string) ($row->limit_stock ?? '0'),
             'active_status' => (string) ($row->active_status ?? '1'),
+            'product_id_satusehat'   => $this->kolomKfaAda ? (string) ($row->product_id_satusehat ?? '') : '',
+            'product_name_satusehat' => $this->kolomKfaAda ? (string) ($row->product_name_satusehat ?? '') : '',
         ];
 
         $this->incrementVersion('modal');
@@ -178,6 +198,8 @@ new class extends Component {
             'form.qty_box'       => 'nullable|numeric|min:0',
             'form.limit_stock'   => 'nullable|integer|min:0',
             'form.active_status' => 'required|in:0,1',
+            'form.product_id_satusehat'   => 'nullable|string|max:50',
+            'form.product_name_satusehat' => 'nullable|string|max:250',
         ];
 
         $messages = [
@@ -205,6 +227,8 @@ new class extends Component {
             'form.qty_box'       => 'Qty per Box',
             'form.limit_stock'   => 'Limit Stok',
             'form.active_status' => 'Status',
+            'form.product_id_satusehat'   => 'Kode KFA',
+            'form.product_name_satusehat' => 'Nama KFA',
         ];
 
         $this->validate($rules, $messages, $attributes);
@@ -223,6 +247,13 @@ new class extends Component {
             'limit_stock'   => (int)   ($this->form['limit_stock'] ?: 0),
             'active_status' => $this->form['active_status'],
         ];
+
+        // Kolom KFA hanya ikut ditulis kalau memang sudah ada di tabel — menyertakannya
+        // sebelum SQL dijalankan berarti ORA-00904 dan produk gagal disimpan sama sekali.
+        if ($this->kolomKfaAda) {
+            $payload[KolomSatuSehat::PRODUK_KFA_KODE] = trim($this->form['product_id_satusehat']) ?: null;
+            $payload[KolomSatuSehat::PRODUK_KFA_NAMA] = trim($this->form['product_name_satusehat']) ?: null;
+        }
 
         if ($this->formMode === 'create') {
             DB::table('skmst_products')->insert([
@@ -253,6 +284,7 @@ new class extends Component {
             'cost_price' => '0', 'sales_price' => '0', 'margin_persen' => '0',
             'qty_box' => '0', 'limit_stock' => '0',
             'active_status' => '1',
+            'product_id_satusehat' => '', 'product_name_satusehat' => '',
         ];
         $this->resetValidation();
     }
@@ -305,165 +337,7 @@ new class extends Component {
                  x-on:focus-product-id.window="$nextTick(() => setTimeout(() => $refs.inputProductId?.focus(), 150))"
                  x-on:focus-product-name.window="$nextTick(() => setTimeout(() => $refs.inputProductName?.focus(), 150))">
 
-                {{-- Section 1: Identitas --}}
-                <x-border-form title="Identitas Produk">
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <div>
-                                <x-input-label value="ID Produk" />
-                                <x-text-input wire:model.live="form.product_id" x-ref="inputProductId"
-                                    maxlength="25"
-                                    :disabled="$formMode === 'edit'"
-                                    :error="$errors->has('form.product_id')"
-                                    class="w-full mt-1 uppercase" />
-                                <x-input-error :messages="$errors->get('form.product_id')" class="mt-1" />
-                            </div>
-                            <div class="sm:col-span-2">
-                                <x-input-label value="Nama Produk" />
-                                <x-text-input wire:model.live="form.product_name" x-ref="inputProductName"
-                                    maxlength="100"
-                                    :error="$errors->has('form.product_name')"
-                                    class="w-full mt-1 uppercase" />
-                                <x-input-error :messages="$errors->get('form.product_name')" class="mt-1" />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <div>
-                                <x-input-label value="Tipe" />
-                                <x-select-input wire:model.live="form.product_type"
-                                    :error="$errors->has('form.product_type')"
-                                    class="w-full mt-1">
-                                    <option value="OBT">OBAT</option>
-                                    <option value="ALK">ALAT KESEHATAN</option>
-                                    <option value="BHP">BAHAN HABIS PAKAI</option>
-                                    <option value="LAB">LABORATORIUM</option>
-                                    <option value="LAY">LAYANAN/JASA</option>
-                                </x-select-input>
-                                <x-input-error :messages="$errors->get('form.product_type')" class="mt-1" />
-                            </div>
-                            <div class="sm:col-span-2">
-                                <x-input-label value="Rak / Lokasi (opsional)" />
-                                <x-text-input wire:model.live="form.product_rak"
-                                    maxlength="100"
-                                    :error="$errors->has('form.product_rak')"
-                                    class="w-full mt-1 uppercase" placeholder="A1-3" />
-                                <x-input-error :messages="$errors->get('form.product_rak')" class="mt-1" />
-                            </div>
-                        </div>
-                    </div>
-                </x-border-form>
-
-                {{-- Section 2: Klasifikasi --}}
-                <x-border-form title="Klasifikasi (Kategori / Satuan / Supplier)">
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div>
-                            <x-input-label value="Kategori" />
-                            <x-select-input wire:model.live="form.cat_id"
-                                :error="$errors->has('form.cat_id')"
-                                class="w-full mt-1">
-                                <option value="">— Pilih Kategori —</option>
-                                @foreach ($this->categories as $c)
-                                    <option value="{{ $c->cat_id }}">{{ $c->cat_desc }}</option>
-                                @endforeach
-                            </x-select-input>
-                            <x-input-error :messages="$errors->get('form.cat_id')" class="mt-1" />
-                        </div>
-                        <div>
-                            <x-input-label value="Satuan (UOM)" />
-                            <x-select-input wire:model.live="form.uom_id"
-                                :error="$errors->has('form.uom_id')"
-                                class="w-full mt-1">
-                                <option value="">— Pilih Satuan —</option>
-                                @foreach ($this->uoms as $u)
-                                    <option value="{{ $u->uom_id }}">{{ $u->uom_desc }}</option>
-                                @endforeach
-                            </x-select-input>
-                            <x-input-error :messages="$errors->get('form.uom_id')" class="mt-1" />
-                        </div>
-                        <div>
-                            <x-input-label value="Supplier" />
-                            <x-select-input wire:model.live="form.supp_id"
-                                :error="$errors->has('form.supp_id')"
-                                class="w-full mt-1">
-                                <option value="">— Pilih Supplier —</option>
-                                @foreach ($this->suppliers as $s)
-                                    <option value="{{ $s->supp_id }}">{{ $s->supp_name }}</option>
-                                @endforeach
-                            </x-select-input>
-                            <x-input-error :messages="$errors->get('form.supp_id')" class="mt-1" />
-                        </div>
-                    </div>
-                </x-border-form>
-
-                {{-- Section 3: Harga & Margin --}}
-                <x-border-form title="Harga (HPP &amp; Jual)">
-                    <div class="space-y-3">
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <div>
-                                <x-input-label value="HPP (Cost Price)" />
-                                <x-text-input wire:model.live="form.cost_price"
-                                    type="number" min="0" step="100"
-                                    :error="$errors->has('form.cost_price')"
-                                    class="w-full mt-1" />
-                                <x-input-error :messages="$errors->get('form.cost_price')" class="mt-1" />
-                            </div>
-                            <div>
-                                <x-input-label value="Harga Jual" />
-                                <x-text-input wire:model.live="form.sales_price"
-                                    type="number" min="0" step="100"
-                                    :error="$errors->has('form.sales_price')"
-                                    class="w-full mt-1" />
-                                <x-input-error :messages="$errors->get('form.sales_price')" class="mt-1" />
-                            </div>
-                            <div>
-                                <x-input-label value="Margin (%) — auto" />
-                                <x-text-input wire:model.live="form.margin_persen"
-                                    type="number" step="0.01"
-                                    :error="$errors->has('form.margin_persen')"
-                                    class="w-full mt-1 bg-gray-50 dark:bg-gray-800" />
-                                <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                                    Auto-hitung dari HPP &amp; Harga Jual; bisa di-override manual.
-                                </p>
-                                <x-input-error :messages="$errors->get('form.margin_persen')" class="mt-1" />
-                            </div>
-                        </div>
-                    </div>
-                </x-border-form>
-
-                {{-- Section 4: Stok --}}
-                <x-border-form title="Stok &amp; Status">
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div>
-                            <x-input-label value="Qty per Box (opsional)" />
-                            <x-text-input wire:model.live="form.qty_box"
-                                type="number" min="0" step="0.01"
-                                :error="$errors->has('form.qty_box')"
-                                class="w-full mt-1" />
-                            <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Mis. 1 box = 100 strip</p>
-                            <x-input-error :messages="$errors->get('form.qty_box')" class="mt-1" />
-                        </div>
-                        <div>
-                            <x-input-label value="Limit Stok (alert)" />
-                            <x-text-input wire:model.live="form.limit_stock"
-                                type="number" min="0" step="1"
-                                :error="$errors->has('form.limit_stock')"
-                                class="w-full mt-1" />
-                            <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Alert kalau stok di bawah angka ini</p>
-                            <x-input-error :messages="$errors->get('form.limit_stock')" class="mt-1" />
-                        </div>
-                        <div>
-                            <x-input-label value="Status" />
-                            <x-select-input wire:model.live="form.active_status"
-                                :error="$errors->has('form.active_status')"
-                                class="w-full mt-1">
-                                <option value="1">AKTIF</option>
-                                <option value="0">NONAKTIF</option>
-                            </x-select-input>
-                            <x-input-error :messages="$errors->get('form.active_status')" class="mt-1" />
-                        </div>
-                    </div>
-                </x-border-form>
+                @include('pages::master.master-apotek.master-product.master-product-form')
             </div>
 
             <div class="sticky bottom-0 z-10 px-6 py-4 mt-auto bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">

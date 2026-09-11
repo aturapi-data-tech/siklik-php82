@@ -65,11 +65,13 @@ Run hanya kalau klinik mau aktifkan integrasi SatuSehat (kirim FHIR ke Kemenkes)
 
 > Untuk fitur SatuSehat aktif di app, butuh juga setup credentials di `.env` (`SATUSEHAT_*`).
 
-### 🆕 `install_bundle_fitur_lanjutan.sql` — fitur lanjutan (Juni 2026)
+### 🆕 `install_bundle_fitur_lanjutan.sql` — fitur lanjutan (Juni 2026, + SatuSehat Sep 2026)
 
-Gabungan idempotent dari 4 file referensi (file aslinya tetap ada sbg dokumentasi:
+Gabungan idempotent dari 6 file referensi (file aslinya tetap ada sbg dokumentasi:
 `create_tkmst_signa_catatans.sql`, `create_penerimaan_non_medis.sql`,
-`create_kartu_stock_non_medis.sql`, `alter_users_add_last_seen.sql`).
+`create_kartu_stock_non_medis.sql`, `alter_users_add_last_seen.sql`,
+`2026_09_11_alter_skmst_products_add_satusehat.sql`,
+`2026_09_11_alter_skmst_radiologis_add_loinc.sql`).
 
 | Section | Object | Dipakai oleh | Idempotency |
 |---------|--------|--------------|-------------|
@@ -77,6 +79,24 @@ Gabungan idempotent dari 4 file referensi (file aslinya tetap ada sbg dokumentas
 | Penerimaan non-medis | `SKMST_PRODUCTNONS`, `SKTXN_RCVHDRNONS`, `SKTXN_RCVDTLNONS`, `SKTXN_RCVPAYMENTNONS`, `SKTXN_CASHOUTHDRNONS`, `SKTXN_CASHOUTDTLNONS` + 5 sequence | Master Produk Non-Medis, Penerimaan Non-Medis, Pembayaran Hutang Non-Medis | ✅ skip per-object |
 | Kartu stock non-medis | `SKTXN_SALDOAWALSTOCKSNON`, `SKTXN_SOWHSNON`, view `SKVIEW_IOSTOCKWHSNON` | Kartu Stock — Non-Medis | ✅ table skip; view selalu `CREATE OR REPLACE` |
 | User tracking | `USERS.LAST_SEEN_AT` + `LAST_SEEN_ROUTE` | Sistem → User Online (middleware `TrackUserActivity`) | ✅ per-kolom check |
+| **KFA master obat** | `SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT` + `PRODUCT_NAME_SATUSEHAT` + index | Master Produk Apotek (tab KFA), kartu SatuSehat MedicationRequest & MedicationDispense | ✅ per-kolom check |
+| **LOINC master radiologi** | `SKMST_RADIOLOGIS.LOINC_CODE` + `LOINC_DISPLAY` + index | Master Radiologis, kartu SatuSehat Radiologi | ✅ per-kolom check (juga dibuat `install_bundle_satusehat.sql` — no-op kalau sudah) |
+
+#### 🩺 Dua SQL SatuSehat baru (11 Sep 2026) — bisa dijalankan terpisah
+
+| File | Isi | Kenapa perlu |
+|------|-----|--------------|
+| `2026_09_11_alter_skmst_products_add_satusehat.sql` | `SKMST_PRODUCTS`: `PRODUCT_ID_SATUSEHAT VARCHAR2(50)`, `PRODUCT_NAME_SATUSEHAT VARCHAR2(250)`, index `SKMST_PRODUCTS_KFA_IX` | **Wajib.** JSON e-resep siklik tidak menyimpan kode KFA sama sekali. Selama kolom ini belum ada & belum diisi, **tidak ada satu obat pun** (non-racikan maupun racikan) yang bisa dikirim ke SatuSehat. Aplikasi tetap jalan tanpa kolom ini — halaman Master Obat & kartu kirim memberi tahu kekurangannya (guard `user_tab_columns`), tidak error. |
+| `2026_09_11_alter_skmst_radiologis_add_loinc.sql` | `SKMST_RADIOLOGIS`: `LOINC_CODE VARCHAR2(20)`, `LOINC_DISPLAY VARCHAR2(250)`, index `SKMST_RADIOLOGIS_LOINC_IX` | Opsional/ sudah ada di Oracle dev — kolomnya dibuat `install_bundle_satusehat.sql` (sekalian ~150 UPDATE pemetaan). File ini hanya untuk schema yang belum pernah menjalankan bundle SatuSehat; tanpa pemetaan, radiologi tetap terkirim tapi dengan LOINC generik `18748-4`. |
+
+```bash
+sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/2026_09_11_alter_skmst_products_add_satusehat.sql
+sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/2026_09_11_alter_skmst_radiologis_add_loinc.sql
+```
+
+> Sesudah kolom KFA ada, isi kodenya lewat **Master → Apotek → Master Produk** (bagian
+> "SATUSEHAT — Kode KFA", input manual dari `kfa.kemkes.go.id`). Baris tanpa KFA ditandai
+> di daftar master. Rincian: `docs/satusehat-api.md` §5.5.
 
 > Catatan stok non-medis: stok TUNGGAL di `SKMST_PRODUCTNONS.QTY_BOX` (tanpa
 > lokasi/transfer). Tabel baru TANPA trigger legacy — `qty_box` di-update
@@ -146,6 +166,19 @@ WHERE table_name IN ('SKMST_SNOMED_CODES','SKMST_LOINC_CODES');
 SELECT column_name FROM user_tab_columns
 WHERE table_name = 'SKMST_CLABITEMS'
   AND column_name IN ('LOINC_CODE','LOINC_DISPLAY','LOW_LIMIT_K','HIGH_LIMIT_K');
+
+-- (SatuSehat) KFA master obat + LOINC master radiologi
+SELECT column_name FROM user_tab_columns
+WHERE table_name = 'SKMST_PRODUCTS'
+  AND column_name IN ('PRODUCT_ID_SATUSEHAT','PRODUCT_NAME_SATUSEHAT');
+SELECT column_name FROM user_tab_columns
+WHERE table_name = 'SKMST_RADIOLOGIS'
+  AND column_name IN ('LOINC_CODE','LOINC_DISPLAY');
+
+-- Kelengkapan pemetaan (berapa yang sudah diisi)
+SELECT COUNT(*) AS ber_kfa FROM skmst_products   WHERE product_id_satusehat IS NOT NULL;
+SELECT COUNT(*) AS ber_loinc FROM skmst_radiologis WHERE loinc_code IS NOT NULL;
+SELECT COUNT(*) AS ber_loinc FROM skmst_clabitems  WHERE loinc_code IS NOT NULL;
 ```
 
 ---

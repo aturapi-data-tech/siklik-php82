@@ -37,4 +37,14 @@ return [
 
     // Batas waktu panggilan SATUSEHAT (detik).
     'timeout' => (int) env('SATUSEHAT_HTTP_TIMEOUT', 10),
+
+    // Penanggung jawab unit penunjang — dipakai App\Support\PenanggungJawabPenunjang
+    // sebagai ServiceRequest.performer (WAJIB, RuleNumber 10377).
+    //
+    // Isi dengan skmst_doctors.dr_id petugas yang MENGERJAKAN pemeriksaan. siklik
+    // (klinik pratama) tidak punya poli Laboratorium/Radiologi tersendiri, jadi tidak
+    // ada cara menyimpulkannya dari data. Dibiarkan kosong pun aman: kartu lab/radiologi
+    // jatuh ke dokter pengirim — kiriman jalan, nilainya saja yang belum akurat.
+    'pj_lab_dr_id' => env('SATUSEHAT_PJ_LAB_DR_ID'),
+    'pj_radiologi_dr_id' => env('SATUSEHAT_PJ_RADIOLOGI_DR_ID'),
 ];

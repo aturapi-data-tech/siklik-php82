@@ -203,4 +203,99 @@ trait EncounterTrait
 
         return $this->makeRequest('put', "Encounter/{$encounterId}", $payload);
     }
+
+    /**
+     * Siapkan Encounter untuk di-finish: status, period.end, statusHistory yang lengkap,
+     * dan diagnosis.
+     *
+     * Dua aturan SATUSEHAT yang gampang kena:
+     *  - "every statusHistory period start and end must be filled (Rule 10122)" — entri
+     *    yang ditulis createNewEncounter()/startRoomEncounter() hanya punya `start`,
+     *    jadi `end` tiap entri diisi dari `start` entri BERIKUTNYA (entri terakhir
+     *    memakai waktu selesai).
+     *  - "Element not found: Encounter.diagnosis (RuleNumber: 10457)" — wajib merujuk
+     *    Condition yang sudah dikirim; pemanggil harus menolak lebih dulu bila
+     *    conditionIdList kosong, jangan mengirim tanpa diagnosis.
+     *
+     * @param  array  $encounter        hasil getEncounter()
+     * @param  string $akhirIso         waktu pasien benar-benar selesai dilayani
+     * @param  array  $conditionIdList  id Condition hasil kirim diagnosa
+     */
+    public function siapkanFinishEncounter(array $encounter, string $akhirIso, array $conditionIdList): array
+    {
+        $encounter['status'] = 'finished';
+
+        // period.end TIDAK BOLEH mendahului period.start. SATUSEHAT menegakkannya sebagai
+        // constraint FHIRPath, dan pelanggarannya dibalas menyesatkan — bukan pesan soal
+        // waktu, melainkan "unparseable_resource" + fhirpath-constraint-violation-Encounter.period.
+        //
+        // Ini bukan kasus teoretis: period.start DIBEKUKAN di SATUSEHAT saat Encounter
+        // dibuat, sedangkan akhirIso datang dari taskId7/taskId5 (jam obat diserahkan /
+        // keluar poli). Bila Encounter baru dikirim BELAKANGAN — dan parseDate() jatuh ke
+        // now() karena tanggal kunjungannya tak terbaca — start bisa lebih baru daripada
+        // jam layanan yang sesungguhnya.
+        $encounter['period']['end'] = $this->waktuTerakhir(
+            (string) ($encounter['period']['start'] ?? ''),
+            $akhirIso
+        );
+
+        $riwayat = array_values(array_filter($encounter['statusHistory'] ?? [], 'is_array'));
+        $riwayat[] = ['status' => 'finished', 'period' => ['start' => $akhirIso]];
+
+        foreach ($riwayat as $indeks => $entri) {
+            $mulai = $entri['period']['start'] ?? $akhirIso;
+            $selesai = $entri['period']['end'] ?? null;
+            if (empty($selesai)) {
+                // Satu status berakhir saat status berikutnya dimulai.
+                $selesai = $riwayat[$indeks + 1]['period']['start'] ?? $akhirIso;
+            }
+            // Jaga urutan: end tak boleh mendahului start (data waktu bisa tak rapi).
+            $riwayat[$indeks]['period'] = ['start' => $mulai, 'end' => $this->waktuTerakhir($mulai, $selesai)];
+        }
+        $encounter['statusHistory'] = $riwayat;
+
+        $encounter['diagnosis'] = [];
+        foreach (array_values($conditionIdList) as $indeks => $conditionId) {
+            $encounter['diagnosis'][] = [
+                'condition' => ['reference' => "Condition/{$conditionId}"],
+                'use' => [
+                    'coding' => [[
+                        'system' => 'http://terminology.hl7.org/CodeSystem/diagnosis-role',
+                        'code' => 'DD',
+                        'display' => 'Discharge diagnosis',
+                    ]],
+                ],
+                'rank' => $indeks + 1,
+            ];
+        }
+
+        return $encounter;
+    }
+
+    /**
+     * Yang paling belakangan dari dua waktu ISO8601; '' dianggap tidak ada.
+     *
+     * Dibandingkan sebagai WAKTU, bukan sebagai teks: perbandingan string hanya benar
+     * bila kedua nilai memakai offset zona yang sama, padahal `period.start` berasal
+     * dari SATUSEHAT sedangkan pembandingnya kita susun sendiri. Bila salah satu tak
+     * bisa diurai, jatuh ke perbandingan teks — tetap benar untuk offset seragam, dan
+     * tetap lebih baik daripada melempar di tengah penyusunan payload.
+     */
+    private function waktuTerakhir(string $pertama, string $kedua): string
+    {
+        if ($pertama === '') {
+            return $kedua;
+        }
+        if ($kedua === '') {
+            return $pertama;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($pertama)->greaterThan(\Carbon\Carbon::parse($kedua))
+                ? $pertama
+                : $kedua;
+        } catch (\Throwable) {
+            return max($pertama, $kedua);
+        }
+    }
 }

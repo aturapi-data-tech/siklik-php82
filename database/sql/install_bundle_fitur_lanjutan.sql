@@ -1,11 +1,13 @@
 -- =============================================================================
 -- File   : install_bundle_fitur_lanjutan.sql
 -- Tujuan : Bundle SEMUA SQL fitur lanjutan siklik-php82 (Juni 2026) dalam 1 file.
---          Gabungan idempotent dari 4 file referensi:
+--          Gabungan idempotent dari 6 file referensi:
 --            01  create_tkmst_signa_catatans.sql   — LOV catatan khusus signa e-resep
 --            02  create_penerimaan_non_medis.sql   — master + penerimaan + hutang non-medis
 --            03  create_kartu_stock_non_medis.sql  — saldo awal + opname + view mutasi non-medis
 --            04  alter_users_add_last_seen.sql     — kolom tracking utk halaman User Online
+--            05  2026_09_11_alter_skmst_products_add_satusehat.sql  — kolom KFA master obat
+--            06  2026_09_11_alter_skmst_radiologis_add_loinc.sql    — kolom LOINC master radiologi
 --
 --          Catatan stok non-medis: stok TUNGGAL di SKMST_PRODUCTNONS.QTY_BOX
 --          (tanpa lokasi/transfer). Tabel ini TANPA trigger legacy — qty_box
@@ -37,7 +39,7 @@ PROMPT ╚═══════════════════════�
 -- SECTION 01 — SKMST_SIGNA_CATATANS (LOV catatan khusus signa e-resep)
 -- =============================================================================
 PROMPT
-PROMPT ─── [1/4] SKMST_SIGNA_CATATANS ───────────────────────────────
+PROMPT ─── [1/6] SKMST_SIGNA_CATATANS ───────────────────────────────
 
 DECLARE
     v_count NUMBER;
@@ -76,7 +78,7 @@ END;
 --   rcv_status: H=hutang, L=lunas, F=batal, A=daftar tunggu/rollback.
 -- =============================================================================
 PROMPT
-PROMPT ─── [2/4] Penerimaan Non-Medis (6 tabel + 5 sequence) ────────
+PROMPT ─── [2/6] Penerimaan Non-Medis (6 tabel + 5 sequence) ────────
 
 DECLARE
     v_count NUMBER;
@@ -241,7 +243,7 @@ END;
 -- SECTION 03 — Kartu Stock NON-MEDIS (saldo awal + opname + view mutasi)
 -- =============================================================================
 PROMPT
-PROMPT ─── [3/4] Kartu Stock Non-Medis ──────────────────────────────
+PROMPT ─── [3/6] Kartu Stock Non-Medis ──────────────────────────────
 
 DECLARE
     v_count NUMBER;
@@ -321,7 +323,7 @@ COMMENT ON TABLE skview_iostockwhsnon IS 'View mutasi stok non-medis: RCV (pener
 -- SECTION 04 — USERS: kolom tracking aktivitas (halaman User Online)
 -- =============================================================================
 PROMPT
-PROMPT ─── [4/4] USERS.LAST_SEEN_AT + LAST_SEEN_ROUTE ───────────────
+PROMPT ─── [4/6] USERS.LAST_SEEN_AT + LAST_SEEN_ROUTE ───────────────
 
 DECLARE
     v_count NUMBER;
@@ -350,6 +352,102 @@ END;
 
 COMMIT;
 
+
+-- =============================================================================
+-- SECTION 05 — SKMST_PRODUCTS: kolom pemetaan KFA SATUSEHAT
+--   (file referensi: 2026_09_11_alter_skmst_products_add_satusehat.sql)
+--
+-- JSON e-resep siklik tidak menyimpan kode KFA sama sekali — yang ada `productId`.
+-- Selama pasangan kolom ini belum ada & belum diisi, TIDAK ADA satu pun obat yang
+-- bisa dikirim ke SATUSEHAT (MedicationRequest & MedicationDispense).
+-- =============================================================================
+PROMPT
+PROMPT ─── [5/6] SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT + _NAME_ ───────
+
+DECLARE
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count FROM user_tab_cols
+     WHERE table_name = 'SKMST_PRODUCTS' AND column_name = 'PRODUCT_ID_SATUSEHAT';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'ALTER TABLE skmst_products ADD (product_id_satusehat VARCHAR2(50))';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN skmst_products.product_id_satusehat IS 'Kode KFA SATUSEHAT (system http://sys-ids.kemkes.go.id/kfa) — kosong = obat tidak bisa dikirim ke SATUSEHAT']';
+        DBMS_OUTPUT.PUT_LINE('  + kolom SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT ditambah');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT sudah ada — skip');
+    END IF;
+
+    SELECT COUNT(*) INTO v_count FROM user_tab_cols
+     WHERE table_name = 'SKMST_PRODUCTS' AND column_name = 'PRODUCT_NAME_SATUSEHAT';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'ALTER TABLE skmst_products ADD (product_name_satusehat VARCHAR2(250))';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN skmst_products.product_name_satusehat IS 'Nama resmi KFA SATUSEHAT — dipakai sebagai display Medication.code; kosong = pakai product_name']';
+        DBMS_OUTPUT.PUT_LINE('  + kolom SKMST_PRODUCTS.PRODUCT_NAME_SATUSEHAT ditambah');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = SKMST_PRODUCTS.PRODUCT_NAME_SATUSEHAT sudah ada — skip');
+    END IF;
+
+    SELECT COUNT(*) INTO v_count FROM user_indexes WHERE index_name = 'SKMST_PRODUCTS_KFA_IX';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'CREATE INDEX skmst_products_kfa_ix ON skmst_products (product_id_satusehat)';
+        DBMS_OUTPUT.PUT_LINE('  + index SKMST_PRODUCTS_KFA_IX dibuat');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = index SKMST_PRODUCTS_KFA_IX sudah ada — skip');
+    END IF;
+END;
+/
+
+COMMIT;
+
+
+-- =============================================================================
+-- SECTION 06 — SKMST_RADIOLOGIS: kolom pemetaan LOINC
+--   (file referensi: 2026_09_11_alter_skmst_radiologis_add_loinc.sql)
+--
+-- CATATAN: kolom yang sama juga dibuat install_bundle_satusehat.sql — di sana
+-- LENGKAP dengan ~150 UPDATE pemetaan kodenya. Section ini hanya menjamin kolomnya
+-- ada untuk schema yang belum pernah menjalankan bundle SatuSehat; kalau sudah,
+-- section ini jadi no-op. Tanpa isi pemetaan, kartu ⚡kirim-radiologi tetap jalan
+-- tapi memakai LOINC generik 18748-4 untuk semua pemeriksaan (dan melaporkannya).
+-- =============================================================================
+PROMPT
+PROMPT ─── [6/6] SKMST_RADIOLOGIS.LOINC_CODE + LOINC_DISPLAY ────────
+
+DECLARE
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count FROM user_tab_cols
+     WHERE table_name = 'SKMST_RADIOLOGIS' AND column_name = 'LOINC_CODE';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'ALTER TABLE skmst_radiologis ADD (loinc_code VARCHAR2(20))';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN skmst_radiologis.loinc_code IS 'Kode LOINC pemeriksaan radiologi (SATUSEHAT) — kosong = dikirim dengan kode generik 18748-4']';
+        DBMS_OUTPUT.PUT_LINE('  + kolom SKMST_RADIOLOGIS.LOINC_CODE ditambah');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = SKMST_RADIOLOGIS.LOINC_CODE sudah ada — skip');
+    END IF;
+
+    SELECT COUNT(*) INTO v_count FROM user_tab_cols
+     WHERE table_name = 'SKMST_RADIOLOGIS' AND column_name = 'LOINC_DISPLAY';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'ALTER TABLE skmst_radiologis ADD (loinc_display VARCHAR2(250))';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN skmst_radiologis.loinc_display IS 'Nama resmi LOINC — dipakai sebagai display code FHIR; kosong = pakai rad_desc']';
+        DBMS_OUTPUT.PUT_LINE('  + kolom SKMST_RADIOLOGIS.LOINC_DISPLAY ditambah');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = SKMST_RADIOLOGIS.LOINC_DISPLAY sudah ada — skip');
+    END IF;
+
+    SELECT COUNT(*) INTO v_count FROM user_indexes WHERE index_name = 'SKMST_RADIOLOGIS_LOINC_IX';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'CREATE INDEX skmst_radiologis_loinc_ix ON skmst_radiologis (loinc_code)';
+        DBMS_OUTPUT.PUT_LINE('  + index SKMST_RADIOLOGIS_LOINC_IX dibuat');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = index SKMST_RADIOLOGIS_LOINC_IX sudah ada — skip');
+    END IF;
+END;
+/
+
+COMMIT;
+
 PROMPT
 PROMPT ╔════════════════════════════════════════════════════════════╗
 PROMPT ║  SIKLIK-PHP82 INSTALL BUNDLE FITUR LANJUTAN — SELESAI ✓    ║
@@ -359,4 +457,8 @@ PROMPT ║    SELECT COUNT(*) FROM skmst_signa_catatans;              ║
 PROMPT ║    SELECT COUNT(*) FROM skmst_productnons;                 ║
 PROMPT ║    SELECT COUNT(*) FROM skview_iostockwhsnon;              ║
 PROMPT ║    SELECT last_seen_at FROM users WHERE ROWNUM = 1;        ║
+PROMPT ║    SELECT COUNT(*) FROM skmst_products                     ║
+PROMPT ║     WHERE product_id_satusehat IS NOT NULL;                ║
+PROMPT ║    SELECT COUNT(*) FROM skmst_radiologis                   ║
+PROMPT ║     WHERE loinc_code IS NOT NULL;                          ║
 PROMPT ╚════════════════════════════════════════════════════════════╝

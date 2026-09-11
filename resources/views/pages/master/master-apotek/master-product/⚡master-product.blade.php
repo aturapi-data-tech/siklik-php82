@@ -5,6 +5,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
+use App\Support\KolomSatuSehat;
 
 new class extends Component {
     use WithPagination;
@@ -77,19 +78,39 @@ new class extends Component {
             ->get();
     }
 
+    /**
+     * Kolom KFA sudah ada di skmst_products?
+     *
+     * Kolomnya ditambahkan lewat SQL manual, bukan migration — sebelum SQL-nya dijalankan
+     * kolom ini belum ada dan menyebutnya di SELECT berarti ORA-00904 (seluruh halaman
+     * mati). Dijawab sekali per request oleh KolomSatuSehat.
+     */
+    #[Computed]
+    public function kolomKfaAda(): bool
+    {
+        return KolomSatuSehat::produkPunyaKfa();
+    }
+
     #[Computed]
     public function rows()
     {
+        $kolomList = [
+            'p.product_id', 'p.product_name', 'p.product_type', 'p.product_rak',
+            'p.cost_price', 'p.sales_price', 'p.margin_persen',
+            'p.qty_box', 'p.limit_stock', 'p.active_status',
+            'c.cat_desc', 'u.uom_desc', 's.supp_name',
+        ];
+
+        if ($this->kolomKfaAda) {
+            $kolomList[] = 'p.' . KolomSatuSehat::PRODUK_KFA_KODE;
+            $kolomList[] = 'p.' . KolomSatuSehat::PRODUK_KFA_NAMA;
+        }
+
         $q = DB::table('skmst_products AS p')
             ->leftJoin('skmst_categories AS c', 'c.cat_id', '=', 'p.cat_id')
             ->leftJoin('skmst_uoms AS u', 'u.uom_id', '=', 'p.uom_id')
             ->leftJoin('skmst_suppliers AS s', 's.supp_id', '=', 'p.supp_id')
-            ->select(
-                'p.product_id', 'p.product_name', 'p.product_type', 'p.product_rak',
-                'p.cost_price', 'p.sales_price', 'p.margin_persen',
-                'p.qty_box', 'p.limit_stock', 'p.active_status',
-                'c.cat_desc', 'u.uom_desc', 's.supp_name'
-            )
+            ->select($kolomList)
             ->orderBy('p.product_name');
 
         if (trim($this->searchKeyword) !== '') {
@@ -193,6 +214,19 @@ new class extends Component {
                                         {{ $row->product_name }}
                                         @if ($row->product_rak)
                                             <div class="text-[11px] font-normal text-gray-400">Rak: {{ $row->product_rak }}</div>
+                                        @endif
+                                        @if ($this->kolomKfaAda)
+                                            @if (!empty($row->product_id_satusehat))
+                                                <div class="text-[11px] font-normal text-emerald-600 dark:text-emerald-400"
+                                                    title="Kode KFA SATUSEHAT — {{ $row->product_name_satusehat ?: $row->product_name }}">
+                                                    KFA <span class="font-mono">{{ $row->product_id_satusehat }}</span>
+                                                </div>
+                                            @else
+                                                <div class="text-[11px] font-normal text-amber-600 dark:text-amber-400"
+                                                    title="Tanpa kode KFA obat ini tidak bisa dikirim ke SATUSEHAT">
+                                                    KFA belum diisi
+                                                </div>
+                                            @endif
                                         @endif
                                     </td>
                                     <td class="text-xs">

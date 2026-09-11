@@ -3,6 +3,7 @@
 
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
@@ -17,9 +18,66 @@ new class extends Component {
     public bool $encounterInProgress = false;
     public bool $encounterFinished = false;
 
-    public function mount(?string $rjNo = null): void
+    /** Sudah ada Condition terkirim? Finish mensyaratkannya (RuleNumber 10457). */
+    public bool $adaDiagnosaTerkirim = false;
+
+    /** Tanggal kunjungan apa adanya dari basis data — kosong = Kirim akan ditolak. */
+    public string $tanggalKunjungan = '';
+
+    /**
+     * Kartu mana yang dirender: 'kirim' (langkah 1, paling atas), 'selesai'
+     * (Selesaikan Encounter, dipasang paling bawah), atau 'semua' (keduanya —
+     * bentuk yang dipakai modal saat ini). Satu komponen dua kartu supaya logika
+     * Encounter tetap di satu berkas; induk tinggal merender dua kali dengan
+     * $bagian berbeda ketika urutan kartu perlu dipisah.
+     */
+    public string $bagian = 'semua';
+
+    /** Pratinjau dihitung hanya saat dibuka — jangan bebani muat modal berisi banyak kartu. */
+    public bool $pratinjauTerbuka = false;
+
+    public function togglePratinjau(): void
+    {
+        $this->pratinjauTerbuka = !$this->pratinjauTerbuka;
+    }
+
+    /**
+     * Identitas kunjungan yang AKAN dikirim, dibaca dari sumber yang SAMA dengan
+     * kirimInti() — dataRJ['regName'|'regNo'|'drDesc'|'rjDate']. Tanggal ditampilkan
+     * apa adanya dari basis data; kalau kosong, di situlah Kirim akan berhenti, dan
+     * pratinjau ini memperlihatkan sebabnya sebelum tombol ditekan.
+     */
+    #[Computed]
+    public function pratinjau(): array
+    {
+        if (empty($this->rjNo)) {
+            return [];
+        }
+
+        $dataRJ = $this->findDataRJ($this->rjNo);
+        if (empty($dataRJ)) {
+            return [];
+        }
+
+        $tanggal = trim((string) ($dataRJ['rjDate'] ?? ''));
+
+        return [
+            ['label' => 'resourceType', 'nilai' => 'Encounter', 'ket' => 'identifier RJ-' . $this->rjNo],
+            ['label' => 'Pasien', 'nilai' => (string) ($dataRJ['regName'] ?? '-'),
+                'ket' => 'No. RM ' . ($dataRJ['regNo'] ?? '-')],
+            ['label' => 'Dokter', 'nilai' => (string) ($dataRJ['drDesc'] ?? '-')],
+            ['label' => 'Poli', 'nilai' => (string) ($dataRJ['poliDesc'] ?? ($dataRJ['poliId'] ?? '-'))],
+            ['label' => 'Waktu mulai (period.start)',
+                'nilai' => $tanggal ?: '(KOSONG — Kirim akan ditolak)',
+                'ket' => $tanggal ? 'dibekukan di SATUSEHAT begitu Encounter terbentuk' : 'betulkan dulu di pendaftaran'],
+            ['label' => 'Kelas kunjungan', 'nilai' => 'AMB (rawat jalan)'],
+        ];
+    }
+
+    public function mount(?string $rjNo = null, string $bagian = 'semua'): void
     {
         $this->rjNo = $rjNo;
+        $this->bagian = in_array($bagian, ['kirim', 'selesai', 'semua'], true) ? $bagian : 'semua';
         $this->reloadState();
     }
 
@@ -41,10 +99,12 @@ new class extends Component {
         if (empty($data)) {
             return;
         }
-        $ss = $data['satusehat'] ?? [];
-        $this->encounterId = $ss['encounterId'] ?? null;
-        $this->encounterInProgress = !empty($ss['encounterInProgress']);
-        $this->encounterFinished = !empty($ss['encounterFinished']);
+        $satuSehat = $data['satusehat'] ?? [];
+        $this->encounterId = $satuSehat['encounterId'] ?? null;
+        $this->encounterInProgress = !empty($satuSehat['encounterInProgress']);
+        $this->encounterFinished = !empty($satuSehat['encounterFinished']);
+        $this->adaDiagnosaTerkirim = !empty($satuSehat['conditionIds']);
+        $this->tanggalKunjungan = trim((string) ($data['rjDate'] ?? ''));
     }
 
     public function kirimForCurrent(): void
@@ -65,16 +125,37 @@ new class extends Component {
         $this->reloadState();
     }
 
+    /**
+     * Pembungkus untuk rantai "Kirim Semua" (rencana potongan B): apa pun hasilnya —
+     * berhasil, ditolak SATUSEHAT, atau berhenti di guard — langkah ini WAJIB memberi
+     * kabar supaya orkestrator bisa melanjutkan. Tanpa ini rantai menggantung diam-diam
+     * pada langkah pertama yang gagal, dan petugas cuma melihat modal yang membeku.
+     */
     #[On('ss-encounter-rj.kirim')]
     public function kirim(string $rjNo): void
     {
+        // Komponen ini dirender DUA KALI di modal (bagian 'kirim' di atas, 'selesai'
+        // paling bawah) dan keduanya mendengar event yang sama. Tanpa penjaring ini
+        // satu klik "Kirim Semua" memberangkatkan Encounter dua kali sekaligus, dan
+        // orkestrator menerima dua kabar untuk satu langkah.
+        if ($this->bagian === 'selesai') {
+            return;
+        }
+
+        $this->kirimInti($rjNo);
+        $this->dispatch('rj-satu-sehat.langkah-selesai', langkah: 'encounter');
+    }
+
+    public function kirimInti(string $rjNo): void
+    {
+        $satuSehat = null;
         try {
             $this->initializeSatuSehat();
-            [$dataRJ, $pasien, $ss] = $this->loadData($rjNo);
+            [$dataRJ, $pasien, $satuSehat] = $this->loadData($rjNo);
 
             // Ambil 3 IHS (patient/dokter/poli) dari DB — pola sama rujukan-kompetensi.
             // Patient UUID registration (SATUSEHAT) di-handle di master-pasien,
-            // BUKAN di sini. Kalau kosong, arahkan user ke master-pasien dulu.
+            // BUKAN di sini. Kalau kosong, arahkan petugas ke master-pasien dulu.
             $regNo = $dataRJ['regNo'] ?? '';
             $patientId = $regNo ? (string) (DB::table('skmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '') : '';
 
@@ -98,10 +179,24 @@ new class extends Component {
                 return;
             }
 
-            $rjDate = $this->parseDate($dataRJ['rjDate'] ?? '');
+            // Tanggal kunjungan kosong = parseDate() diam-diam memakai now(), sehingga
+            // period.start terisi JAM PETUGAS MENEKAN TOMBOL, bukan jam kunjungan. Waktu
+            // itu lalu DIBEKUKAN di SATUSEHAT begitu Encounter terbentuk dan tak bisa
+            // dikoreksi belakangan. Akibatnya berantai: Finish memakai jam layanan
+            // sesungguhnya (taskId7/taskId5) yang bisa lebih awal -> melanggar constraint
+            // start<=end, dan seluruh resource yang menempel ikut salah waktu.
+            // Lebih baik ditolak di sini supaya tanggalnya dibetulkan lebih dulu.
+            $tanggalKunjungan = trim((string) ($dataRJ['rjDate'] ?? ''));
+            if ($tanggalKunjungan === '') {
+                $this->dispatch('toast', type: 'error',
+                    message: 'Tanggal kunjungan (rj_date) kosong — betulkan dulu di pendaftaran sebelum kirim Encounter.');
+                return;
+            }
 
-            if (empty($ss['encounterId'])) {
-                $res = $this->createNewEncounter([
+            $rjDate = $this->parseDate($tanggalKunjungan);
+
+            if (empty($satuSehat['encounterId'])) {
+                $respons = $this->createNewEncounter([
                     'encounterId' => 'RJ-' . $rjNo,
                     'patientId' => $patientId,
                     'patientName' => $pasien['regName'] ?? '',
@@ -111,54 +206,88 @@ new class extends Component {
                     'class_code' => 'AMB',
                     'startDate' => $rjDate->toIso8601String(),
                 ]);
-                $ss['encounterId'] = $res['id'] ?? null;
+                $satuSehat['encounterId'] = $respons['id'] ?? null;
             }
 
-            if (!empty($ss['encounterId']) && empty($ss['encounterInProgress'])) {
-                $this->startRoomEncounter($ss['encounterId'], [
+            if (!empty($satuSehat['encounterId']) && empty($satuSehat['encounterInProgress'])) {
+                $this->startRoomEncounter($satuSehat['encounterId'], [
                     'startDate' => $rjDate->toIso8601String(),
                     'locationId' => $locationId,
                 ]);
-                $ss['encounterInProgress'] = true;
+                $satuSehat['encounterInProgress'] = true;
             }
 
-            $this->saveResult($rjNo, $dataRJ, $ss);
-            $this->dispatch('toast', type: 'success', message: 'Encounter berhasil dikirim: ' . ($ss['encounterId'] ?? '-'));
+            $this->saveResult($rjNo, $satuSehat);
+            $this->dispatch('toast', type: 'success', message: 'Encounter berhasil dikirim: ' . ($satuSehat['encounterId'] ?? '-'));
             $this->dispatch('rj-satu-sehat.refresh', rjNo: $rjNo);
         } catch (\Throwable $e) {
-            $this->dispatch('toast', type: 'error', message: 'Encounter gagal: ' . $e->getMessage());
+            // Encounter yang sudah terbentuk TIDAK boleh hangus id-nya: kalau
+            // startRoomEncounter() yang gagal, encounterId sudah ada di tangan.
+            try { if (!empty($satuSehat['encounterId'])) { $this->saveResult($rjNo, $satuSehat); } } catch (\Throwable) {}
+            $this->dispatch('toast', type: 'error', message: 'Encounter gagal: ' . $this->ringkasErrorSatuSehat($e));
         }
     }
 
+    /** Pembungkus rantai — lihat catatan di kirim(). */
     #[On('ss-encounter-rj.finish')]
     public function finish(string $rjNo): void
     {
+        // Cermin dari penjaring di kirim(): finish hanya dikerjakan instance kartu
+        // penutup, supaya PUT Encounter tidak berangkat dua kali.
+        if ($this->bagian === 'kirim') {
+            return;
+        }
+
+        $this->finishInti($rjNo);
+        $this->dispatch('rj-satu-sehat.langkah-selesai', langkah: 'encounter-selesai');
+    }
+
+    public function finishInti(string $rjNo): void
+    {
         try {
             $this->initializeSatuSehat();
-            [$dataRJ, , $ss] = $this->loadData($rjNo);
+            [$dataRJ, , $satuSehat] = $this->loadData($rjNo);
 
-            if (empty($ss['encounterId'])) {
+            if (empty($satuSehat['encounterId'])) {
                 $this->dispatch('toast', type: 'error', message: 'Encounter belum dibuat.');
                 return;
             }
-            if (!empty($ss['encounterFinished'])) {
+            if (!empty($satuSehat['encounterFinished'])) {
                 $this->dispatch('toast', type: 'info', message: 'Encounter sudah finished.');
                 return;
             }
 
-            $rjDate = $this->parseDate($dataRJ['rjDate'] ?? '');
-            $existing = $this->getEncounter($ss['encounterId']);
-            $existing['status'] = 'finished';
-            $existing['statusHistory'][] = ['status' => 'finished', 'period' => ['start' => $rjDate->toIso8601String(), 'end' => now()->toIso8601String()]];
-            $existing['period']['end'] = now()->toIso8601String();
-            $this->makeRequest('put', "Encounter/{$ss['encounterId']}", $existing);
-            $ss['encounterFinished'] = true;
+            // Waktu selesai = jam layanan berakhir, bukan now() (jam petugas mengklik):
+            // task 7 (obat diserahkan), atau task 5 (keluar poli) bila tak ada obat.
+            $taskIdPelayanan = $dataRJ['taskIdPelayanan'] ?? [];
+            $waktuSelesai = trim((string) ($taskIdPelayanan['taskId7'] ?? '')) ?: trim((string) ($taskIdPelayanan['taskId5'] ?? ''));
+            $akhirIso = $waktuSelesai !== ''
+                ? $this->parseDate($waktuSelesai)->toIso8601String()
+                : now()->toIso8601String();
 
-            $this->saveResult($rjNo, $dataRJ, $ss);
+            // Encounter.diagnosis wajib (RuleNumber 10457) dan harus merujuk Condition yang
+            // sudah dikirim — tolak lebih dulu, jangan kirim lalu pasti ditolak server.
+            $conditionIdList = $satuSehat['conditionIds'] ?? [];
+            if (empty($conditionIdList)) {
+                $this->dispatch('toast', type: 'error',
+                    message: 'Kirim Diagnosa (Condition) dulu — SATUSEHAT mewajibkan Encounter.diagnosis saat finish.');
+                return;
+            }
+
+            // statusHistory tiap entri wajib start+end (Rule 10122), dan period.end tak
+            // boleh mendahului period.start yang dibekukan SATUSEHAT — dirapikan di trait.
+            $encounterTersimpan = $this->siapkanFinishEncounter(
+                $this->getEncounter($satuSehat['encounterId']), $akhirIso, $conditionIdList
+            );
+            $this->makeRequest('put', "Encounter/{$satuSehat['encounterId']}", $encounterTersimpan);
+
+            $satuSehat['encounterFinished'] = true;
+
+            $this->saveResult($rjNo, $satuSehat);
             $this->dispatch('toast', type: 'success', message: 'Encounter finished.');
             $this->dispatch('rj-satu-sehat.refresh', rjNo: $rjNo);
         } catch (\Throwable $e) {
-            $this->dispatch('toast', type: 'error', message: 'Finish Encounter gagal: ' . $e->getMessage());
+            $this->dispatch('toast', type: 'error', message: 'Finish Encounter gagal: ' . $this->ringkasErrorSatuSehat($e));
         }
     }
 
@@ -173,40 +302,26 @@ new class extends Component {
         return [$dataRJ, $pasien, $dataRJ['satusehat'] ?? []];
     }
 
-    private function saveResult(string $rjNo, array $dataRJ, array $ss): void
+    private function saveResult(string $rjNo, array $satuSehat): void
     {
-        DB::transaction(function () use ($rjNo, $ss) {
+        DB::transaction(function () use ($rjNo, $satuSehat) {
             $this->lockRJRow($rjNo);
             $data = $this->findDataRJ($rjNo);
-            $data['satusehat'] = $ss;
+            $data['satusehat'] = $satuSehat;
             $this->updateJsonRJ($rjNo, $data);
         });
     }
 
-    private function getIHS(string $table, string $col, string $val): string
+    private function parseDate(string $teksTanggal): Carbon
     {
-        if (empty($val)) {
-            return '';
-        }
-        $uuidCol = match ($table) {
-            'skmst_doctors' => 'dr_uuid',
-            'skmst_polis' => 'poli_uuid',
-            'skmst_pasiens' => 'patient_uuid',
-            default => 'dr_uuid',
-        };
-        return (string) (DB::table($table)->where($col, $val)->value($uuidCol) ?? '');
-    }
-
-    private function parseDate(string $str): Carbon
-    {
-        if (empty($str)) {
+        if (empty($teksTanggal)) {
             return Carbon::now();
         }
         try {
-            return Carbon::createFromFormat('d/m/Y H:i:s', $str);
+            return Carbon::createFromFormat('d/m/Y H:i:s', $teksTanggal);
         } catch (\Throwable) {
             try {
-                return Carbon::parse($str);
+                return Carbon::parse($teksTanggal);
             } catch (\Throwable) {
                 return Carbon::now();
             }
@@ -216,35 +331,56 @@ new class extends Component {
 ?>
 
 <div class="space-y-3">
-    {{-- Step 1: Encounter --}}
-    <div class="flex items-center justify-between p-4 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-            <div
-                class="flex items-center justify-center w-8 h-8 rounded-full {{ !empty($encounterId) ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500' }}">
-                <span class="text-sm font-bold">1</span>
+    @if ($bagian !== 'selesai')
+        {{-- Step 1: Encounter --}}
+        <div
+            class="p-4 bg-canvas border border-hairline shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex items-center justify-center w-8 h-8 rounded-full {{ !empty($encounterId) ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500' }}">
+                    <span class="text-sm font-bold">1</span>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-800 dark:text-gray-100">Encounter</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Kunjungan pasien (AMB / rawat jalan).</div>
+                    @if ($tanggalKunjungan === '')
+                        <div class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                            Tanggal kunjungan kosong — betulkan di pendaftaran, Kirim akan ditolak.
+                        </div>
+                    @else
+                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Mulai (period.start): {{ $tanggalKunjungan }}
+                        </div>
+                    @endif
+                    @if (!empty($encounterId))
+                        <div class="mt-1 font-mono text-xs text-emerald-600 dark:text-emerald-400">
+                            ID: {{ $encounterId }}
+                        </div>
+                    @endif
+                </div>
             </div>
-            <div>
-                <div class="font-semibold text-gray-800 dark:text-gray-100">Encounter</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Kunjungan pasien ke RS.</div>
-                @if (!empty($encounterId))
-                    <div class="mt-1 font-mono text-xs text-emerald-600 dark:text-emerald-400">
-                        ID: {{ $encounterId }}
-                    </div>
-                @endif
+            <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled"
+                class="!bg-teal-600 hover:!bg-teal-700 {{ !empty($encounterId) ? '!bg-emerald-600' : '' }}">
+                <span wire:loading.remove wire:target="kirimForCurrent,kirim">
+                    <span class="inline-flex items-center gap-1.5">
+                        <x-satu-sehat.ikon-tombol :selesai="!empty($encounterId)" jenis="kirim" />
+                        {{ !empty($encounterId) ? 'Terkirim' : 'Kirim' }}
+                    </span>
+                </span>
+                <span wire:loading wire:target="kirimForCurrent,kirim"><x-loading />...</span>
+            </x-primary-button>
             </div>
-        </div>
-        <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled"
-            class="!bg-teal-600 hover:!bg-teal-700 {{ !empty($encounterId) ? '!bg-emerald-600' : '' }}">
-            <span wire:loading.remove wire:target="kirimForCurrent">
-                {{ !empty($encounterId) ? 'Terkirim' : 'Kirim' }}
-            </span>
-            <span wire:loading wire:target="kirimForCurrent"><x-loading />...</span>
-        </x-primary-button>
-    </div>
 
-    {{-- Selesaikan Encounter (visible setelah encounter ada) --}}
-    @if (!empty($encounterId))
-        <div class="flex items-center justify-between p-4 bg-white border-2 border-teal-300 shadow-sm rounded-xl dark:bg-gray-900 dark:border-teal-700">
+            <x-satu-sehat.pratinjau :terbuka="$pratinjauTerbuka" :baris="$pratinjauTerbuka ? $this->pratinjau : []"
+                kosong="Data kunjungan belum lengkap — lihat pesan saat menekan Kirim." />
+        </div>
+    @endif
+
+    {{-- Selesaikan Encounter — muncul setelah encounter ada. --}}
+    @if ($bagian !== 'kirim' && !empty($encounterId))
+        <div
+            class="flex items-center justify-between p-4 bg-white border-2 border-teal-300 shadow-sm rounded-xl dark:bg-gray-900 dark:border-teal-700">
             <div class="flex items-center gap-3">
                 <div
                     class="flex items-center justify-center w-8 h-8 rounded-full {{ $encounterFinished ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400' }}">
@@ -254,15 +390,26 @@ new class extends Component {
                 </div>
                 <div>
                     <div class="font-semibold text-gray-800 dark:text-gray-100">Selesaikan Encounter</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Update status encounter menjadi finished.</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Update status encounter menjadi finished.
+                    </div>
+                    @unless ($encounterFinished)
+                        @if (!$adaDiagnosaTerkirim)
+                            <div class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                                Kirim Diagnosa (Condition) dulu — Encounter.diagnosis wajib saat finish.
+                            </div>
+                        @endif
+                    @endunless
                 </div>
             </div>
             <x-primary-button type="button" wire:click="finishForCurrent" wire:loading.attr="disabled"
                 class="{{ $encounterFinished ? '!bg-emerald-600' : '!bg-teal-600 hover:!bg-teal-700' }}">
-                <span wire:loading.remove wire:target="finishForCurrent">
-                    {{ $encounterFinished ? 'Selesai' : 'Finish' }}
+                <span wire:loading.remove wire:target="finishForCurrent,finish">
+                    <span class="inline-flex items-center gap-1.5">
+                        <x-satu-sehat.ikon-tombol :selesai="$encounterFinished" jenis="finish" />
+                        {{ $encounterFinished ? 'Selesai' : 'Finish' }}
+                    </span>
                 </span>
-                <span wire:loading wire:target="finishForCurrent"><x-loading />...</span>
+                <span wire:loading wire:target="finishForCurrent,finish"><x-loading />...</span>
             </x-primary-button>
         </div>
     @endif

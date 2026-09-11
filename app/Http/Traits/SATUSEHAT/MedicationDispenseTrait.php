@@ -52,13 +52,19 @@ trait MedicationDispenseTrait
                 'use'    => 'official',
                 'value'  => $data['registrationId']
             ]],
-            'code'   => [
-                'coding' => [[
-                    'system'  => 'http://sys-ids.kemkes.go.id/kfa',
-                    'code'    => $data['medicationCode'],
-                    'display' => $data['medicationDisplay']
-                ]]
-            ],
+            // Racikan (compound) tidak punya kode KFA untuk campurannya — yang ber-KFA
+            // adalah bahan-bahannya (lihat 'ingredient'). Untuk kasus itu pemanggil
+            // mengirim medicationCode kosong, dan code cukup berisi teks.
+            'code'   => trim((string) ($data['medicationCode'] ?? '')) !== ''
+                ? [
+                    'coding' => [[
+                        'system'  => 'http://sys-ids.kemkes.go.id/kfa',
+                        'code'    => $data['medicationCode'],
+                        'display' => $data['medicationDisplay']
+                    ]],
+                    'text' => $data['medicationDisplay'],
+                ]
+                : ['text' => $data['medicationDisplay']],
             'status' => 'active',
             'manufacturer' => [
                 'reference' => "Organization/{$data['orgId']}"
@@ -120,13 +126,24 @@ trait MedicationDispenseTrait
             'whenPrepared'   => $data['whenPrepared'],
             'whenHandedOver' => $data['whenHandedOver'],
             'performer'      => $data['performer'],
-            'dosageInstruction'       => $data['dosageInstruction'],
             'authorizingPrescription' => [$data['authorizingPrescription']],
-            'quantity'       => $data['quantity'],
-            'daysSupply'     => $data['daysSupply'],
             'receiver'       => [$data['receiver']],
             // 'substitution'   => $data['substitution'],
         ];
+
+        // Racikan: bahan-bahannya yang membawa kode KFA
+        // (App\Support\Terminologi\RacikanKfa::fhirIngredient()).
+        if (!empty($data['ingredient'])) {
+            $payload['contained'][0]['ingredient'] = $data['ingredient'];
+        }
+
+        // Field opsional hanya dikirim bila ada isinya — SATUSEHAT menolak elemen
+        // bertipe objek yang dikirim sebagai array kosong (lihat MedicationRequestTrait).
+        foreach (['dosageInstruction', 'quantity', 'daysSupply'] as $kunciOpsional) {
+            if (!empty($data[$kunciOpsional])) {
+                $payload[$kunciOpsional] = $data[$kunciOpsional];
+            }
+        }
 
         // optional destination (e.g. ward, pharmacy)
         if (!empty($data['destinationId'])) {

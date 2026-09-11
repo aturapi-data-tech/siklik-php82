@@ -21,7 +21,9 @@ trait ServiceRequestTrait
      *- occurrenceDateTime: string (ISO8601)
      *- authoredOn: string (ISO8601)
      *- requester: string (reference, e.g. 'Practitioner/{id}')
-     *- performer (optional): array of references
+     *- performer (opsional): string reference praktisi yang MENGERJAKAN pemeriksaan.
+     *  Bila tidak diisi, requester dipakai sebagai pengganti — lihat catatan di
+     *  buildServiceRequest(). Field ini wajib ada di payload (RuleNumber 10377).
      *- reasonCode (optional): array of either text or coding arrays
      *
      * @return array
@@ -51,11 +53,25 @@ trait ServiceRequestTrait
             'requester' => ['reference' => $data['requester'], 'display' => $data['requesterDisplay']],
         ];
 
-        if (!empty($data['performer'])) {
-            $payload['performer'] = [
-                ['reference' => $data['performer'], 'display' => $data['performerDisplay']]
-            ];
-        }
+        // performer WAJIB — SATUSEHAT menolak tanpanya:
+        //   "Reference is mandatory : ServiceRequest.performer (RuleNumber: 10377)"
+        //
+        // Menurut koleksi Postman resmi, isinya praktisi yang MENGERJAKAN pemeriksaan
+        // (Practitioner_Id_Lab / Practitioner_Id_Rad), bukan dokter pengirim. Masalahnya
+        // kita belum punya IHS untuk petugas penunjang: satu-satunya pemetaan ke
+        // Practitioner di basis data adalah skmst_doctors.dr_uuid, sementara petugas
+        // penunjang tersimpan tanpa uuid.
+        //
+        // Jadi bila pemanggil tidak menyebut performer, dokter pengirim dipakai sebagai
+        // penggantinya — kiriman jalan, tapi nilainya BELUM AKURAT. Begitu ada master
+        // dokter penanggung jawab penunjang (atau pemetaan petugas → IHS), pemanggil
+        // tinggal mengirim performer sendiri dan baris ini tidak perlu diubah.
+        $performer = $data['performer'] ?? $data['requester'];
+        $performerDisplay = $data['performerDisplay'] ?? ($data['requesterDisplay'] ?? null);
+
+        $payload['performer'] = [
+            ['reference' => $performer, 'display' => $performerDisplay],
+        ];
 
         if (!empty($data['reasonCode'])) {
             $payload['reasonCode'] = $data['reasonCode'];
@@ -96,6 +112,15 @@ trait ServiceRequestTrait
      */
     public function searchServiceRequest(array $params = []): array
     {
-        return $this->makeRequest('get', '/ServiceRequest', [], $params);
+        // makeRequest() hanya menerima 3 argumen; $params yang dulu dikirim sebagai
+        // argumen KEEMPAT dibuang diam-diam oleh PHP, sehingga fungsi ini sebenarnya
+        // mengambil SELURUH ServiceRequest tanpa filter apa pun. Query string kini
+        // dirangkai ke endpoint, sebagaimana pencarian lain di trait-trait SATUSEHAT.
+        $endpoint = '/ServiceRequest';
+        if (!empty($params)) {
+            $endpoint .= '?' . http_build_query($params);
+        }
+
+        return $this->makeRequest('get', $endpoint);
     }
 }
