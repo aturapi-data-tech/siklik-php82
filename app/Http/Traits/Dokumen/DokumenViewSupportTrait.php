@@ -106,7 +106,7 @@ trait DokumenViewSupportTrait
 
     /**
      * Render blade print jadi HTML self-contained (untuk preview iframe di modal Lihat).
-     * $view = nama blade lengkap (mis. 'pages.components.modul-dokumen.r-j.xxx.cetak-xxx-print').
+     * $view = nama blade lengkap (mis. 'pages.components.modul-dokumen.rj.xxx.cetak-xxx-print').
      * Memakai payload yg sama dgn cetak → isi Lihat = persis tampilan Cetak.
      */
     protected function renderDokumenPreview(string $view, array $data): string

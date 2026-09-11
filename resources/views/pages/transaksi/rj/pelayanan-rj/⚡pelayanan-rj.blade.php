@@ -822,7 +822,7 @@ new class extends Component {
                                                             <div class="grid grid-cols-2 gap-1">
 
                                                                 {{-- Rekam Medis — Perawat, Dokter, Admin, Mr (view) --}}
-                                                                @hasanyrole('Perawat|Dokter|Admin|Mr')
+                                                                @can('emr.buka')
                                                                     <x-dropdown-link href="#"
                                                                         wire:click.prevent="openRekamMedis('{{ $row->rj_no }}')"
                                                                         class="px-3 py-2 text-sm rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40">
@@ -840,10 +840,10 @@ new class extends Component {
                                                                             </span>
                                                                         </div>
                                                                     </x-dropdown-link>
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                                 {{-- Modul Dokumen — Admin, Perawat, Dokter, Mr --}}
-                                                                @hasanyrole('Admin|Perawat|Dokter|Mr')
+                                                                @can('dokumen.buka')
                                                                     <x-dropdown-link href="#"
                                                                         wire:click.prevent="openModulDokumen('{{ $row->rj_no }}')"
                                                                         class="px-3 py-2 text-sm rounded-lg bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40">
@@ -862,10 +862,10 @@ new class extends Component {
                                                                             </span>
                                                                         </div>
                                                                     </x-dropdown-link>
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                                 {{-- Administrasi — Admin, Perawat, Tu --}}
-                                                                @hasanyrole('Admin|Perawat|Tu')
+                                                                @can('administrasi.buka')
                                                                     <x-dropdown-link href="#"
                                                                         wire:click.prevent="openAdministrasiPasien('{{ $row->rj_no }}')"
                                                                         class="px-3 py-2 text-sm rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40">
@@ -884,7 +884,7 @@ new class extends Component {
                                                                             </span>
                                                                         </div>
                                                                     </x-dropdown-link>
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                             </div>
 

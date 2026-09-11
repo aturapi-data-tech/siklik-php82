@@ -118,7 +118,7 @@ new class extends Component {
         ];
 
         // ── Generate PDF ──
-        $pdf = Pdf::loadView('pages.components.modul-dokumen.r-j.kwitansi.cetak-kwitansi-rj-obat-print', ['data' => $data])->setPaper('A4');
+        $pdf = Pdf::loadView('pages.components.modul-dokumen.rj.kwitansi.cetak-kwitansi-rj-obat-print', ['data' => $data])->setPaper('A4');
 
         $filename = 'kwitansi-obat-' . ($hdr->reg_no ?? $rjNo) . '.pdf';
 

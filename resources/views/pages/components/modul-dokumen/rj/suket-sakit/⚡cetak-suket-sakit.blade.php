@@ -78,7 +78,7 @@ new class extends Component {
             'tglCetak' => Carbon::now()->translatedFormat('d F Y'),
         ]);
 
-        $pdf = Pdf::loadView('pages.components.modul-dokumen.r-j.suket-sakit.cetak-suket-sakit-print', [
+        $pdf = Pdf::loadView('pages.components.modul-dokumen.rj.suket-sakit.cetak-suket-sakit-print', [
             'data' => $data,
         ])->setPaper('A4');
 

@@ -225,7 +225,7 @@ new class extends Component {
                                 </x-badge>
                             @endif
 
-                            @role(['Dokter', 'Admin'])
+                            @can('emr.icare')
                                 @if (!empty($dataDaftarPoliRJ['sep']['noSep']))
                                     <x-secondary-button type="button"
                                         wire:click="myiCare('{{ $dataDaftarPoliRJ['sep']['noSep'] }}')"
@@ -242,7 +242,7 @@ new class extends Component {
                                         </span>
                                     </x-secondary-button>
                                 @endif
-                            @endrole
+                            @endcan
 
                         </div>
 
@@ -317,7 +317,7 @@ new class extends Component {
                     {{-- KIRI: Administrasi + Modul Dokumen (selaras sirus) --}}
                     <div class="flex items-center gap-2">
                         {{-- Administrasi --}}
-                        @hasanyrole('Admin|Perawat|Tu')
+                        @can('administrasi.buka')
                             <x-primary-button type="button" wire:click="openAdministrasiPasien('{{ $rjNo }}')"
                                 wire:loading.attr="disabled" wire:target="openAdministrasiPasien"
                                 class="gap-1 !bg-teal-600 hover:!bg-teal-700 !text-white focus:!ring-teal-300 dark:!bg-teal-600 dark:!text-white dark:hover:!bg-teal-700 dark:focus:!ring-teal-900">
@@ -333,10 +333,10 @@ new class extends Component {
                                     <x-loading /> Memuat...
                                 </span>
                             </x-primary-button>
-                        @endhasanyrole
+                        @endcan
 
                         {{-- Modul Dokumen --}}
-                        @hasanyrole('Admin|Perawat|Dokter|Mr')
+                        @can('dokumen.buka')
                             <x-primary-button type="button"
                                 wire:click="$dispatch('emr-rj.modul-dokumen.open', { rjNo: '{{ $rjNo }}' })"
                                 class="gap-1 !bg-indigo-600 hover:!bg-indigo-700 !text-white focus:!ring-indigo-300 dark:!bg-indigo-600 dark:!text-white dark:hover:!bg-indigo-700 dark:focus:!ring-indigo-900">
@@ -346,10 +346,10 @@ new class extends Component {
                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>Modul Dokumen
                             </x-primary-button>
-                        @endhasanyrole
+                        @endcan
 
                         {{-- Log Aktivitas (audit jejak — Admin & Mr) --}}
-                        @hasanyrole('Admin|Mr')
+                        @can('emr.logAktivitas')
                             <x-primary-button type="button"
                                 wire:click="$dispatch('emr-rj.log-aktivitas.open', { rjNo: '{{ $rjNo }}' })"
                                 class="gap-1 !bg-slate-600 hover:!bg-slate-700 !text-white focus:!ring-slate-300 dark:!bg-slate-600 dark:!text-white dark:hover:!bg-slate-700 dark:focus:!ring-slate-900">
@@ -359,12 +359,12 @@ new class extends Component {
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>Log Aktivitas
                             </x-primary-button>
-                        @endhasanyrole
+                        @endcan
                     </div>
 
                     {{-- KANAN: Cetak E-Resep + Tutup + Simpan --}}
                     <div class="flex items-center gap-3">
-                        @hasanyrole('Perawat|Dokter|Admin|Mr')
+                        @can('emr.cetakEresep')
                             @if ($this->hasEresep())
                                 <x-outline-button type="button" wire:click="cetakEresep('{{ $rjNo }}')"
                                     wire:loading.attr="disabled" wire:target="cetakEresep">
@@ -381,7 +381,7 @@ new class extends Component {
                                     </span>
                                 </x-outline-button>
                             @endif
-                        @endhasanyrole
+                        @endcan
 
                         <x-secondary-button x-on:click="tryClose()">
                             Tutup
@@ -448,5 +448,5 @@ new class extends Component {
     </x-modal>
 
     {{-- Cetak E-Resep PDF (headless: listen event cetak-eresep-rj.open) --}}
-    <livewire:pages::components.rekam-medis.r-j.cetak-eresep.cetak-eresep wire:key="cetak-eresep-rj-emr" />
+    <livewire:pages::components.rekam-medis.rj.cetak-eresep.cetak-eresep wire:key="cetak-eresep-rj-emr" />
 </div>

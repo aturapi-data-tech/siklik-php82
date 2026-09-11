@@ -31,7 +31,7 @@ new class extends Component {
         }
 
         // Audit jejak hanya untuk Admin & Mr (rekam medis).
-        if (!auth()->user()->hasAnyRole(['Admin', 'Mr'])) {
+        if (!auth()->user()?->can('emr.logAktivitas')) {
             $this->dispatch('toast', type: 'error', message: 'Hanya Admin & Rekam Medis yang dapat melihat Log Aktivitas.');
             return;
         }

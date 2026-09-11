@@ -1,4 +1,4 @@
-{{-- resources/views/pages/components/modul-dokumen/r-j/rekam-medis/cetak-rekam-medis-print.blade.php --}}
+{{-- resources/views/pages/components/modul-dokumen/rj/rekam-medis/cetak-rekam-medis-print.blade.php --}}
 
 <x-pdf.layout-a4 title="ASSESMENT AWAL RAWAT JALAN">
 

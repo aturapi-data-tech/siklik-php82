@@ -1,4 +1,4 @@
-{{-- resources/views/pages/components/modul-dokumen/r-j/general-consent/cetak-general-consent-rj-print.blade.php --}}
+{{-- resources/views/pages/components/modul-dokumen/rj/general-consent/cetak-general-consent-rj-print.blade.php --}}
 
 <x-pdf.layout-a4-with-out-background title="FORMULIR PERSETUJUAN UMUM (GENERAL CONSENT)">
 

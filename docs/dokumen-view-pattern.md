@@ -1,6 +1,6 @@
 # Pola "Dokumen Viewer" (Lihat = Preview Cetak) — Rekam Medis
 
-Pola untuk menampilkan dokumen read-only di layar yang **isinya persis sama dengan hasil Cetak PDF**, plus navigasi antar-record tanpa buka-tutup modal. Dipakai di display Rekam Medis RJ (`resources/views/pages/components/rekam-medis/r-j/dokumen-view/`).
+Pola untuk menampilkan dokumen read-only di layar yang **isinya persis sama dengan hasil Cetak PDF**, plus navigasi antar-record tanpa buka-tutup modal. Dipakai di display Rekam Medis RJ (`resources/views/pages/components/rekam-medis/rj/dokumen-view/`).
 
 > Catatan siklik: repo ini **RJ-only** (klinik pratama). Pola ini diadopsi dari sirus-php82 (yang mencakup RI/UGD/RJ) — versi di sini hanya bagian RJ.
 
@@ -38,7 +38,7 @@ new class extends Component {
     public array $list = [];         // entri dioper via prop dari parent (bukan baca CLOB ulang)
     public ?array $selected = null;
     public string $previewHtml = '';
-    private string $printView = 'pages.components.modul-dokumen.r-j.<doc>.cetak-<doc>-rj-print';
+    private string $printView = 'pages.components.modul-dokumen.rj.<doc>.cetak-<doc>-rj-print';
 
     public function lihat(string $id): void {
         $this->selected = collect($this->list)->firstWhere('<field>', $id) ?: null;

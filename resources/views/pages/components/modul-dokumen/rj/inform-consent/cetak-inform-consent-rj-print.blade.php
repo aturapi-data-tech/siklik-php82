@@ -1,4 +1,4 @@
-{{-- resources/views/pages/components/modul-dokumen/r-j/inform-consent/cetak-inform-consent-rj-print.blade.php --}}
+{{-- resources/views/pages/components/modul-dokumen/rj/inform-consent/cetak-inform-consent-rj-print.blade.php --}}
 
 @php
     $isSetuju = ($data['consent']['agreement'] ?? '1') === '1';

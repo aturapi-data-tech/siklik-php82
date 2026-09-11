@@ -641,9 +641,9 @@ new class extends Component {
             <div x-show="tab === 'dokumen'" style="display:none"
                 class="flex-1 px-6 py-5 space-y-4 overflow-y-auto bg-gray-50/70 dark:bg-gray-950/20">
                 @if ($rjNo)
-                    <livewire:pages::components.rekam-medis.r-j.dokumen-view.inform-consent-view-rj
+                    <livewire:pages::components.rekam-medis.rj.dokumen-view.inform-consent-view-rj
                         :rjNo="$rjNo" :entries="$txn['informConsentPasienRJ'] ?? []" wire:key="ic-view-{{ $rjNo }}" />
-                    <livewire:pages::components.rekam-medis.r-j.dokumen-view.general-consent-view-rj
+                    <livewire:pages::components.rekam-medis.rj.dokumen-view.general-consent-view-rj
                         :rjNo="$rjNo" :consent="$txn['generalConsentPasienRJ'] ?? []" wire:key="gc-view-{{ $rjNo }}" />
                 @endif
             </div>

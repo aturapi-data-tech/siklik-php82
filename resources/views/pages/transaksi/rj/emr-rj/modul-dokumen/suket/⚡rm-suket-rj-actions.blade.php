@@ -314,6 +314,6 @@ new class extends Component {
     </div>
 
     {{-- Cetak components — daftar sekali di parent/modal --}}
-    <livewire:pages::components.modul-dokumen.r-j.suket-sakit.cetak-suket-sakit wire:key="cetak-suket-sakit" />
-    <livewire:pages::components.modul-dokumen.r-j.suket-sehat.cetak-suket-sehat wire:key="cetak-suket-sehat" />
+    <livewire:pages::components.modul-dokumen.rj.suket-sakit.cetak-suket-sakit wire:key="cetak-suket-sakit" />
+    <livewire:pages::components.modul-dokumen.rj.suket-sehat.cetak-suket-sehat wire:key="cetak-suket-sehat" />
 </div>

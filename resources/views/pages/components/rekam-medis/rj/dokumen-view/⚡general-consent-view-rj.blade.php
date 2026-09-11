@@ -15,7 +15,7 @@ new class extends Component {
     public array $consent = [];
     public string $previewHtml = '';
 
-    private string $printView = 'pages.components.modul-dokumen.r-j.general-consent.cetak-general-consent-rj-print';
+    private string $printView = 'pages.components.modul-dokumen.rj.general-consent.cetak-general-consent-rj-print';
 
     public function mount(?int $rjNo = null, array $consent = []): void
     {

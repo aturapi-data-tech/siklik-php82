@@ -263,7 +263,7 @@ Untuk TTD area, **selalu pakai `h-16` (native)** — bukan `h-[64px]`. `h-16` = 
 
 24 file `-print.blade.php` (TTD digital `h-16`):
 
-- 2 EMR Assessment Awal (`rekam-medis/r-j/cetak-rekam-medis/cetak-rekam-medis-print`, `rekam-medis/u-g-d/cetak-rekam-medis/cetak-rekam-medis-print`)
+- 2 EMR Assessment Awal (`rekam-medis/rj/cetak-rekam-medis/cetak-rekam-medis-print`, `rekam-medis/u-g-d/cetak-rekam-medis/cetak-rekam-medis-print`)
 - 2 Penunjang (`rekam-medis/penunjang/laboratorium-display/laboratorium-display-print`, `rekam-medis/penunjang/radiologi-display/radiologi-display-print`)
 - 3 Eresep (`rekam-medis/{r-j,u-g-d,r-i}/cetak-eresep/cetak-eresep-print`)
 - 4 Suket Sakit/Sehat (`modul-dokumen/{r-j,u-g-d}/suket-{sakit,sehat}/cetak-suket-*-print`)
@@ -271,14 +271,14 @@ Untuk TTD area, **selalu pakai `h-16` (native)** — bukan `h-[64px]`. `h-16` = 
 - 3 Inform Consent (`modul-dokumen/{r-j,u-g-d,r-i}/inform-consent/cetak-inform-consent-*-print`)
 - 1 Form Penjaminan (`modul-dokumen/u-g-d/form-penjaminan/cetak-form-penjaminan-print`)
 - 1 Form Transfer UGD-RI (`modul-dokumen/u-g-d/form-trf-ugd-ri/cetak-form-trf-ugd-ri-print`)
-- 2 Rekam Medis RJ baru (`rekam-medis/r-j/cetak-rekam-medis/cetak-rekam-medis-rj-{v1,fisio}-print`)
+- 2 Rekam Medis RJ baru (`rekam-medis/rj/cetak-rekam-medis/cetak-rekam-medis-rj-{v1,fisio}-print`)
 - 1 Riwayat Pengobatan RI (`modul-dokumen/r-i/riwayat-pengobatan/cetak-riwayat-pengobatan-ri-print`)
 - 2 Form A & B MPP (`livewire/cetak/cetak-form-{a,b}-print`)
 
 3 file BPJS pakai pola compact (`height: 30/40px` + `&nbsp;`):
-- `modul-dokumen/b-p-j-s/cetak-sep/cetak-sep-print`
-- `modul-dokumen/b-p-j-s/cetak-skdp/cetak-skdp-print`
-- `modul-dokumen/b-p-j-s/cetak-prb/cetak-prb-print`
+- `modul-dokumen/bpjs/cetak-sep/cetak-sep-print`
+- `modul-dokumen/bpjs/cetak-skdp/cetak-skdp-print`
+- `modul-dokumen/bpjs/cetak-prb/cetak-prb-print`
 
 ---
 
@@ -300,7 +300,7 @@ Untuk TTD area, **selalu pakai `h-16` (native)** — bukan `h-[64px]`. `h-16` = 
 
 - Direktif: `app/Providers/AppServiceProvider.php` → `Blade::directive('ttdSrc', ...)`
 - Layout: `resources/views/components/pdf/layout-a4-with-out-background.blade.php`
-- Contoh canonical (3-stack): `resources/views/pages/components/rekam-medis/r-j/cetak-rekam-medis/cetak-rekam-medis-rj-v1-print.blade.php`
+- Contoh canonical (3-stack): `resources/views/pages/components/rekam-medis/rj/cetak-rekam-medis/cetak-rekam-medis-rj-v1-print.blade.php`
 - Contoh single TTD: `resources/views/pages/components/modul-dokumen/u-g-d/suket-sakit/cetak-suket-sakit-ugd-print.blade.php`
 - Contoh 3-kolom TTD: `resources/views/pages/components/modul-dokumen/u-g-d/inform-consent/cetak-inform-consent-print.blade.php`
-- Contoh compact BPJS: `resources/views/pages/components/modul-dokumen/b-p-j-s/cetak-sep/cetak-sep-print.blade.php`
+- Contoh compact BPJS: `resources/views/pages/components/modul-dokumen/bpjs/cetak-sep/cetak-sep-print.blade.php`

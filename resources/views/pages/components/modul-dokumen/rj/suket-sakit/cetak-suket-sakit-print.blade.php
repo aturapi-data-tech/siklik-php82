@@ -1,4 +1,4 @@
-{{-- resources/views/pages/components/modul-dokumen/r-j/suket-sakit/cetak-suket-sakit-print.blade.php --}}
+{{-- resources/views/pages/components/modul-dokumen/rj/suket-sakit/cetak-suket-sakit-print.blade.php --}}
 
 <x-pdf.layout-a4 title="SURAT KETERANGAN SAKIT">
 

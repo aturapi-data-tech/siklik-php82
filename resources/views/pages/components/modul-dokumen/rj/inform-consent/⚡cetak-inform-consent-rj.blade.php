@@ -1,5 +1,5 @@
 <?php
-// resources/views/pages/components/modul-dokumen/r-j/inform-consent/cetak-inform-consent-rj.blade.php
+// resources/views/pages/components/modul-dokumen/rj/inform-consent/cetak-inform-consent-rj.blade.php
 
 use Livewire\Component;
 use Livewire\Attributes\On;
@@ -103,7 +103,7 @@ new class extends Component {
 
         set_time_limit(300);
 
-        $pdf = Pdf::loadView('pages.components.modul-dokumen.r-j.inform-consent.cetak-inform-consent-rj-print', ['data' => $data])->setPaper('A4');
+        $pdf = Pdf::loadView('pages.components.modul-dokumen.rj.inform-consent.cetak-inform-consent-rj-print', ['data' => $data])->setPaper('A4');
 
         return response()->streamDownload(fn() => print $pdf->output(), 'inform-consent-rj-' . ($pasien['regNo'] ?? $rjNo) . '.pdf');
     }
