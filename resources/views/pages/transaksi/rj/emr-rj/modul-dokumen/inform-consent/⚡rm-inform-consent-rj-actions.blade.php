@@ -60,6 +60,15 @@ new class extends Component {
 
     public array $consentList = [];
 
+    // Layar aktif di modal: 'daftar' (tabel entri) atau 'form' (isi/lanjutkan draft).
+    // Formulir sengaja tidak nongkrong bersama daftarnya: dulu ia tampil terus lalu
+    // dikosongkan diam-diam sesudah tersimpan, dan petugas yang mengira itu masih
+    // formulir yang tadi diisi mengetik ulang — tersimpan sebagai draft baru.
+    public string $layar = 'daftar';
+
+    // Kunci entri yang sedang dilanjutkan = nilai signatureDate (stabil, bukan index array).
+    public ?string $editingKey = null;
+
     // ── Layar "Lihat" (preview read-only = render blade cetak ke iframe) ──
     // Pola docs/dokumen-view-pattern.md; payload dibuat oleh buatDataCetak().
     public ?array $entriDilihat = null;
@@ -95,12 +104,9 @@ new class extends Component {
             return;
         }
 
-        $this->resetNewConsent();
-        $this->signature = '';
-        $this->signatureSaksi = '';
+        $this->cancelEdit();
         $this->previewHtml = '';
         $this->entriDilihat = null;
-        $this->resetValidation();
 
         $data = $this->findDataRJ($this->rjNo);
         if (!$data) {
@@ -220,7 +226,8 @@ new class extends Component {
     }
 
     /* ===============================
-     | SET DOKTER PENJELAS
+     | TTD PEMBERI INFORMASI = validasi penuh + stempel + KUNCI entri
+     | (aksi terakhir sekaligus pengunci — tidak ada tombol "Simpan & Kunci" terpisah)
      =============================== */
     public function setDokterPenjelas(): void
     {
@@ -230,14 +237,37 @@ new class extends Component {
         }
 
         if (!empty($this->newConsent['dokter'])) {
-            $this->dispatch('toast', type: 'warning', message: 'Tanda tangan dokter sudah ada.');
+            $this->dispatch('toast', type: 'warning', message: 'Tanda tangan pemberi informasi sudah ada.');
             return;
         }
 
+        $stempelLama = [
+            'dokter' => $this->newConsent['dokter'] ?? '',
+            'dokterCode' => $this->newConsent['dokterCode'] ?? '',
+            'dokterDate' => $this->newConsent['dokterDate'] ?? '',
+        ];
         $this->newConsent['dokter'] = auth()->user()->myuser_name ?? '';
         $this->newConsent['dokterCode'] = auth()->user()->myuser_code ?? '';
         $this->newConsent['dokterDate'] = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
-        $this->dispatch('toast', type: 'success', message: 'Tanda tangan dokter berhasil ditambahkan.');
+        $this->stempelPpa();
+
+        // Stempel yang ditulis sebelum validate() WAJIB dicabut lagi saat validasi gagal —
+        // kalau tidak, tombol TTD hilang (komponen mengira sudah TTD) padahal tak ada yang tersimpan.
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+            $this->newConsent = array_replace($this->newConsent, $stempelLama);
+            $this->dispatch('toast', type: 'error', message: 'Lengkapi isian & tanda tangan pasien/saksi sebelum TTD pemberi informasi.');
+            throw $e;
+        }
+
+        $key = $this->editingKey ?: Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
+        if ($this->persistEntry($key, 'Kunci Inform Consent (TTD pemberi informasi)')) {
+            $this->dispatch('toast', type: 'success', message: 'Inform Consent ditandatangani & dikunci.');
+            $this->cancelEdit(); // kosongkan formulir = kembali ke daftar
+        } else {
+            $this->newConsent = array_replace($this->newConsent, $stempelLama);
+        }
     }
 
     /* ===============================
@@ -257,100 +287,243 @@ new class extends Component {
     }
 
     /* ===============================
-     | SAVE
+     | SIMPAN DRAFT — tanpa validasi penuh; hanya nama tindakan yang wajib.
+     | Upsert by editingKey supaya menyimpan dua kali tidak membuat entri kembar.
      =============================== */
     #[On('save-rm-inform-consent-rj')]
     public function addConsent(): void
+    {
+        $this->saveDraft();
+    }
+
+    public function saveDraft(): void
     {
         if ($this->isFormLocked) {
             $this->dispatch('toast', type: 'error', message: 'Form read-only, tidak dapat menyimpan.');
             return;
         }
+        if (!$this->diForm()) {
+            return;
+        }
 
-        $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
+        $this->validateOnly('newConsent.tindakan');
+        $this->stempelPpa();
 
-        // Stempel PPA ditulis ke form SEBELUM validate() — supaya kode & tanggalnya
-        // ikut satu paket dengan entri yang tersimpan.
-        $stempelPpaLama = [
-            'petugasPemeriksaCode' => $this->newConsent['petugasPemeriksaCode'] ?? '',
-            'petugasPemeriksaDate' => $this->newConsent['petugasPemeriksaDate'] ?? '',
-        ];
+        $key = $this->editingKey ?: Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
+        if ($this->persistEntry($key, $this->editingKey ? 'Ubah draft Inform Consent' : 'Simpan draft Inform Consent')) {
+            $this->editingKey = $key; // lanjut mengedit entri yang sama, bukan membuat duplikat
+            $this->dispatch('toast', type: 'success', message: 'Draft Inform Consent tersimpan. Lanjutkan tanda tangan untuk mengunci.');
+        }
+    }
 
-        // PPA (combobox): resolve kode dari nama (users.myuser_code); tanggal = waktu entri.
-        // Nama ketik-bebas tanpa match → kode kosong (cetak fallback ke nama, aman).
+    /** PPA (combobox): resolve kode dari nama (users.myuser_code); nama ketik-bebas tanpa match → kode kosong. */
+    private function stempelPpa(): void
+    {
         $namaPpa = trim($this->newConsent['petugasPemeriksa'] ?? '');
-        if ($namaPpa !== '') {
-            $this->newConsent['petugasPemeriksaCode'] = DB::table('users')->where('myuser_name', $namaPpa)->value('myuser_code') ?? '';
-            $this->newConsent['petugasPemeriksaDate'] = $now;
-        } else {
+        if ($namaPpa === '') {
             $this->newConsent['petugasPemeriksaCode'] = '';
             $this->newConsent['petugasPemeriksaDate'] = '';
+            return;
         }
-
-        // Stempel yang ditulis sebelum validate() WAJIB dicabut lagi saat validasi
-        // gagal — kalau tidak, stempel tersangkut di form padahal tak ada yang tersimpan.
-        try {
-            $this->validate();
-        } catch (ValidationException $e) {
-            $this->newConsent = array_replace($this->newConsent, $stempelPpaLama);
-            throw $e;
+        $kode = DB::table('users')->where('myuser_name', $namaPpa)->value('myuser_code') ?? '';
+        if ($kode !== ($this->newConsent['petugasPemeriksaCode'] ?? '') || empty($this->newConsent['petugasPemeriksaDate'])) {
+            $this->newConsent['petugasPemeriksaCode'] = $kode;
+            $this->newConsent['petugasPemeriksaDate'] = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
         }
+    }
 
-        $consentEntry = [
-            'tindakan' => $this->newConsent['tindakan'],
+    /** Bentuk entri tersimpan — bentuk node lama dipertahankan (tanpa flag finalized; final = dokter terisi). */
+    private function buildConsentEntry(string $key, array $lama = []): array
+    {
+        $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
+        $saksiDate = $this->signatureSaksi !== '' ? (($lama['signatureSaksi'] ?? '') === $this->signatureSaksi ? ($lama['signatureSaksiDate'] ?? $now) : $now) : '';
+
+        return [
+            'tindakan' => $this->newConsent['tindakan'] ?? '',
             'diagnosa' => $this->newConsent['diagnosa'] ?? '',
             'komplikasi' => $this->newConsent['komplikasi'] ?? '',
-            'tujuan' => $this->newConsent['tujuan'],
-            'resiko' => $this->newConsent['resiko'],
-            'alternatif' => $this->newConsent['alternatif'],
+            'tujuan' => $this->newConsent['tujuan'] ?? '',
+            'resiko' => $this->newConsent['resiko'] ?? '',
+            'alternatif' => $this->newConsent['alternatif'] ?? '',
             'dokter' => $this->newConsent['dokter'] ?? '',
             'dokterCode' => $this->newConsent['dokterCode'] ?? '',
             'dokterDate' => $this->newConsent['dokterDate'] ?? '',
             'signature' => $this->signature,
-            'signatureDate' => $now,
-            'wali' => $this->newConsent['wali'],
-            'waliHubungan' => $this->newConsent['waliHubungan'],
+            'signatureDate' => $key,
+            'wali' => $this->newConsent['wali'] ?? '',
+            'waliHubungan' => $this->newConsent['waliHubungan'] ?? '',
             'signatureSaksi' => $this->signatureSaksi,
-            'signatureSaksiDate' => $this->signatureSaksi ? $now : '',
-            'saksi' => $this->newConsent['saksi'],
-            'agreement' => $this->newConsent['agreement'],
+            'signatureSaksiDate' => $saksiDate,
+            'saksi' => $this->newConsent['saksi'] ?? '',
+            'agreement' => $this->newConsent['agreement'] ?? '1',
             'petugasPemeriksa' => $this->newConsent['petugasPemeriksa'] ?? '',
             'petugasPemeriksaCode' => $this->newConsent['petugasPemeriksaCode'] ?? '',
             'petugasPemeriksaDate' => $this->newConsent['petugasPemeriksaDate'] ?? '',
         ];
+    }
 
+    /** Upsert entri by signatureDate di node informConsentPasienRJ. Entri final tak boleh ditimpa. */
+    private function persistEntry(string $key, string $logVerb): bool
+    {
         try {
-            DB::transaction(function () use ($consentEntry) {
+            DB::transaction(function () use ($key, $logVerb) {
                 $this->lockRJRow($this->rjNo);
 
                 $data = $this->findDataRJ($this->rjNo);
                 if (empty($data)) {
                     throw new \RuntimeException('Data RJ tidak ditemukan, simpan dibatalkan.');
                 }
-
                 if (!isset($data['informConsentPasienRJ']) || !is_array($data['informConsentPasienRJ'])) {
                     $data['informConsentPasienRJ'] = [];
                 }
 
-                $data['informConsentPasienRJ'][] = $consentEntry;
+                $idx = collect($data['informConsentPasienRJ'])->search(fn($e) => ($e['signatureDate'] ?? '') === $key);
+                $lama = $idx !== false ? $data['informConsentPasienRJ'][$idx] : [];
+                if ($lama !== [] && $this->entriFinal($lama)) {
+                    throw new \RuntimeException('Entri sudah dikunci (TTD pemberi informasi). Buka kunci dulu untuk mengubahnya.');
+                }
+
+                $entri = $this->buildConsentEntry($key, $lama);
+                if ($idx !== false) {
+                    $data['informConsentPasienRJ'][$idx] = $entri;
+                } else {
+                    $data['informConsentPasienRJ'][] = $entri;
+                }
 
                 $this->updateJsonRJ($this->rjNo, $data);
                 $this->dataDaftarPoliRJ = $data;
-                $this->consentList = $data['informConsentPasienRJ'];
-                $this->appendAdminLogRJ((int) $this->rjNo, 'Tambah Inform Consent — ' . ($consentEntry['tindakan'] ?: '-') . ', TTD ' . ($consentEntry['signatureDate'] ?? '-'), 'MR');
+                $this->consentList = array_values($data['informConsentPasienRJ']);
+                $this->appendAdminLogRJ((int) $this->rjNo, $logVerb . ' — ' . ($entri['tindakan'] ?: '-') . ', ' . $key, 'MR');
             });
 
             $this->incrementVersion('modal-inform-consent-rj');
-            $this->dispatch('toast', type: 'success', message: 'Inform Consent berhasil disimpan.');
             $this->dispatch('refresh-modul-dokumen-rj-data', rjNo: $this->rjNo);
 
-            $this->resetNewConsent();
-            $this->signature = '';
-            $this->signatureSaksi = '';
+            return true;
         } catch (\RuntimeException $e) {
             $this->dispatch('toast', type: 'error', message: $e->getMessage());
         } catch (\Exception $e) {
             $this->dispatch('toast', type: 'error', message: 'Gagal menyimpan: ' . $e->getMessage());
+        }
+
+        return false;
+    }
+
+    /* ===============================
+     | DUA LAYAR: daftar ⇄ form
+     =============================== */
+    public function diForm(): bool
+    {
+        return !$this->isFormLocked && ($this->editingKey !== null || $this->layar === 'form');
+    }
+
+    public function tambahEntri(): void
+    {
+        if ($this->isFormLocked || $this->disabled) {
+            $this->dispatch('toast', type: 'error', message: 'Form read-only.');
+            return;
+        }
+        $this->cancelEdit(); // kosongkan formulir (sekaligus balik ke daftar)…
+        $this->layar = 'form'; // …lalu naikkan formulirnya
+        $this->incrementVersion('modal-inform-consent-rj');
+    }
+
+    public function kembaliKeDaftar(): void
+    {
+        $this->cancelEdit();
+        $this->incrementVersion('modal-inform-consent-rj');
+    }
+
+    /** Lanjutkan pengisian draft: muat entri ke formulir. Entri final ditolak (Lihat/Cetak saja). */
+    public function editEntri(string $signatureDate): void
+    {
+        if ($this->isFormLocked) {
+            $this->dispatch('toast', type: 'error', message: 'Form read-only.');
+            return;
+        }
+        $entri = collect($this->consentList)->firstWhere('signatureDate', $signatureDate);
+        if (!$entri) {
+            $this->dispatch('toast', type: 'error', message: 'Entri tidak ditemukan.');
+            return;
+        }
+        if ($this->entriFinal($entri)) {
+            $this->dispatch('toast', type: 'warning', message: 'Entri sudah dikunci. Buka kunci dulu bila perlu dikoreksi.');
+            return;
+        }
+
+        $this->cancelEdit();
+        $this->hydrateFormFromEntry($entri);
+        $this->editingKey = $signatureDate;
+        $this->layar = 'form';
+        $this->incrementVersion('modal-inform-consent-rj');
+    }
+
+    private function hydrateFormFromEntry(array $entri): void
+    {
+        foreach (array_keys($this->newConsent) as $k) {
+            $this->newConsent[$k] = (string) ($entri[$k] ?? ($k === 'agreement' ? '1' : ''));
+        }
+        $this->signature = (string) ($entri['signature'] ?? '');
+        $this->signatureSaksi = (string) ($entri['signatureSaksi'] ?? '');
+    }
+
+    private function cancelEdit(): void
+    {
+        $this->editingKey = null;
+        $this->resetNewConsent(); // ikut menyetel layar = 'daftar'
+        $this->signature = '';
+        $this->signatureSaksi = '';
+        $this->resetValidation();
+    }
+
+    /* ===============================
+     | BUKA KUNCI — cabut TTD pemberi informasi saja; TTD pasien/wali & saksi dipertahankan
+     =============================== */
+    public function bukaKunci(string $signatureDate): void
+    {
+        if (!auth()->user()?->can('dokumen.bukaKunci')) {
+            $this->dispatch('toast', type: 'error', message: 'Anda tidak berwenang membuka kunci dokumen.');
+            return;
+        }
+        if ($this->isFormLocked) {
+            $this->dispatch('toast', type: 'error', message: 'EMR terkunci, dokumen tidak dapat dibuka.');
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($signatureDate) {
+                $this->lockRJRow($this->rjNo);
+
+                $data = $this->findDataRJ($this->rjNo);
+                if (empty($data)) {
+                    throw new \RuntimeException('Data RJ tidak ditemukan.');
+                }
+                $idx = collect($data['informConsentPasienRJ'] ?? [])->search(fn($e) => ($e['signatureDate'] ?? '') === $signatureDate);
+                if ($idx === false) {
+                    throw new \RuntimeException('Entri tidak ditemukan.');
+                }
+                if (!$this->entriFinal($data['informConsentPasienRJ'][$idx])) {
+                    throw new \RuntimeException('Entri belum dikunci.');
+                }
+
+                $petugasLama = $data['informConsentPasienRJ'][$idx]['dokter'] ?? '-';
+                $data['informConsentPasienRJ'][$idx]['dokter'] = '';
+                $data['informConsentPasienRJ'][$idx]['dokterCode'] = '';
+                $data['informConsentPasienRJ'][$idx]['dokterDate'] = '';
+
+                $this->updateJsonRJ($this->rjNo, $data);
+                $this->dataDaftarPoliRJ = $data;
+                $this->consentList = array_values($data['informConsentPasienRJ']);
+                $this->appendAdminLogRJ((int) $this->rjNo, 'Buka Kunci Inform Consent ' . $signatureDate . ' — TTD pemberi informasi ' . $petugasLama . ' dicabut oleh ' . (auth()->user()->myuser_name ?? '-'), 'MR');
+            });
+
+            $this->incrementVersion('modal-inform-consent-rj');
+            $this->dispatch('toast', type: 'success', message: 'Kunci dibuka, entri kembali menjadi draft.');
+            $this->dispatch('refresh-modul-dokumen-rj-data', rjNo: $this->rjNo);
+        } catch (\RuntimeException $e) {
+            $this->dispatch('toast', type: 'error', message: $e->getMessage());
+        } catch (\Exception $e) {
+            $this->dispatch('toast', type: 'error', message: 'Gagal membuka kunci: ' . $e->getMessage());
         }
     }
 
@@ -413,6 +586,9 @@ new class extends Component {
                 $this->appendAdminLogRJ((int) $this->rjNo, 'Hapus Inform Consent — ' . $tindakanDihapus . ', TTD ' . $signatureDate, 'MR');
             });
 
+            if ($this->editingKey === $signatureDate) {
+                $this->cancelEdit();
+            }
             $this->incrementVersion('modal-inform-consent-rj');
             $this->dispatch('toast', type: 'success', message: 'Inform Consent berhasil dihapus.');
             $this->dispatch('refresh-modul-dokumen-rj-data', rjNo: $this->rjNo);
@@ -519,6 +695,7 @@ new class extends Component {
             'petugasPemeriksaCode' => '',
             'petugasPemeriksaDate' => '',
         ];
+        $this->layar = 'daftar'; // mengosongkan formulir = kembali ke daftar
     }
 
     protected function resetForm(): void
@@ -527,6 +704,7 @@ new class extends Component {
         $this->isFormLocked = false;
         $this->dataDaftarPoliRJ = [];
         $this->consentList = [];
+        $this->editingKey = null;
         $this->resetNewConsent();
         $this->signature = '';
         $this->signatureSaksi = '';
@@ -677,6 +855,19 @@ new class extends Component {
                                 EMR terkunci — data tidak dapat diubah.
                             </div>
                         @endif
+
+                        {{-- Dua layar: formulir hanya dirender di layar 'form' (diForm()), daftar entri di
+                             layar 'daftar'. Guard dipasang TEPAT di sini, bukan di header modal, supaya
+                             badge + display pasien tetap tampil di layar daftar. --}}
+                        @if ($this->diForm())
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if ($editingKey)
+                                <x-badge variant="warning">Melanjutkan draft {{ $editingKey }}</x-badge>
+                            @else
+                                <x-badge variant="info">Entri baru</x-badge>
+                            @endif
+                            <span class="text-sm text-muted">Simpan Draft kapan saja; TTD pemberi informasi = validasi penuh + kunci.</span>
+                        </div>
 
                         {{-- ══ INFORMASI TINDAKAN ══ --}}
                         <section class="space-y-4">
@@ -907,17 +1098,19 @@ new class extends Component {
                                         :allowClear="false" :ttd="$newConsent['dokter'] ?? ''"
                                         :code="$newConsent['dokterCode'] ?? ''" :date="$newConsent['dokterDate'] ?? ''"
                                         sign="setDokterPenjelas" nameLabel="Pemberi Informasi" dateLabel="Waktu TTD"
-                                        signLabel="TTD Pemberi Informasi" />
+                                        signLabel="TTD Pemberi Informasi & Kunci" />
                                 </div>
 
                             </div>
                         </section>
+                        @endif
 
                         {{-- ══ DAFTAR ENTRI TERSIMPAN ══
                              Bentuk baku tabel daftar modul dokumen: tanpa kolom No, kolom
                              pertama panah rincian, entri TERBARU DI ATAS, sel Aksi satu baris
                              rata kanan dengan kelompok berisiko dipisah garis. --}}
-                        <section class="pt-6 space-y-3 border-t border-gray-200 dark:border-gray-700">
+                        @unless ($this->diForm())
+                        <section class="space-y-3">
                             <div class="overflow-x-auto rounded-2xl">
                                 <table class="ds-table ds-table-entri min-w-full">
                                     <thead class="sticky top-0 z-10">
@@ -937,6 +1130,7 @@ new class extends Component {
                                             $entriTgl = $entri['signatureDate'] ?? '';
                                             $entriIsFinal = $this->entriFinal($entri);
                                             $bolehHapus = auth()->user()?->can('dokumen.hapus');
+                                            $bolehBukaKunci = auth()->user()?->can('dokumen.bukaKunci');
                                         @endphp
 
                                         {{-- Satu <tbody> per entri: baris ringkas + baris rincian yang
@@ -978,14 +1172,30 @@ new class extends Component {
                                                 </td>
                                                 <td class="whitespace-nowrap" @click.stop>
                                                     <div class="flex items-center justify-end gap-2">
+                                                        @if (!$isFormLocked && !$entriIsFinal)
+                                                            <x-primary-button type="button" wire:click="editEntri('{{ $entriTgl }}')"
+                                                                wire:loading.attr="disabled" title="Lanjutkan mengisi draft ini">
+                                                                Lanjutkan Pengisian
+                                                            </x-primary-button>
+                                                        @endif
                                                         <x-lihat-button wire:click="lihat('{{ $entriTgl }}')" />
                                                         <x-cetak-button wire:click="cetak('{{ $entriTgl }}')" />
 
                                                         {{-- Kelompok berisiko: dipisah garis, hanya dirender bila
                                                              user berhak (supaya tak menyisakan garis kosong). --}}
-                                                        @if (!$isFormLocked && $bolehHapus)
+                                                        @if (!$isFormLocked && ($bolehHapus || ($entriIsFinal && $bolehBukaKunci)))
                                                             <div
                                                                 class="flex items-center gap-2 pl-3 ml-1 border-l border-hairline dark:border-gray-700">
+                                                                @if ($entriIsFinal)
+                                                                    @can('dokumen.bukaKunci')
+                                                                        <x-confirm-button variant="warning-soft" action="bukaKunci('{{ $entriTgl }}')"
+                                                                            title="Buka Kunci Inform Consent"
+                                                                            message="TTD pemberi informasi akan dicabut & entri kembali menjadi draft untuk dikoreksi. TTD pasien/wali dan saksi tetap dipertahankan. Lanjutkan?"
+                                                                            confirmText="Ya, buka kunci" cancelText="Batal">
+                                                                            Buka Kunci
+                                                                        </x-confirm-button>
+                                                                    @endcan
+                                                                @endif
                                                                 @can('dokumen.hapus')
                                                                     <x-hapus-button :action="'hapus(\'' . $entriTgl . '\')'"
                                                                         title="Hapus Inform Consent"
@@ -1053,10 +1263,11 @@ new class extends Component {
                             </div>
 
                             <p class="text-sm text-muted">
-                                Setiap entri berdiri sendiri — satu baris untuk satu tindakan. Isi formulir di atas
-                                untuk menambah entri baru.
+                                Setiap entri berdiri sendiri — satu baris untuk satu tindakan. <strong>Isi Formulir
+                                Baru</strong> untuk entri baru, <strong>Lanjutkan Pengisian</strong> untuk melanjutkan draft.
                             </p>
                         </section>
+                        @endunless
 
                     </div>
                 </div>
@@ -1066,17 +1277,26 @@ new class extends Component {
             <div
                 class="sticky bottom-0 z-10 px-6 py-4 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
                 <div class="flex flex-wrap items-center justify-end gap-3">
-                    <x-secondary-button wire:click="closeModal">
-                        Tutup
-                    </x-secondary-button>
-
-                    @if ($rjNo && !$isFormLocked)
-                        <x-primary-button wire:click.prevent="addConsent" wire:loading.attr="disabled"
-                            wire:target="addConsent" class="gap-2 min-w-[180px] justify-center">
-                            <span wire:loading.remove wire:target="addConsent">Simpan Inform Consent</span>
-                            <span wire:loading wire:target="addConsent"><x-loading class="w-4 h-4" />
+                    @if ($this->diForm())
+                        <x-secondary-button type="button" wire:click="kembaliKeDaftar">
+                            Kembali ke Daftar
+                        </x-secondary-button>
+                        <x-primary-button wire:click.prevent="saveDraft" wire:loading.attr="disabled"
+                            wire:target="saveDraft" class="gap-2 min-w-[180px] justify-center">
+                            <span wire:loading.remove wire:target="saveDraft">{{ $editingKey ? 'Simpan Perubahan' : 'Simpan Draft' }}</span>
+                            <span wire:loading wire:target="saveDraft"><x-loading class="w-4 h-4" />
                                 Menyimpan...</span>
                         </x-primary-button>
+                    @else
+                        <x-secondary-button wire:click="closeModal">
+                            Tutup
+                        </x-secondary-button>
+                        @if ($rjNo && !$isFormLocked)
+                            <x-primary-button type="button" wire:click="tambahEntri" wire:loading.attr="disabled"
+                                wire:target="tambahEntri" class="gap-2 min-w-[180px] justify-center">
+                                Isi Formulir Baru
+                            </x-primary-button>
+                        @endif
                     @endif
                 </div>
             </div>

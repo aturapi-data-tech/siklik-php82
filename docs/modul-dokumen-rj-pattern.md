@@ -200,6 +200,39 @@ public function daftarEntri(): array
 
 ---
 
+## 5b. Dua layar untuk modul multi-entri (WAJIB)
+
+Formulir **tidak** nongkrong bersama daftarnya. Modal punya dua layar dalam satu `<x-modal>`:
+`'daftar'` (tabel §5) ⇄ `'form'` (isi entri baru / lanjutkan draft). Alasan: formulir yang tampil
+terus lalu dikosongkan diam-diam sesudah tersimpan membuat petugas mengetik ulang di atasnya →
+**draft duplikat**.
+
+```php
+public string $layar = 'daftar';
+public ?string $editingKey = null;          // kunci entri = signatureDate (stabil, bukan index)
+
+public function diForm(): bool { return !$this->isFormLocked && ($this->editingKey !== null || $this->layar === 'form'); }
+public function tambahEntri(): void { $this->cancelEdit(); $this->layar = 'form'; }
+public function kembaliKeDaftar(): void { $this->cancelEdit(); }
+public function editEntri(string $key): void { /* tolak bila entriFinal(); hydrate form; editingKey = $key; layar = 'form' */ }
+private function resetNewConsent(): void { /* … */ $this->layar = 'daftar'; }   // reset = kembali ke daftar
+```
+
+| Aturan | Isi |
+|---|---|
+| Nama method **tetap** | `diForm()`, `tambahEntri()`, `kembaliKeDaftar()`, `editEntri($key)`, `saveDraft()`, `bukaKunci($key)` |
+| `reset*()` menyetel `layar = 'daftar'` | sehingga setiap jalur (kunci, batal, hapus entri yang sedang diedit) otomatis balik ke daftar tanpa `$layar = 'daftar'` manual |
+| `@if ($this->diForm())` | dipasang **tepat sebelum `<section>` formulir**, `@endif` sesudah section TTD; **bukan** di header modal (badge + display pasien harus tetap tampil di layar daftar) |
+| `@unless ($this->diForm())` | membungkus tabel daftar |
+| Simpan Draft | upsert by `editingKey` (`persistEntry($key, …)`), hanya kolom kunci (mis. `tindakan`) yang wajib; sesudahnya `editingKey = $key` supaya simpan dua kali tidak membuat entri kembar; **tetap di form** |
+| TTD petugas | validasi penuh → stempel → `persistEntry` → `cancelEdit()` (balik ke daftar). Entri final ditolak `persistEntry` (harus Buka Kunci dulu) |
+| Footer | layar form: **Kembali ke Daftar** + **Simpan Draft / Simpan Perubahan**; layar daftar: **Tutup** + **Isi Formulir Baru** (`tambahEntri`) |
+| Aksi tabel | entri Draft: `<x-primary-button wire:click="editEntri(...)">Lanjutkan Pengisian</x-primary-button>` sebelum Lihat/Cetak; entri final: Buka Kunci (`x-confirm-button warning-soft`, `@can('dokumen.bukaKunci')`) di kelompok berisiko |
+
+Modul **sekali-entri** (General Consent, Suket) tidak memakai dua layar.
+
+---
+
 ## 6. Kartu & tab di hub
 
 Kartu ringkas (dirender oleh komponen anaknya, di atas modal):
@@ -235,35 +268,26 @@ Hitungannya **di method komponen**, bukan logika di `@php` template (lihat skill
 
 ## 7. Keadaan modul yang ada sekarang + backlog
 
-Tiga modul RJ sudah diselaraskan ke §3–§6 **kecuali pola dua layar**:
+Tiga modul RJ sudah diselaraskan ke §3–§6, dan modul multi-entri sudah dua layar (§5b):
 
-| Modul | Baris | Dua layar? | Catatan |
-|---|---|---|---|
-| Surat Keterangan (`suket`) | 350 | — (sekali-entri, tak perlu) | 2 sub-tab (Sehat / Istirahat), `x-cetak-button` per tab; TTD di cetakan = dokter pemeriksa kunjungan, tidak ada stempel petugas di layar |
-| General Consent | 897 | — (sekali-entri, tak perlu) | TTD petugas = pengunci + Buka Kunci (`dokumen.bukaKunci`); form read-only saat final |
-| Inform Consent | 1096 | **BELUM** — formulir & daftar tampil sekaligus | tabel daftar sudah bentuk baku; Lihat/Cetak/Hapus sudah komponen baku |
+| Modul | Dua layar? | Catatan |
+|---|---|---|
+| Surat Keterangan (`suket`) | — (sekali-entri, tak perlu) | 2 sub-tab (Sehat / Istirahat), `x-cetak-button` per tab; TTD di cetakan = dokter pemeriksa kunjungan, tidak ada stempel petugas di layar |
+| General Consent | — (sekali-entri, tak perlu) | TTD petugas = pengunci + Buka Kunci (`dokumen.bukaKunci`); form read-only saat final |
+| Inform Consent | **Ya** (11 Sep 2026) | `$layar`/`$editingKey`/`diForm()`; Simpan Draft (hanya tindakan wajib) → TTD pemberi informasi = validasi penuh + kunci; Lanjutkan Pengisian; Buka Kunci per entri |
 
 ### Backlog (sengaja belum dikerjakan)
 
-1. **Inform Consent belum dua layar.** Target sirus: modal punya `$layar` (`'daftar'` ⇄
-   `'form'`) + `diForm()`; `reset*()` ikut menyetel `$layar = 'daftar'` sehingga setiap jalur
-   (simpan, TTD/kunci, batal, hapus) otomatis balik ke daftar; method wajib bernama
-   `tambahEntri()` dan `kembaliKeDaftar()`; `@if ($this->diForm())` dipasang **tepat sebelum
-   `<fieldset>` formulir** (bukan di header modal — kalau di header, badge + display pasien
-   ikut hilang di layar daftar). Alasan polanya: formulir yang nongkrong bersama daftarnya
-   lalu dikosongkan diam-diam membuat petugas mengetik ulang di atasnya → **draft duplikat**.
-   Belum dikerjakan karena Inform Consent siklik belum punya siklus draft/edit entri sama
-   sekali (entri dibuat sekali jalan), jadi dua layar baru bermakna setelah alur
-   "Lanjutkan Pengisian" ada.
-2. **Ukuran berkas > 400 baris** (General Consent 897, Inform Consent 1096). Belum dipecah —
+1. **Ukuran berkas > 400 baris** (General Consent 890, Inform Consent 1316). Belum dipecah —
    pemecahan komponen Volt SFC berisiko dan tidak diminta sekarang.
-3. **Inform Consent belum punya alur edit/lanjutkan draft.** Entri hanya bisa dibuat,
-   dilihat, dicetak, dihapus. Kolom Status sudah menyiapkan tampilan `Draft`.
-4. **Kelola User menyimpan TTD ke folder `ttd/`**, sedangkan data nyata di kolom
+2. **Kelola User menyimpan TTD ke folder `ttd/`**, sedangkan data nyata di kolom
    `myuser_ttd_image` memakai `UserTtd/…`. Keduanya terbaca (`TtdUser` menangani nilai
    ber-slash apa pun), tapi dua folder untuk satu keperluan sebaiknya disatukan.
-5. **Suket belum punya viewer di display Rekam Medis** (General Consent & Inform Consent
+3. **Suket belum punya viewer di display Rekam Medis** (General Consent & Inform Consent
    sudah, di `…/rekam-medis/rj/dokumen-view/`).
+4. **Isi modal hub Modul Dokumen sudah lazy** (`@if ($rjNo)` di `⚡modul-dokumen-rj`, anak memuat
+   dari prop di `mount()`), tetapi tiga tab di dalamnya masih Alpine `x-show` (semua anak mounted
+   saat modal terbuka) — sengaja, karena komponen dokumen ringan (lihat `docs/standar-ui-komponen.md` §1b).
 
 ---
 
