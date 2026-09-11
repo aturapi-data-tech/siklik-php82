@@ -5,21 +5,43 @@ Dokumentasi alur integrasi BPJS PCare di siklik-php82 (klinik pratama).
 ## Komponen
 
 - **Trait**: `app/Http/Traits/BPJS/PcareTrait.php` — endpoint PCare (signature HMAC, AES decrypt, dll)
+- **Config**: `config/bpjs.php` grup `pcare` — semua kredensial & URL (dibaca lewat `config()`, bukan `env()`)
+- **Transport**: `app/Support/Bpjs/BpjsHttp.php` — satu pintu keluar semua panggilan BPJS (batas waktu + proxy whitelist IP)
 - **Helper trait**: `app/Http/Traits/customErrorMessagesTrait.php` — Indonesian validation messages
 - **Wired ke**: `resources/views/pages/transaksi/rj/daftar-rj/⚡daftar-rj-actions.blade.php`
 - **Trigger UI**: dropdown menu di `⚡daftar-rj.blade.php` (kolom Actions per baris pasien)
 
-## Konfigurasi `.env`
+## Konfigurasi — `.env` → `config/bpjs.php`
 
-Sebelum test, isi 5 env vars:
+`.env` tetap tempat menyimpan nilainya, tapi **kode membacanya lewat `config()`**, bukan `env()`.
+`env()` mengembalikan `null` begitu `php artisan config:cache` dijalankan, sehingga semua panggilan
+BPJS diam-diam gagal di produksi. Aturan: **jangan ada `env()` di dalam `app/`**.
+
+Isi di `.env`:
 
 ```env
 PCARE_URL=https://apijkn-dev.bpjs-kesehatan.go.id/pcare-rest-dev/
 PCARE_CONS_ID=<consumer ID dari BPJS>
 PCARE_SECRET_KEY=<consumer secret>
 PCARE_USER_KEY=<user key>
+PCARE_USERNAME=<username PCare>
+PCARE_PASSWORD=<password PCare>
 PCARE_PROVIDER=<kode faskes 8 digit, e.g., 0184B007>
+PCARE_DESC=<keterangan faskes>
 ```
+
+Pemetaan env → config (`config/bpjs.php`):
+
+| `.env` | dibaca di kode sebagai |
+|---|---|
+| `PCARE_URL` | `config('bpjs.pcare.url')` |
+| `PCARE_CONS_ID` | `config('bpjs.pcare.cons_id')` |
+| `PCARE_SECRET_KEY` | `config('bpjs.pcare.secret_key')` |
+| `PCARE_USER_KEY` | `config('bpjs.pcare.user_key')` |
+| `PCARE_USERNAME` | `config('bpjs.pcare.username')` |
+| `PCARE_PASSWORD` | `config('bpjs.pcare.password')` |
+| `PCARE_PROVIDER` | `config('bpjs.pcare.provider')` |
+| `PCARE_DESC` | `config('bpjs.pcare.desc')` |
 
 > Untuk test pakai BPJS dev: minta kredensial sandbox ke BPJS via help desk.
 
@@ -27,6 +49,13 @@ Setelah edit `.env`, jalankan:
 ```bash
 php artisan config:clear
 ```
+
+### Jalur keluar (whitelist IP BPJS)
+
+Sejak 2 Sep 2026 BPJS hanya melayani IP publik yang di-whitelist (pengajuan lewat ITSM BPJS).
+Semua panggilan PCare keluar lewat `App\Support\Bpjs\BpjsHttp::mulai()`, yang bisa dialihkan ke
+forward proxy VPS dengan saklar `BPJS_PROXY_AKTIF=true` + `BPJS_PROXY_URL`.
+Cek dengan `php artisan bpjs:cek-proxy`. Rinciannya: `docs/bpjs-whitelist-ip-proxy.md`.
 
 ## Alur Pendaftaran BPJS (PCare addPedaftaran)
 
@@ -47,10 +76,15 @@ Klik dropdown "⋮" di baris pasien → **"Kirim Pendaftaran BPJS"**.
 - `rr` atau `respirasi` (>0)
 - `beratBadan`, `tinggiBadan`, `lingkarPerut` (boleh 0, tapi BPJS prefer non-zero)
 
+> **Sisa pekerjaan:** `resources/views/.../⚡daftar-rj-actions.blade.php` masih memakai
+> `env('PCARE_PROVIDER')` — harus diganti `config('bpjs.pcare.provider')` (file view sedang
+> dikerjakan paralel, jadi belum disentuh di perubahan ini). Selama belum diganti,
+> `php artisan config:cache` akan membuat `kdProviderPeserta` kosong.
+
 ### Field yang dikirim ke BPJS
 | Field BPJS | Source |
 |------------|--------|
-| `kdProviderPeserta` | `env('PCARE_PROVIDER')` |
+| `kdProviderPeserta` | `config('bpjs.pcare.provider')` |
 | `tglDaftar` | `dataDaftarPoliRJ.rjDate` (format d-m-Y) |
 | `noKartu` | `dataPasien.pasien.identitas.nokartuBpjs` (digit-only) |
 | `kdPoli` | `dataDaftarPoliRJ.kdpolibpjs` |
@@ -140,7 +174,7 @@ Kolom utama:
 
 ### Persiapan
 1. Edit `.env` — isi `PCARE_*` credentials sandbox.
-2. `php artisan config:clear`
+2. `php artisan config:clear` (wajib; kode membaca lewat `config('bpjs.pcare.*')`)
 3. Pastikan ada minimal 1 pasien BPJS aktif di siklik dengan `nokartu_bpjs` valid (13 digit).
 4. Pastikan `master.poli` punya `kd_poli_bpjs` valid untuk poli yang dipakai.
 5. Pastikan `master.dokter` punya `kd_dr_bpjs` valid untuk dokter yang dipakai.

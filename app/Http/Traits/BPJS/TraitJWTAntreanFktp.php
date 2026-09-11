@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\DB;
  * audit log per request.
  *
  * Beda dengan rsimadinah:
- *   - Private key: dari env BPJS_JWT_SECRET (bukan hardcoded)
- *   - Validasi user: cocokkan ke env ANTREAN_USERNAME/PASSWORD
+ *   - Private key: dari config('bpjs.antrean_fktp.jwt_secret') (env BPJS_JWT_SECRET, bukan hardcoded)
+ *   - Validasi user: cocokkan ke config('bpjs.antrean_fktp.username'/'password')
  *     (klinik FKTP cuma 1 consumer = BPJS, gak butuh user table)
  *   - Audit log: ke WEB_LOG_STATUS (sudah ada di Oracle siklik)
  *     bukan api_log_status (gak ada di siklik)
@@ -133,7 +133,7 @@ trait TraitJWTAntreanFktp
 
     private function privateKey(): string
     {
-        return env('BPJS_JWT_SECRET', 'siklik-fktp-fallback-change-me');
+        return (string) config('bpjs.antrean_fktp.jwt_secret');
     }
 
     private function payloadtoken($username): array
@@ -153,8 +153,8 @@ trait TraitJWTAntreanFktp
      */
     public function checkUser($username, $password): bool
     {
-        return $username === env('ANTREAN_USERNAME')
-            && $password === env('ANTREAN_PASSWORD');
+        return $username === config('bpjs.antrean_fktp.username')
+            && $password === config('bpjs.antrean_fktp.password');
     }
 
     /**
@@ -211,7 +211,7 @@ trait TraitJWTAntreanFktp
 
         DB::table('web_log_status')->insert([
             'code'                => $code,
-            'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref'            => Carbon::now(config('app.timezone')),
             'response'            => json_encode($response, JSON_UNESCAPED_UNICODE),
             'http_req'            => $request->fullUrl(),
             'requestTransferTime' => null,
@@ -232,7 +232,7 @@ trait TraitJWTAntreanFktp
 
         DB::table('web_log_status')->insert([
             'code'                => $code,
-            'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref'            => Carbon::now(config('app.timezone')),
             'response'            => json_encode($response, JSON_UNESCAPED_UNICODE),
             'http_req'            => $request->fullUrl(),
             'requestTransferTime' => null,
