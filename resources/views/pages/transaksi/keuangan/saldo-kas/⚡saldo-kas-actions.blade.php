@@ -1,9 +1,15 @@
 <?php
 
+// Edit Saldo Awal Tahun (akun kas satu cara bayar) — back-calc mengikuti form 6i:
+//   saldo awal tahun = saldo target − arus tahun berjalan (Jan–Des).
+// Arus dihitung App\Support\Keuangan\SaldoKas (jurnal langsung dari tabel transaksi),
+// bukan view SKVIEW_ACCOUNTS. Pola sirus-php82.
+
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Support\Keuangan\SaldoKas;
 
 new class extends Component {
     use WithRenderVersioningTrait;
@@ -14,6 +20,8 @@ new class extends Component {
     public string $accDesc      = '';
     public string $accDkStatus  = 'D';
     public string $tanggal      = '';
+    /** Shift terakhir yang dihitung ('' = seluruh hari) — ikut induk; siklik selalu ''. */
+    public string $shift        = '';
     public string $tahun        = '';
     public string $saldoCurrent = '0';
     public string $saldoTarget  = '0';
@@ -26,77 +34,68 @@ new class extends Component {
         $this->registerAreas(['modal']);
     }
 
-    #[On('keuangan.saldo-kas.openEdit')]
-    public function openEdit(string $cbId, string $tanggal): void
+    private function bolehEdit(): bool
     {
-        if (!auth()->user()?->hasRole('Admin')) {
+        return (bool) auth()->user()?->hasRole('Admin');
+    }
+
+    #[On('keuangan.saldo-kas.openEdit')]
+    public function openEdit(string $cbId, string $tanggal, string $shift = ''): void
+    {
+        if (!$this->bolehEdit()) {
             $this->dispatch('toast', type: 'error', message: 'Hanya admin yang bisa mengedit saldo.');
             return;
         }
 
-        $row = DB::table('skacc_carabayars as cb')
+        $caraBayar = DB::table('skacc_carabayars as cb')
             ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.acc_id', 'a.acc_desc', 'a.acc_dk_status')
             ->where('cb.cb_id', $cbId)
             ->first();
 
-        if (!$row) {
+        if (!$caraBayar) {
             $this->dispatch('toast', type: 'error', message: 'Cara bayar tidak ditemukan.');
             return;
         }
 
-        $this->cbId        = (string) $row->cb_id;
-        $this->cbDesc      = (string) ($row->cb_desc ?? '');
-        $this->accId       = (string) $row->acc_id;
-        $this->accDesc     = (string) ($row->acc_desc ?? '');
-        $this->accDkStatus = (string) ($row->acc_dk_status ?? 'D');
+        $this->cbId        = (string) $caraBayar->cb_id;
+        $this->cbDesc      = (string) ($caraBayar->cb_desc ?? '');
+        $this->accId       = (string) $caraBayar->acc_id;
+        $this->accDesc     = (string) ($caraBayar->acc_desc ?? '');
+        $this->accDkStatus = (string) ($caraBayar->acc_dk_status ?: 'D');
         $this->tanggal     = $tanggal;
+        $this->shift       = $shift;
         $this->tahun       = substr($tanggal, 0, 4);
 
-        $this->saldoCurrent = (string) $this->hitungSaldoTanggal($this->accId, $this->accDkStatus, $tanggal);
-        $this->saldoTarget  = $this->saldoCurrent;
+        // Rumus 6i (SaldoKas), sama persis dengan angka di tabel induk.
+        $this->saldoCurrent = (string) SaldoKas::hitung(
+            $this->accId,
+            $this->accDkStatus,
+            $tanggal,
+            $shift !== '' ? $shift : null,
+        );
+        $this->saldoTarget = $this->saldoCurrent;
 
         $this->incrementVersion('modal');
         $this->dispatch('open-modal', name: 'saldo-kas-actions');
     }
 
-    /**
-     * Saldo current — sama formula dgn parent.
-     */
-    private function hitungSaldoTanggal(string $accId, string $dkStatus, string $tanggal): float
-    {
-        $tahun = (int) substr($tanggal, 0, 4);
-
-        $sa = DB::table('sktxn_saldoawalakuns')
-            ->where('acc_id', $accId)->where('sa_year', (string) $tahun)->first();
-
-        $saldoAwalTahun = $dkStatus === 'D'
-            ? (float) ($sa->sa_acc_d ?? 0)
-            : (float) ($sa->sa_acc_k ?? 0);
-
-        if ($dkStatus === 'D') {
-            $arus = (float) DB::table('skview_accounts')
-                ->where('txn_acc_k', $accId)
-                ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
-                    sprintf('%04d-01-01', $tahun), $tanggal,
-                ])
-                ->sum(DB::raw('NVL(txn_k,0) - NVL(txn_d,0)'));
-        } else {
-            $arus = (float) DB::table('skview_accounts')
-                ->where('txn_acc', $accId)
-                ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
-                    sprintf('%04d-01-01', $tahun), $tanggal,
-                ])
-                ->sum(DB::raw('NVL(txn_d,0) - NVL(txn_k,0)'));
-        }
-
-        return $saldoAwalTahun + $arus;
-    }
-
     public function save(): void
     {
-        if (!auth()->user()?->hasRole('Admin')) {
+        if (!$this->bolehEdit()) {
             $this->dispatch('toast', type: 'error', message: 'Hanya admin yang bisa mengedit saldo.');
+            return;
+        }
+
+        // Sifat akun menentukan KOLOM tujuan (sa_acc_d vs sa_acc_k) — guard whitelist,
+        // nilai di luar D/K tidak boleh diam-diam jatuh ke salah satu cabang.
+        if (!in_array($this->accDkStatus, ['D', 'K'], true)) {
+            $this->dispatch('toast', type: 'error', message: 'Sifat akun (D/K) tidak dikenali — saldo tidak disimpan.');
+            return;
+        }
+
+        if ($this->accId === '' || $this->tahun === '') {
+            $this->dispatch('toast', type: 'error', message: 'Konteks akun/tahun kosong — saldo tidak disimpan.');
             return;
         }
 
@@ -110,54 +109,22 @@ new class extends Component {
         $target = (float) $this->saldoTarget;
         $tahun  = (int) $this->tahun;
 
-        // Mengikuti legacy: arus_year = sum total tahun ini (Jan–Des).
-        // updatesaldo = target_saldo - arus_year → simpan ke saldo_awal_tahun.
+        // Mengikuti legacy: arus_year = arus sepanjang tahun berjalan (Jan–Des), rumus 6i.
+        // updatesaldo = saldo target − arus_year → disimpan sebagai saldo awal tahun.
+        $arusTahun   = SaldoKas::arusTahun($this->accId, $this->accDkStatus, $tahun);
+        $updateSaldo = $target - $arusTahun;
+
+        $sudahAda = DB::table('sktxn_saldoawalakuns')
+            ->where('acc_id', $this->accId)
+            ->where('sa_year', (string) $tahun)
+            ->exists();
+
         if ($this->accDkStatus === 'D') {
-            $arusYear = (float) DB::table('skview_accounts')
-                ->where('txn_acc_k', $this->accId)
-                ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [(string) $tahun])
-                ->sum(DB::raw('NVL(txn_k,0) - NVL(txn_d,0)'));
+            $this->simpanSaldoAwal($tahun, $sudahAda, ['sa_acc_d' => $updateSaldo], ['sa_acc_d' => $updateSaldo, 'sa_acc_k' => 0]);
+        }
 
-            $updateSaldo = $target - $arusYear;
-
-            $exists = DB::table('sktxn_saldoawalakuns')
-                ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)->exists();
-
-            if ($exists) {
-                DB::table('sktxn_saldoawalakuns')
-                    ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)
-                    ->update(['sa_acc_d' => $updateSaldo]);
-            } else {
-                DB::table('sktxn_saldoawalakuns')->insert([
-                    'acc_id'   => $this->accId,
-                    'sa_year'  => (string) $tahun,
-                    'sa_acc_d' => $updateSaldo,
-                    'sa_acc_k' => 0,
-                ]);
-            }
-        } else {
-            $arusYear = (float) DB::table('skview_accounts')
-                ->where('txn_acc', $this->accId)
-                ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [(string) $tahun])
-                ->sum(DB::raw('NVL(txn_d,0) - NVL(txn_k,0)'));
-
-            $updateSaldo = $target - $arusYear;
-
-            $exists = DB::table('sktxn_saldoawalakuns')
-                ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)->exists();
-
-            if ($exists) {
-                DB::table('sktxn_saldoawalakuns')
-                    ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)
-                    ->update(['sa_acc_k' => $updateSaldo]);
-            } else {
-                DB::table('sktxn_saldoawalakuns')->insert([
-                    'acc_id'   => $this->accId,
-                    'sa_year'  => (string) $tahun,
-                    'sa_acc_d' => 0,
-                    'sa_acc_k' => $updateSaldo,
-                ]);
-            }
+        if ($this->accDkStatus === 'K') {
+            $this->simpanSaldoAwal($tahun, $sudahAda, ['sa_acc_k' => $updateSaldo], ['sa_acc_d' => 0, 'sa_acc_k' => $updateSaldo]);
         }
 
         $this->dispatch('toast', type: 'success',
@@ -166,10 +133,27 @@ new class extends Component {
         $this->dispatch('keuangan.saldo-kas.saved');
     }
 
+    /** Update bila baris tahun itu sudah ada, insert bila belum (SKTXN_SALDOAWALAKUNS: acc_id + sa_year). */
+    private function simpanSaldoAwal(int $tahun, bool $sudahAda, array $kolomUpdate, array $kolomInsert): void
+    {
+        if ($sudahAda) {
+            DB::table('sktxn_saldoawalakuns')
+                ->where('acc_id', $this->accId)
+                ->where('sa_year', (string) $tahun)
+                ->update($kolomUpdate);
+            return;
+        }
+
+        DB::table('sktxn_saldoawalakuns')->insert(array_merge([
+            'acc_id'  => $this->accId,
+            'sa_year' => (string) $tahun,
+        ], $kolomInsert));
+    }
+
     public function closeModal(): void
     {
         $this->reset(['cbId', 'cbDesc', 'accId', 'accDesc', 'accDkStatus',
-                      'tanggal', 'tahun', 'saldoCurrent', 'saldoTarget']);
+                      'tanggal', 'shift', 'tahun', 'saldoCurrent', 'saldoTarget']);
         $this->resetValidation();
         $this->dispatch('close-modal', name: 'saldo-kas-actions');
         $this->resetVersion();
@@ -188,7 +172,7 @@ new class extends Component {
                 </h2>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Sistem akan back-calc saldo awal tahun {{ $tahun }} agar saldo per
-                    {{ $tanggal ? \Carbon\Carbon::parse($tanggal)->format('d/m/Y') : '' }}
+                    {{ $tanggal ? \Carbon\Carbon::parse($tanggal)->format('d/m/Y') : '' }}{{ $shift !== '' ? ' shift ' . $shift : '' }}
                     sama dengan target yang Anda tentukan.
                 </p>
             </div>
@@ -232,6 +216,30 @@ new class extends Component {
                 </p>
                 <x-input-error :messages="$errors->get('saldoTarget')" class="mt-1" />
             </div>
+
+            <details class="text-sm border rounded-lg bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                <summary class="px-3 py-2 font-semibold text-gray-700 cursor-pointer dark:text-gray-200">
+                    Cara pakai &amp; sumber data
+                </summary>
+                <div class="px-3 pb-3 space-y-1.5 text-xs text-gray-600 dark:text-gray-300">
+                    <p>
+                        Yang disimpan hanya <b>saldo awal tahun</b> di
+                        <span class="font-mono">SKTXN_SALDOAWALAKUNS</span> (kolom
+                        <span class="font-mono">sa_acc_d</span> untuk akun D,
+                        <span class="font-mono">sa_acc_k</span> untuk akun K) — transaksi tidak diubah sama sekali.
+                    </p>
+                    <p>
+                        Back-calc: <span class="font-mono">saldo awal tahun = saldo target − arus tahun berjalan (1 Jan s/d 31 Des)</span>.
+                        Arus diambil dari <span class="font-mono">App\Support\Keuangan\SaldoKas::arusTahun()</span> yang membaca
+                        jurnal LANGSUNG dari tabel transaksi (<span class="font-mono">App\Support\Keuangan\Jurnal</span>),
+                        bukan view <span class="font-mono">SKVIEW_ACCOUNTS</span>.
+                    </p>
+                    <p>
+                        Rumus 6i: akun D memakai baris <span class="font-mono">txn_acc</span> (<span class="font-mono">txn_d − txn_k</span>),
+                        akun K memakai baris <span class="font-mono">txn_acc_k</span> (<span class="font-mono">txn_k − txn_d</span>).
+                    </p>
+                </div>
+            </details>
 
             <div class="flex justify-end gap-2 pt-2">
                 <x-secondary-button type="button" wire:click="closeModal">Batal</x-secondary-button>

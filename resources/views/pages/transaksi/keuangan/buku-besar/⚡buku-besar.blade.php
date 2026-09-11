@@ -1,11 +1,22 @@
 <?php
 
+// Buku Besar — jurnal dibaca LANGSUNG dari tabel transaksi lewat App\Support\Keuangan\Jurnal
+// (pengganti view SKVIEW_ACCOUNTS yang hasilnya tidak stabil di Oracle 10g). Pola sirus-php82.
+
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Computed;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Support\Keuangan\Jurnal;
+use App\Support\Keuangan\Hpp;
 
 new class extends Component {
+    use WithPagination;
+
     public string $accId        = '';
     public string $accDesc      = '';
     public string $accDkStatus  = '';
@@ -14,6 +25,9 @@ new class extends Component {
     public string $periode      = '';
     /** Format input user: 'MM/YYYY' */
     public string $periodeInput = '';
+
+    /** Baris per halaman — satu akun besar (mis. piutang) bisa puluhan ribu baris per bulan. */
+    public int $itemsPerPage = 50;
 
     public function mount(): void
     {
@@ -26,35 +40,50 @@ new class extends Component {
         $this->accId       = (string) ($payload['acc_id'] ?? '');
         $this->accDesc     = (string) ($payload['acc_desc'] ?? '');
         $this->accDkStatus = (string) ($payload['acc_dk_status'] ?? '');
+        $this->resetPage();
     }
 
     public function updatedPeriodeInput(string $value): void
     {
         $value = trim($value);
-        if (!preg_match('/^(0[1-9]|1[0-2])\/(\d{4})$/', $value, $m)) {
+        if (!preg_match('/^(0[1-9]|1[0-2])\/(\d{4})$/', $value, $cocok)) {
             $this->periode = '';
             return;
         }
-        [$_, $bulan, $tahun] = $m;
+        [, $bulan, $tahun] = $cocok;
         $this->periode = "{$tahun}-{$bulan}";
+        $this->resetPage();
     }
 
-    private function setPeriode(string $ym): void
+    public function updatedItemsPerPage(): void
     {
-        $this->periode = $ym;
-        $this->periodeInput = \Carbon\Carbon::parse("{$ym}-01")->format('m/Y');
+        $this->resetPage();
+    }
+
+    private function setPeriode(string $tahunBulan): void
+    {
+        $this->periode = $tahunBulan;
+        $this->periodeInput = Carbon::parse("{$tahunBulan}-01")->format('m/Y');
+        $this->resetPage();
     }
 
     public function prevMonth(): void
     {
         if ($this->periode === '') return;
-        $this->setPeriode(\Carbon\Carbon::parse("{$this->periode}-01")->subMonth()->format('Y-m'));
+        $this->setPeriode(Carbon::parse("{$this->periode}-01")->subMonth()->format('Y-m'));
     }
 
     public function nextMonth(): void
     {
         if ($this->periode === '') return;
-        $this->setPeriode(\Carbon\Carbon::parse("{$this->periode}-01")->addMonth()->format('Y-m'));
+        $this->setPeriode(Carbon::parse("{$this->periode}-01")->addMonth()->format('Y-m'));
+    }
+
+    /** Reset filter (dipanggil tombol Reset di x-toolbar-refresh-reset). */
+    public function resetFilters(): void
+    {
+        $this->itemsPerPage = 50;
+        $this->setPeriode(now()->format('Y-m'));
     }
 
     #[Computed]
@@ -67,107 +96,187 @@ new class extends Component {
     public function sampaiTanggal(): string
     {
         if ($this->periode === '') return '';
-        return \Carbon\Carbon::parse("{$this->periode}-01")->endOfMonth()->toDateString();
+        return Carbon::parse("{$this->periode}-01")->endOfMonth()->toDateString();
+    }
+
+    /** Akun bertabiat kredit (kewajiban/ekuitas/pendapatan): saldo bertambah saat dikredit. */
+    private function akunKredit(): bool
+    {
+        return $this->accDkStatus === 'K';
     }
 
     /**
-     * Saldo akun per tanggal — generic untuk D-acc maupun K-acc.
-     * Filter "rows about this account": txn_acc = acc_id.
-     * D-acc: saldo bertambah saat didebit  → mutasi = D − K
-     * K-acc: saldo bertambah saat dikredit → mutasi = K − D
+     * Saldo akun per tanggal — generic untuk akun D maupun K.
+     * Sumber: Jurnal (baris milik akun = txn_acc, arus dari kolom txn_d/txn_k baris itu).
+     *   saldo = saldo awal tahun (SKTXN_SALDOAWALAKUNS) + arus 1 Januari s/d tanggal
+     *   akun D: mutasi = D − K   |   akun K: mutasi = K − D
      */
     private function hitungSaldoTanggal(string $tanggal): float
     {
         if ($this->accId === '' || $tanggal === '') return 0;
 
         $tahun = (int) substr($tanggal, 0, 4);
+        $kosong = ['debit' => 0.0, 'kredit' => 0.0];
 
-        $sa = DB::table('sktxn_saldoawalakuns')
-            ->where('acc_id', $this->accId)
-            ->where('sa_year', (string) $tahun)
-            ->first();
+        $saldoAwalTahun = Jurnal::saldoAwalPerAkun([$this->accId], $tahun)[$this->accId] ?? $kosong;
+        $arus = Jurnal::arusPerAkun([$this->accId], sprintf('%04d-01-01', $tahun), $tanggal)[$this->accId] ?? $kosong;
 
-        $saldoAwalTahun = $this->accDkStatus === 'K'
-            ? (float) ($sa->sa_acc_k ?? 0)
-            : (float) ($sa->sa_acc_d ?? 0);
-
-        $expr = $this->accDkStatus === 'K'
-            ? 'NVL(txn_k,0) - NVL(txn_d,0)'
-            : 'NVL(txn_d,0) - NVL(txn_k,0)';
-
-        $arus = (float) DB::table('skview_accounts')
-            ->where('txn_acc', $this->accId)
-            ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
-                sprintf('%04d-01-01', $tahun), $tanggal,
-            ])
-            ->sum(DB::raw($expr));
-
-        return $saldoAwalTahun + $arus;
+        return $this->akunKredit()
+            ? $saldoAwalTahun['kredit'] + $arus['kredit'] - $arus['debit']
+            : $saldoAwalTahun['debit'] + $arus['debit'] - $arus['kredit'];
     }
 
+    /** Saldo awal periode = saldo per (tanggal awal periode − 1 hari). */
     #[Computed]
     public function saldoAwalPeriode(): float
     {
         if ($this->dariTanggal === '') return 0;
-        $prev = \Carbon\Carbon::parse($this->dariTanggal)->subDay()->toDateString();
-        return $this->hitungSaldoTanggal($prev);
+
+        return $this->hitungSaldoTanggal(Carbon::parse($this->dariTanggal)->subDay()->toDateString());
     }
 
+    /**
+     * Seluruh baris jurnal akun pada periode (urut tanggal) + saldo berjalan.
+     * Nama akun lawan diambil lewat satu query kecil terpisah — JANGAN join di atas jurnal.
+     */
     #[Computed]
-    public function rows()
+    public function barisJurnal()
     {
         if ($this->accId === '' || $this->periode === '') return collect();
 
-        $rows = DB::table('skview_accounts as v')
-            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc_k')
+        $barisList = Jurnal::query($this->accId, Jurnal::SISI_ACC, $this->dariTanggal, $this->sampaiTanggal)
             ->select(
-                'v.txn_date', 'v.txn_name',
-                'v.txn_acc_k as lawan_acc_id',
-                'a.acc_desc as lawan_acc_desc',
-                DB::raw('NVL(v.txn_d,0) AS debit'),
-                DB::raw('NVL(v.txn_k,0) AS kredit'),
+                'txn_date', 'txn_name',
+                'txn_acc_k as lawan_acc_id',
+                DB::raw('NVL(txn_d,0) AS debit'),
+                DB::raw('NVL(txn_k,0) AS kredit'),
             )
-            ->where('v.txn_acc', $this->accId)
-            ->whereBetween(DB::raw("TO_CHAR(v.txn_date,'YYYY-MM-DD')"), [
-                $this->dariTanggal, $this->sampaiTanggal,
-            ])
-            ->orderBy('v.txn_date')
+            ->orderBy('txn_date')
             ->get();
 
-        // Running saldo (sign tergantung D/K nature)
-        $saldo = $this->saldoAwalPeriode;
-        $isK = $this->accDkStatus === 'K';
+        $namaLawan = Jurnal::namaAkun($barisList->pluck('lawan_acc_id'));
 
-        return $rows->map(function ($r) use (&$saldo, $isK) {
-            $mutasi = $isK
-                ? ((float) $r->kredit - (float) $r->debit)
-                : ((float) $r->debit - (float) $r->kredit);
+        $saldo = $this->saldoAwalPeriode;
+        $akunKredit = $this->akunKredit();
+
+        return $barisList->map(function ($baris) use (&$saldo, $akunKredit, $namaLawan) {
+            $baris->lawan_acc_desc = $namaLawan[$baris->lawan_acc_id] ?? null;
+            $mutasi = $akunKredit
+                ? ((float) $baris->kredit - (float) $baris->debit)
+                : ((float) $baris->debit - (float) $baris->kredit);
             $saldo += $mutasi;
-            $r->saldo_berjalan = $saldo;
-            $r->mutasi = $mutasi;
-            return $r;
-        });
+            $baris->mutasi = $mutasi;
+            $baris->saldo_berjalan = $saldo;
+            return $baris;
+        })->values();
+    }
+
+    /** Paginasi dilakukan di PHP: saldo berjalan butuh seluruh baris periode terurut. */
+    #[Computed]
+    public function rows(): LengthAwarePaginator
+    {
+        $seluruhBaris = $this->barisJurnal;
+        $halaman = Paginator::resolveCurrentPage();
+        $perHalaman = max(10, $this->itemsPerPage);
+
+        return new LengthAwarePaginator(
+            $seluruhBaris->slice(($halaman - 1) * $perHalaman, $perHalaman)->values(),
+            $seluruhBaris->count(),
+            $perHalaman,
+            $halaman,
+            ['path' => request()->url()],
+        );
+    }
+
+    /** Saldo sebelum baris pertama halaman ini (halaman 1 = saldo awal periode). */
+    #[Computed]
+    public function saldoAwalHalaman(): float
+    {
+        $indeksAwal = ($this->rows->currentPage() - 1) * $this->rows->perPage();
+        if ($indeksAwal <= 0) return $this->saldoAwalPeriode;
+
+        $barisSebelumnya = $this->barisJurnal->get($indeksAwal - 1);
+
+        return $barisSebelumnya ? (float) $barisSebelumnya->saldo_berjalan : $this->saldoAwalPeriode;
+    }
+
+    /**
+     * Rekap per jenis transaksi — jenis = PREFIX 2 KATA txn_name (mis. "RJ OBAT", "BAYAR RJ", "CASH IN").
+     * Label jurnal siklik tidak memakai kurung seperti sirus; 1 kata terlalu kasar (akun kas cuma 1 jenis),
+     * 3 kata sudah memuat nama pasien, jadi 2 kata yang dipakai.
+     */
+    #[Computed]
+    public function rekapJenis()
+    {
+        return $this->barisJurnal
+            ->groupBy(function ($baris) {
+                // Prefix 2 kata pertama: label siklik berbentuk '<MODUL> <SUBJENIS> ...' (mis. "RJ OBAT
+                // TRANSAKSI", "BAYAR RJ <nama pasien>"); 1 kata terlalu kasar, 3 kata sudah kena nama pasien.
+                $kataList = preg_split('/\s+/', trim((string) $baris->txn_name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                $jenis = implode(' ', array_slice($kataList, 0, 2));
+                return $jenis === '' ? '-' : $jenis;
+            })
+            ->map(fn ($grup, $jenis) => (object) [
+                'jenis'  => $jenis,
+                'jumlah' => $grup->count(),
+                'debit'  => (float) $grup->sum('debit'),
+                'kredit' => (float) $grup->sum('kredit'),
+            ])
+            ->sortByDesc(fn ($rekap) => $rekap->debit + $rekap->kredit)
+            ->values();
+    }
+
+    /**
+     * Peringatan HPP: untuk akun HPP (conf 9) & persediaan (conf 2), Jurnal menyisipkan baris semu HPP
+     * tahunan bertanggal 1 Desember. Bila HPP tahun itu tidak wajar (negatif karena stock opname /
+     * harga pokok rusak), angkanya harus dibaca dengan hati-hati.
+     */
+    #[Computed]
+    public function peringatanHpp(): ?array
+    {
+        if ($this->accId === '' || $this->periode === '') return null;
+
+        $tahun = (int) substr($this->periode, 0, 4);
+        $tanggalHpp = sprintf('%04d-12-01', $tahun);
+        if ($tanggalHpp < $this->dariTanggal || $tanggalHpp > $this->sampaiTanggal) return null;
+
+        $akunHppList = array_filter([
+            Jurnal::akunKonfigurasiId(Hpp::CONF_HPP),
+            Jurnal::akunKonfigurasiId(Hpp::CONF_PERSEDIAAN),
+        ]);
+        if (!in_array($this->accId, $akunHppList, true)) return null;
+
+        $wajar = Hpp::wajar($tahun);
+        $nilaiHpp = number_format(Hpp::nilai($tahun), 0, ',', '.');
+
+        return [
+            'wajar' => $wajar,
+            'pesan' => $wajar
+                ? "Periode ini memuat baris semu HPP tahun {$tahun} (dijurnalkan 1 Desember) sebesar {$nilaiHpp}."
+                : "HPP tahun {$tahun} tidak wajar ({$nilaiHpp}) — stock opname / harga pokok produk belum benar, "
+                    ."jadi baris semu HPP 1 Desember dan saldo akhir akun ini belum bisa dipakai.",
+        ];
     }
 
     #[Computed]
     public function totalDebit(): float
     {
-        return (float) $this->rows->sum('debit');
+        return (float) $this->barisJurnal->sum('debit');
     }
 
     #[Computed]
     public function totalKredit(): float
     {
-        return (float) $this->rows->sum('kredit');
+        return (float) $this->barisJurnal->sum('kredit');
     }
 
     #[Computed]
     public function saldoAkhir(): float
     {
-        $isK = $this->accDkStatus === 'K';
-        $netMutasi = $isK
+        $netMutasi = $this->akunKredit()
             ? ($this->totalKredit - $this->totalDebit)
             : ($this->totalDebit - $this->totalKredit);
+
         return $this->saldoAwalPeriode + $netMutasi;
     }
 };
@@ -213,6 +322,18 @@ new class extends Component {
                                 @endif
                             </p>
                         </div>
+
+                        <div class="w-full sm:w-32">
+                            <x-input-label for="itemsPerPage" value="Baris/hal" class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400" />
+                            <x-select-input id="itemsPerPage" wire:model.live="itemsPerPage" class="block w-full">
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="250">250</option>
+                            </x-select-input>
+                        </div>
+
+                        <x-toolbar-refresh-reset :label="null" />
                     </div>
 
                     @if ($accId !== '' && $periode !== '')
@@ -238,6 +359,65 @@ new class extends Component {
                         </div>
                     @endif
                 </div>
+
+                @if ($this->peringatanHpp)
+                    <div class="mt-3 px-3 py-2 text-xs border rounded-lg {{ $this->peringatanHpp['wajar'] ? 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-200' }}">
+                        {{ $this->peringatanHpp['pesan'] }}
+                    </div>
+                @endif
+
+                @if ($accId !== '' && $periode !== '')
+                    <details class="mt-3 text-sm border rounded-lg bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                        <summary class="px-3 py-2 font-semibold text-gray-700 cursor-pointer dark:text-gray-200">
+                            Rekap per jenis transaksi ({{ $this->rekapJenis->count() }} jenis)
+                        </summary>
+                        <div class="flex flex-wrap gap-1.5 px-3 pb-3">
+                            @forelse ($this->rekapJenis as $rekap)
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-lg bg-gray-50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700">
+                                    <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ $rekap->jenis }}</span>
+                                    <span class="px-1.5 text-xs font-medium text-gray-500 rounded bg-white dark:bg-gray-900 dark:text-gray-400">{{ $rekap->jumlah }} trx</span>
+                                    <span class="font-mono text-xs font-semibold text-blue-700 dark:text-blue-300">D {{ number_format($rekap->debit, 0, ',', '.') }}</span>
+                                    <span class="font-mono text-xs font-semibold text-rose-700 dark:text-rose-300">K {{ number_format($rekap->kredit, 0, ',', '.') }}</span>
+                                </div>
+                            @empty
+                                <span class="text-xs text-gray-400">Tidak ada transaksi pada periode ini.</span>
+                            @endforelse
+                        </div>
+                    </details>
+                @endif
+
+                <details class="mt-2 text-sm border rounded-lg bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <summary class="px-3 py-2 font-semibold text-gray-700 cursor-pointer dark:text-gray-200">
+                        Cara pakai &amp; sumber data
+                    </summary>
+                    <div class="px-3 pb-3 space-y-1.5 text-xs text-gray-600 dark:text-gray-300">
+                        <p>
+                            Sumber angka halaman ini adalah <span class="font-mono">App\Support\Keuangan\Jurnal</span> —
+                            jurnal dirakit langsung dari tabel transaksi (bayar RJ, apotek, penerimaan/pengeluaran kas TU,
+                            pembelian, dsb.), <b>bukan</b> view <span class="font-mono">SKVIEW_ACCOUNTS</span> yang hasilnya
+                            tidak stabil di Oracle 10g.
+                        </p>
+                        <p>
+                            Baris yang ditampilkan adalah baris <b>milik akun terpilih</b>
+                            (<span class="font-mono">txn_acc = akun</span>), jadi kolom DEBIT/KREDIT adalah debit/kredit akun itu
+                            sendiri dan kolom LAWAN AKUN adalah sisi jurnal seberangnya.
+                        </p>
+                        <p>
+                            Rumus 6i: <span class="font-mono">saldo = saldo awal tahun (SKTXN_SALDOAWALAKUNS) + arus 1 Januari s/d tanggal</span>.
+                            Akun bertabiat D memakai mutasi <span class="font-mono">D − K</span>, akun bertabiat K memakai
+                            <span class="font-mono">K − D</span>. Saldo awal periode = saldo per hari sebelum tanggal awal periode.
+                        </p>
+                        <p>
+                            Khusus akun HPP &amp; persediaan, jurnal menyisipkan <b>baris semu HPP tahunan</b>
+                            bertanggal 1 Desember (padanan cabang HPP di view lama). Bila HPP tahun itu tidak wajar,
+                            muncul peringatan di atas.
+                        </p>
+                        <p>
+                            Nama akun lawan diambil lewat query kecil terpisah (<span class="font-mono">Jurnal::namaAkun()</span>),
+                            tidak di-join di atas jurnal, supaya rakitan UNION ALL tetap ringan.
+                        </p>
+                    </div>
+                </details>
             </div>
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
@@ -263,15 +443,19 @@ new class extends Component {
                             @else
                                 <tr class="bg-gray-50 dark:bg-gray-800/40">
                                     <td colspan="5" class="px-3 py-2 text-xs italic text-gray-500">
-                                        Saldo per {{ \Carbon\Carbon::parse($this->dariTanggal)->subDay()->format('d/m/Y') }}
+                                        @if ($this->rows->currentPage() > 1)
+                                            Saldo sebelum baris pertama halaman {{ $this->rows->currentPage() }}
+                                        @else
+                                            Saldo per {{ \Carbon\Carbon::parse($this->dariTanggal)->subDay()->format('d/m/Y') }}
+                                        @endif
                                     </td>
                                     <td class="ds-td-strong ds-td-token text-right">
-                                        {{ number_format($this->saldoAwalPeriode, 0, ',', '.') }}
+                                        {{ number_format($this->saldoAwalHalaman, 0, ',', '.') }}
                                     </td>
                                 </tr>
 
                                 @forelse ($this->rows as $i => $row)
-                                    <tr wire:key="bb-{{ $accId }}-{{ $i }}-{{ $row->txn_date }}">
+                                    <tr wire:key="bb-{{ $accId }}-{{ $this->rows->currentPage() }}-{{ $i }}-{{ $row->txn_date }}">
                                         <td class="px-3 py-2 font-mono text-xs leading-tight align-top">
                                             <div>{{ \Carbon\Carbon::parse($row->txn_date)->format('d/m/Y') }}</div>
                                             <div class="text-[10px] text-gray-400">{{ \Carbon\Carbon::parse($row->txn_date)->format('H:i') }}</div>
@@ -309,10 +493,11 @@ new class extends Component {
                                     </tr>
                                 @endforelse
 
-                                @if ($this->rows->count() > 0)
+                                @if ($this->rows->total() > 0)
                                     <tr class="font-semibold bg-emerald-50 dark:bg-emerald-900/20">
                                         <td colspan="3" class="px-3 py-2 text-xs uppercase">
                                             Saldo per {{ \Carbon\Carbon::parse($this->sampaiTanggal)->format('d/m/Y') }}
+                                            <span class="normal-case text-gray-500">(total {{ number_format($this->rows->total(), 0, ',', '.') }} baris periode ini)</span>
                                         </td>
                                         <td class="ds-td-token text-right text-blue-700 dark:text-blue-300">
                                             {{ number_format($this->totalDebit, 0, ',', '.') }}
@@ -329,6 +514,12 @@ new class extends Component {
                         </tbody>
                     </table>
                 </div>
+
+                @if ($accId !== '' && $periode !== '' && $this->rows->total() > 0)
+                    <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                        {{ $this->rows->links() }}
+                    </div>
+                @endif
             </div>
 
             @if ($accId !== '')
