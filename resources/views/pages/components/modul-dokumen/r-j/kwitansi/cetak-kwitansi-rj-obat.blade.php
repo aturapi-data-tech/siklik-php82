@@ -30,8 +30,8 @@ new class extends Component {
                 a.klaim_id,
                 a.dr_id,
                 a.poli_id
-            FROM  rstxn_rjhdrs  a
-            JOIN  rsmst_pasiens b ON b.reg_no = a.reg_no
+            FROM  sktxn_rjhdrs  a
+            JOIN  skmst_pasiens b ON b.reg_no = a.reg_no
             WHERE a.rj_no = :rjno
             ",
             ['rjno' => $rjNo],
@@ -48,8 +48,8 @@ new class extends Component {
             SELECT
                 (b.product_name || '   ' || COUNT(*) || ' (X)') AS keterangan,
                 SUM(NVL(a.qty, 0) * NVL(a.price, 0))            AS obat
-            FROM  rstxn_rjobats   a
-            JOIN  tkmst_products  b ON b.product_id = a.product_id
+            FROM  sktxn_rjobats   a
+            JOIN  skmst_products  b ON b.product_id = a.product_id
             WHERE a.rj_no = :rjno
             GROUP BY b.product_name
             ORDER BY b.product_name
@@ -65,14 +65,14 @@ new class extends Component {
         // ── Kalkulasi Total Obat ──
         $totalObat = (int) collect($rincianObat)->sum('obat');
 
-        // ── Nama Kasir (TKMST_KASIRS) ──
+        // ── Nama Kasir (SKMST_KASIRS) ──
         $kasirName = null;
         if (!empty($hdr->kasir_id)) {
-            $kasirName = DB::table('tkmst_kasirs')->where('kasir_id', $hdr->kasir_id)->value('kasir_name');
+            $kasirName = DB::table('skmst_kasirs')->where('kasir_id', $hdr->kasir_id)->value('kasir_name');
         }
 
         // ── Klaim ──
-        $klaimRow = DB::table('rsmst_klaimtypes')
+        $klaimRow = DB::table('skmst_klaimtypes')
             ->where('klaim_id', $hdr->klaim_id ?? '')
             ->select('klaim_desc')
             ->first();
@@ -81,13 +81,13 @@ new class extends Component {
 
         // ── Poli ──
         $poliDesc =
-            DB::table('rsmst_polis')
+            DB::table('skmst_polis')
                 ->where('poli_id', $hdr->poli_id ?? '')
                 ->value('poli_desc') ?? '-';
 
         // ── Dokter ──
         $drName =
-            DB::table('rsmst_doctors')
+            DB::table('skmst_doctors')
                 ->where('dr_id', $hdr->dr_id ?? '')
                 ->value('dr_name') ??
             ($hdr->dr_id ?? '-');

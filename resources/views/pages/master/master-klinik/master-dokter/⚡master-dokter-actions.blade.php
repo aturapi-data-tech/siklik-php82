@@ -81,7 +81,7 @@ new class extends Component {
     #[On('master.dokter.openEdit')]
     public function openEdit(string $drId): void
     {
-        $row = DB::table('rsmst_doctors')->where('dr_id', $drId)->first();
+        $row = DB::table('skmst_doctors')->where('dr_id', $drId)->first();
         if (!$row) {
             $this->dispatch('toast', type: 'error', message: 'Data dokter tidak ditemukan.');
             return;
@@ -111,14 +111,14 @@ new class extends Component {
     protected function rules(): array
     {
         // Unique rule khusus Oracle — perlu kolom PK eksplisit
-        $uniqueDrId = $this->formMode === 'create' ? 'required|string|max:50|unique:rsmst_doctors,dr_id' : 'required|string|max:50|unique:rsmst_doctors,dr_id,' . $this->drId . ',dr_id';
+        $uniqueDrId = $this->formMode === 'create' ? 'required|string|max:50|unique:skmst_doctors,dr_id' : 'required|string|max:50|unique:skmst_doctors,dr_id,' . $this->drId . ',dr_id';
 
         return [
             'drId' => $uniqueDrId,
             'drName' => 'required|string|max:255',
             'drPhone' => 'nullable|string|max:100',
             'drAddress' => 'nullable|string|max:255',
-            'poliId' => 'required|string|max:250|exists:rsmst_polis,poli_id',
+            'poliId' => 'required|string|max:250|exists:skmst_polis,poli_id',
             'basicSalary' => 'nullable|numeric',
             'poliPrice' => 'nullable|numeric',
             'ugdPrice' => 'nullable|numeric',
@@ -190,9 +190,9 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_doctors')->insert($payload);
+            DB::table('skmst_doctors')->insert($payload);
         } else {
-            DB::table('rsmst_doctors')->where('dr_id', $this->drId)->update($payload);
+            DB::table('skmst_doctors')->where('dr_id', $this->drId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data dokter berhasil disimpan.');
@@ -208,13 +208,13 @@ new class extends Component {
     {
         try {
             // Cek apakah dokter masih dipakai di transaksi RJ
-            $isUsed = DB::table('rstxn_rjhdrs')->where('dr_id', $drId)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('dr_id', $drId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Dokter sudah dipakai pada transaksi Rawat Jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_doctors')->where('dr_id', $drId)->delete();
+            $deleted = DB::table('skmst_doctors')->where('dr_id', $drId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data dokter tidak ditemukan.');
                 return;

@@ -92,7 +92,7 @@ new class extends Component {
             return collect();
         }
 
-        return DB::table('rsview_checkups')->select(DB::raw('DISTINCT EXTRACT(YEAR FROM checkup_date) as tahun'))->where('reg_no', $this->regNo)->orderBy('tahun', 'desc')->pluck('tahun');
+        return DB::table('skview_checkups')->select(DB::raw('DISTINCT EXTRACT(YEAR FROM checkup_date) as tahun'))->where('reg_no', $this->regNo)->orderBy('tahun', 'desc')->pluck('tahun');
     }
 
     /* =======================
@@ -107,7 +107,7 @@ new class extends Component {
 
         $searchKeyword = trim($this->searchKeyword);
 
-        $query = DB::table('rsview_checkups')
+        $query = DB::table('skview_checkups')
             ->select(
                 DB::raw("to_char(checkup_date,'dd/mm/yyyy hh24:mi:ss') AS checkup_date"),
                 DB::raw("to_char(checkup_date,'yyyymmddhh24miss') AS checkup_date1"),
@@ -121,9 +121,9 @@ new class extends Component {
                 'checkup_rjri',
                 DB::raw("(
                     SELECT string_agg(clabitem_desc)
-                    FROM lbtxn_checkupdtls a
-                    JOIN lbmst_clabitems b ON a.clabitem_id = b.clabitem_id
-                    WHERE checkup_no = rsview_checkups.checkup_no
+                    FROM sktxn_checkupdtls a
+                    JOIN skmst_clabitems b ON a.clabitem_id = b.clabitem_id
+                    WHERE checkup_no = skview_checkups.checkup_no
                     AND a.price IS NOT NULL
                 ) AS checkup_dtl_pasien"),
             )
@@ -173,7 +173,7 @@ new class extends Component {
             return ['total' => 0, 'selesai' => 0, 'proses' => 0, 'terdaftar' => 0];
         }
 
-        $stats = DB::table('rsview_checkups')->select(DB::raw('COUNT(*) as total'), DB::raw("SUM(CASE WHEN checkup_status = 'H' THEN 1 ELSE 0 END) as selesai"), DB::raw("SUM(CASE WHEN checkup_status = 'C' THEN 1 ELSE 0 END) as proses"), DB::raw("SUM(CASE WHEN checkup_status = 'P' THEN 1 ELSE 0 END) as terdaftar"))->where('reg_no', $this->regNo)->where('checkup_status', '!=', 'F')->first();
+        $stats = DB::table('skview_checkups')->select(DB::raw('COUNT(*) as total'), DB::raw("SUM(CASE WHEN checkup_status = 'H' THEN 1 ELSE 0 END) as selesai"), DB::raw("SUM(CASE WHEN checkup_status = 'C' THEN 1 ELSE 0 END) as proses"), DB::raw("SUM(CASE WHEN checkup_status = 'P' THEN 1 ELSE 0 END) as terdaftar"))->where('reg_no', $this->regNo)->where('checkup_status', '!=', 'F')->first();
 
         return [
             'total' => $stats->total ?? 0,
@@ -198,10 +198,10 @@ new class extends Component {
             SELECT DISTINCT a.kasir_id, a.checkup_no, checkup_date, a.reg_no, reg_name,
                    a.dr_id, dr_name, sex, birth_date, c.address, kasir_name,
                    waktu_selesai_pelayanan, checkup_kesimpulan
-            FROM lbtxn_checkuphdrs a
-            JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-            JOIN rsmst_doctors f ON a.dr_id = f.dr_id
-            LEFT JOIN tkmst_kasirs g ON a.kasir_id = g.kasir_id
+            FROM sktxn_checkuphdrs a
+            JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+            JOIN skmst_doctors f ON a.dr_id = f.dr_id
+            LEFT JOIN skmst_kasirs g ON a.kasir_id = g.kasir_id
             WHERE a.checkup_no = :cno
         ",
                 ['cno' => $checkupNo],
@@ -221,13 +221,13 @@ new class extends Component {
                    lowhigh_status, lab_result_status,
                    to_char(checkup_date,'dd/mm/yyyy') AS checkup_date1x,
                    WAKTU_SELESAI_PELAYANAN
-            FROM lbtxn_checkuphdrs a
-            JOIN lbtxn_checkupdtls b ON a.checkup_no = b.checkup_no
-            JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-            JOIN lbmst_clabitems d ON b.clabitem_id = d.clabitem_id
-            JOIN lbmst_clabs e ON d.clab_id = e.clab_id
-            JOIN rsmst_doctors f ON a.dr_id = f.dr_id
-            LEFT JOIN tkmst_kasirs g ON a.kasir_id = g.kasir_id
+            FROM sktxn_checkuphdrs a
+            JOIN sktxn_checkupdtls b ON a.checkup_no = b.checkup_no
+            JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+            JOIN skmst_clabitems d ON b.clabitem_id = d.clabitem_id
+            JOIN skmst_clabs e ON d.clab_id = e.clab_id
+            JOIN skmst_doctors f ON a.dr_id = f.dr_id
+            LEFT JOIN skmst_kasirs g ON a.kasir_id = g.kasir_id
             WHERE a.checkup_no = :cno
               AND nvl(hidden_status,'N') = 'N'
             ORDER BY app_seq, item_seq, clabitem_desc
@@ -240,11 +240,11 @@ new class extends Component {
             SELECT a.kasir_id, a.checkup_no, checkup_date, a.reg_no, reg_name, a.dr_id, dr_name,
                    sex, birth_date, kasir_name,
                    ('  ' || labout_desc) AS labout_desc, labout_result, labout_normal
-            FROM lbtxn_checkuphdrs a
-            JOIN lbtxn_checkupoutdtls b ON a.checkup_no = b.checkup_no
-            JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-            JOIN rsmst_doctors d ON a.dr_id = d.dr_id
-            LEFT JOIN tkmst_kasirs e ON a.kasir_id = e.kasir_id
+            FROM sktxn_checkuphdrs a
+            JOIN sktxn_checkupoutdtls b ON a.checkup_no = b.checkup_no
+            JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+            JOIN skmst_doctors d ON a.dr_id = d.dr_id
+            LEFT JOIN skmst_kasirs e ON a.kasir_id = e.kasir_id
             WHERE a.checkup_no = :cno
             ORDER BY checkup_no, labout_dtl, labout_desc
         ",
@@ -337,10 +337,10 @@ new class extends Component {
                        a.reg_no, reg_name, a.dr_id, dr_name,
                        sex, birth_date, c.address, kasir_name,
                        waktu_selesai_pelayanan, checkup_kesimpulan
-                FROM lbtxn_checkuphdrs a
-                JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-                JOIN rsmst_doctors f ON a.dr_id = f.dr_id
-                LEFT JOIN tkmst_kasirs g ON a.kasir_id = g.kasir_id
+                FROM sktxn_checkuphdrs a
+                JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+                JOIN skmst_doctors f ON a.dr_id = f.dr_id
+                LEFT JOIN skmst_kasirs g ON a.kasir_id = g.kasir_id
                 WHERE a.checkup_no = :cno
             ",
                 ['cno' => $checkupNo],
@@ -359,13 +359,13 @@ new class extends Component {
                    normal_f, normal_m, high_limit_m, high_limit_f,
                    low_limit_m, low_limit_f, lowhigh_status, lab_result_status,
                    sex, a.dr_id, dr_name, a.kasir_id, kasir_name
-            FROM lbtxn_checkuphdrs a
-            JOIN lbtxn_checkupdtls b ON a.checkup_no = b.checkup_no
-            JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-            JOIN lbmst_clabitems d ON b.clabitem_id = d.clabitem_id
-            JOIN lbmst_clabs e ON d.clab_id = e.clab_id
-            JOIN rsmst_doctors f ON a.dr_id = f.dr_id
-            LEFT JOIN tkmst_kasirs g ON a.kasir_id = g.kasir_id
+            FROM sktxn_checkuphdrs a
+            JOIN sktxn_checkupdtls b ON a.checkup_no = b.checkup_no
+            JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+            JOIN skmst_clabitems d ON b.clabitem_id = d.clabitem_id
+            JOIN skmst_clabs e ON d.clab_id = e.clab_id
+            JOIN skmst_doctors f ON a.dr_id = f.dr_id
+            LEFT JOIN skmst_kasirs g ON a.kasir_id = g.kasir_id
             WHERE a.checkup_no = :cno
               AND nvl(hidden_status,'N') = 'N'
             ORDER BY app_seq, item_seq, clabitem_desc
@@ -376,8 +376,8 @@ new class extends Component {
         $txnLuar = DB::select(
             "
             SELECT ('  ' || labout_desc) AS labout_desc, labout_result, labout_normal
-            FROM lbtxn_checkuphdrs a
-            JOIN lbtxn_checkupoutdtls b ON a.checkup_no = b.checkup_no
+            FROM sktxn_checkuphdrs a
+            JOIN sktxn_checkupoutdtls b ON a.checkup_no = b.checkup_no
             WHERE a.checkup_no = :cno
             ORDER BY labout_dtl, labout_desc
         ",

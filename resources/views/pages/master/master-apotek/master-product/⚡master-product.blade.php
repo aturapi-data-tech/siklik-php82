@@ -60,7 +60,7 @@ new class extends Component {
     #[Computed]
     public function categories()
     {
-        return DB::table('tkmst_categories')
+        return DB::table('skmst_categories')
             ->select('cat_id', 'cat_desc')
             ->where('active_status', '1')
             ->orderBy('cat_desc')
@@ -70,7 +70,7 @@ new class extends Component {
     #[Computed]
     public function suppliers()
     {
-        return DB::table('tkmst_suppliers')
+        return DB::table('skmst_suppliers')
             ->select('supp_id', 'supp_name')
             ->where('active_status', '1')
             ->orderBy('supp_name')
@@ -80,10 +80,10 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkmst_products AS p')
-            ->leftJoin('tkmst_categories AS c', 'c.cat_id', '=', 'p.cat_id')
-            ->leftJoin('tkmst_uoms AS u', 'u.uom_id', '=', 'p.uom_id')
-            ->leftJoin('tkmst_suppliers AS s', 's.supp_id', '=', 'p.supp_id')
+        $q = DB::table('skmst_products AS p')
+            ->leftJoin('skmst_categories AS c', 'c.cat_id', '=', 'p.cat_id')
+            ->leftJoin('skmst_uoms AS u', 'u.uom_id', '=', 'p.uom_id')
+            ->leftJoin('skmst_suppliers AS s', 's.supp_id', '=', 'p.supp_id')
             ->select(
                 'p.product_id', 'p.product_name', 'p.product_type', 'p.product_rak',
                 'p.cost_price', 'p.sales_price', 'p.margin_persen',

@@ -19,7 +19,7 @@ use App\Http\Traits\BPJS\AntrianTrait;
  *
  * Output yang dipake:
  *   - Visual reference jadwal mingguan klinik di BPJS
- *   - Bisa dipakai untuk validasi/sync manual ke SCMST_SCPOLIS
+ *   - Bisa dipakai untuk validasi/sync manual ke SKMST_SCPOLIS
  */
 new class extends Component {
     use AntrianTrait;
@@ -38,7 +38,7 @@ new class extends Component {
     public bool  $isFetching   = false;
     public bool  $hasResult    = false;
 
-    /* ─── Apply ke SCMST_SCPOLIS ─── */
+    /* ─── Apply ke SKMST_SCPOLIS ─── */
     public array $applyLog    = [];
     public string $applyResult = '';
     public bool  $isApplying  = false;
@@ -49,7 +49,7 @@ new class extends Component {
     }
 
     /* ===============================
-     | LOCAL SCHEDULE — query SCVIEW_SCPOLIS untuk poli yg dipilih
+     | LOCAL SCHEDULE — query SKVIEW_SCPOLIS untuk poli yg dipilih
      |
      | Return shape:
      |   [dr_id => ['dr_name', 'kd_dr_bpjs', 'days' => [day_id => [{ket, kuota}, ...]]]]
@@ -59,7 +59,7 @@ new class extends Component {
     {
         if (empty($this->poliId)) return [];
 
-        $rows = DB::table('scview_scpolis')
+        $rows = DB::table('skview_scpolis')
             ->select('dr_id', 'dr_name', 'kd_dr_bpjs', 'day_id', 'sc_poli_ket', 'kuota', 'mulai_praktek')
             ->where('poli_id', (int) $this->poliId)
             ->where('sc_poli_status_', '1')
@@ -195,10 +195,10 @@ new class extends Component {
     }
 
     /* ===============================
-     | APPLY ke SCMST_SCPOLIS
+     | APPLY ke SKMST_SCPOLIS
      |
      | UPSERT key composite: (DAY_ID, POLI_ID, DR_ID, MULAI_PRAKTEK, SELESAI_PRAKTEK).
-     | Skip dokter yang KD_DR_BPJS-nya gak match RSMST_DOCTORS (active_status='1').
+     | Skip dokter yang KD_DR_BPJS-nya gak match SKMST_DOCTORS (active_status='1').
      |
      | Hari → DAY_ID dari hariLabel ("SENIN"..."MINGGU"), bukan dari tanggal langsung
      | (BPJS bisa kembalikan jadwal sama untuk 2 tanggal di rentang 7 hari kalau
@@ -230,7 +230,7 @@ new class extends Component {
 
         foreach ($this->jadwal as $kodeBpjs => $dr) {
             // Resolve dr_id via KD_DR_BPJS (active only)
-            $doctor = DB::table('rsmst_doctors')
+            $doctor = DB::table('skmst_doctors')
                 ->select('dr_id', 'dr_name')
                 ->where('kd_dr_bpjs', (string) $kodeBpjs)
                 ->where('active_status', '1')
@@ -239,7 +239,7 @@ new class extends Component {
             if (!$doctor) {
                 $skipCount = count($dr['days']);
                 $skipped += $skipCount;
-                $this->applyLog[] = "[SKIP] Dr. {$dr['namadokter']} (BPJS {$kodeBpjs}) — tidak ada/non-aktif di RSMST_DOCTORS ({$skipCount} jadwal)";
+                $this->applyLog[] = "[SKIP] Dr. {$dr['namadokter']} (BPJS {$kodeBpjs}) — tidak ada/non-aktif di SKMST_DOCTORS ({$skipCount} jadwal)";
                 continue;
             }
 
@@ -263,14 +263,14 @@ new class extends Component {
                 $mulai   = trim($parts[0]) . ':00';
                 $selesai = trim($parts[1]) . ':00';
 
-                // Shift dari RSTXN_SHIFTCTLS (fallback 1)
-                $shiftRow = DB::table('rstxn_shiftctls')
+                // Shift dari SKTXN_SHIFTCTLS (fallback 1)
+                $shiftRow = DB::table('sktxn_shiftctls')
                     ->whereRaw('? BETWEEN shift_start AND shift_end', [$mulai])
                     ->first();
                 $shift = (int) ($shiftRow->shift ?? ($mulai < '14:00:00' ? 1 : 2));
 
                 try {
-                    $exists = DB::table('scmst_scpolis')
+                    $exists = DB::table('skmst_scpolis')
                         ->where('day_id', $dayId)
                         ->where('poli_id', (int) $this->poliId)
                         ->where('dr_id', $doctor->dr_id)
@@ -279,7 +279,7 @@ new class extends Component {
                         ->exists();
 
                     if ($exists) {
-                        DB::table('scmst_scpolis')
+                        DB::table('skmst_scpolis')
                             ->where('day_id', $dayId)
                             ->where('poli_id', (int) $this->poliId)
                             ->where('dr_id', $doctor->dr_id)
@@ -295,13 +295,13 @@ new class extends Component {
                         $perDokterUpd++;
                     } else {
                         // NO_URUT increment per (DAY_ID, POLI_ID, DR_ID)
-                        $maxNoUrut = (int) DB::table('scmst_scpolis')
+                        $maxNoUrut = (int) DB::table('skmst_scpolis')
                             ->where('day_id', $dayId)
                             ->where('poli_id', (int) $this->poliId)
                             ->where('dr_id', $doctor->dr_id)
                             ->max('no_urut');
 
-                        DB::table('scmst_scpolis')->insert([
+                        DB::table('skmst_scpolis')->insert([
                             'sc_poli_status_'      => '1',
                             'sc_poli_ket'          => $cell['jampraktek'],
                             'day_id'               => $dayId,
@@ -384,7 +384,7 @@ new class extends Component {
                             <li>Pilih <span class="font-semibold">Tanggal Mulai</span> (default hari ini)</li>
                             <li>Klik <span class="font-semibold">Ambil Jadwal 7 Hari</span> — tunggu beberapa detik</li>
                             <li>Lihat tabel hasil (baris = dokter, kolom = hari Senin–Minggu)</li>
-                            <li>Klik <span class="font-semibold">Apply ke SCMST_SCPOLIS</span> untuk menyimpan</li>
+                            <li>Klik <span class="font-semibold">Apply ke SKMST_SCPOLIS</span> untuk menyimpan</li>
                         </ol>
                     </div>
 
@@ -472,7 +472,7 @@ new class extends Component {
                 @endif
             </div>
 
-            {{-- ═══════════ JADWAL LOKAL (SCMST_SCPOLIS) ═══════════ --}}
+            {{-- ═══════════ JADWAL LOKAL (SKMST_SCPOLIS) ═══════════ --}}
             @if (!empty($poliId))
                 <div class="bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
 
@@ -482,7 +482,7 @@ new class extends Component {
                                 Jadwal Lokal — {{ $poliDesc }}
                             </h3>
                             <span class="text-xs text-gray-500 dark:text-gray-400">
-                                Data dari SCMST_SCPOLIS (yang dipakai validasi quota saat checkin)
+                                Data dari SKMST_SCPOLIS (yang dipakai validasi quota saat checkin)
                             </span>
                         </div>
                         <span class="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
@@ -572,7 +572,7 @@ new class extends Component {
                                 wire:click="applyKeSiklik"
                                 wire:loading.attr="disabled"
                                 wire:target="applyKeSiklik"
-                                wire:confirm="Yakin apply hasil ini ke SCMST_SCPOLIS? Data existing akan di-UPDATE, baru di-INSERT, dokter tanpa kd_dr_bpjs di-SKIP."
+                                wire:confirm="Yakin apply hasil ini ke SKMST_SCPOLIS? Data existing akan di-UPDATE, baru di-INSERT, dokter tanpa kd_dr_bpjs di-SKIP."
                                 class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
                                        bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition">
                                 <span wire:loading.remove wire:target="applyKeSiklik" class="flex items-center gap-2">
@@ -580,7 +580,7 @@ new class extends Component {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                               d="M5 13l4 4L19 7"/>
                                     </svg>
-                                    Apply ke SCMST_SCPOLIS
+                                    Apply ke SKMST_SCPOLIS
                                 </span>
                                 <span wire:loading wire:target="applyKeSiklik" class="flex items-center gap-2">
                                     <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -672,12 +672,12 @@ new class extends Component {
                 </div>
             @endif
 
-            {{-- ═══════════ APPLY LOG (UPSERT ke SCMST_SCPOLIS) ═══════════ --}}
+            {{-- ═══════════ APPLY LOG (UPSERT ke SKMST_SCPOLIS) ═══════════ --}}
             @if (!empty($applyLog))
                 <div class="bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                     <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            Log Apply ke SCMST_SCPOLIS
+                            Log Apply ke SKMST_SCPOLIS
                         </h3>
                         @if (!empty($applyResult))
                             <span class="text-xs font-mono text-gray-600 dark:text-gray-400">

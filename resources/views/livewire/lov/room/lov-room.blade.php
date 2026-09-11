@@ -53,16 +53,16 @@ new class extends Component {
 
     protected function loadSelectedRoom(string $roomId): void
     {
-        // Hanya filter by room_id. Tidak cek rsview_roominapes (pasien yang di-edit
+        // Hanya filter by room_id. Tidak cek skview_roominapes (pasien yang di-edit
         // kamarnya pasti terisi) maupun bed_no dari parent (bed bisa dihapus/diganti di master);
         // bed diambil apa adanya dari DB via ROWNUM = 1.
         $row = DB::selectOne(
             "SELECT r.room_name, r.room_id, b.bed_no,
                     r.class_id, c.class_desc,
                     r.room_price, r.perawatan_price
-             FROM   rsmst_rooms r
-             JOIN   rsmst_beds  b ON b.room_id = r.room_id
-             JOIN   rsmst_class c ON c.class_id = r.class_id
+             FROM   skmst_rooms r
+             JOIN   skmst_beds  b ON b.room_id = r.room_id
+             JOIN   skmst_class c ON c.class_id = r.class_id
              WHERE  r.room_id = :room_id
              AND    ROWNUM = 1",
             ['room_id' => $roomId],
@@ -105,12 +105,12 @@ new class extends Component {
                 SELECT r.room_name, r.room_id, b.bed_no,
                        r.class_id, c.class_desc,
                        r.room_price, r.perawatan_price
-                FROM   rsmst_rooms r
-                JOIN   rsmst_beds  b ON b.room_id = r.room_id
-                JOIN   rsmst_class c ON c.class_id = r.class_id
+                FROM   skmst_rooms r
+                JOIN   skmst_beds  b ON b.room_id = r.room_id
+                JOIN   skmst_class c ON c.class_id = r.class_id
                 WHERE  r.active_status = '1'
                 AND    r.room_id || b.bed_no NOT IN (
-                           SELECT room_code FROM rsview_roominapes
+                           SELECT room_code FROM skview_roominapes
                        )
                 AND   (UPPER(r.room_name) LIKE :kw1
                     OR UPPER(b.bed_no)    LIKE :kw2

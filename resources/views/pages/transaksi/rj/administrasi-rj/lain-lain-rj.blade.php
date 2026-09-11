@@ -56,11 +56,11 @@ new class extends Component {
      =============================== */
     private function findData(int $rjNo): void
     {
-        $this->rjLainLain = DB::table('rstxn_rjothers')
-            ->join('rsmst_others', 'rsmst_others.other_id', 'rstxn_rjothers.other_id')
-            ->select('rstxn_rjothers.rjo_dtl', 'rstxn_rjothers.other_id', 'rsmst_others.other_desc', 'rstxn_rjothers.other_price')
-            ->where('rstxn_rjothers.rj_no', $rjNo)
-            ->orderBy('rstxn_rjothers.rjo_dtl')
+        $this->rjLainLain = DB::table('sktxn_rjothers')
+            ->join('skmst_others', 'skmst_others.other_id', 'sktxn_rjothers.other_id')
+            ->select('sktxn_rjothers.rjo_dtl', 'sktxn_rjothers.other_id', 'skmst_others.other_desc', 'sktxn_rjothers.other_price')
+            ->where('sktxn_rjothers.rj_no', $rjNo)
+            ->orderBy('sktxn_rjothers.rjo_dtl')
             ->get()
             ->map(
                 fn($r) => [
@@ -121,7 +121,7 @@ new class extends Component {
 
         $this->validate(
             [
-                'formEntryLainLain.lainLainId' => 'bail|required|exists:rsmst_others,other_id',
+                'formEntryLainLain.lainLainId' => 'bail|required|exists:skmst_others,other_id',
                 'formEntryLainLain.lainLainDesc' => 'bail|required',
                 'formEntryLainLain.lainLainPrice' => 'bail|required|numeric|min:0',
             ],
@@ -139,9 +139,9 @@ new class extends Component {
                 // Lock row RJ — cegah race condition sequence rjo_dtl
                 $this->lockRJRow($this->rjNo);
 
-                $last = DB::table('rstxn_rjothers')->select(DB::raw('nvl(max(rjo_dtl)+1,1) as rjo_dtl_max'))->first();
+                $last = DB::table('sktxn_rjothers')->select(DB::raw('nvl(max(rjo_dtl)+1,1) as rjo_dtl_max'))->first();
 
-                DB::table('rstxn_rjothers')->insert([
+                DB::table('sktxn_rjothers')->insert([
                     'rjo_dtl' => $last->rjo_dtl_max,
                     'rj_no' => $this->rjNo,
                     'other_id' => $this->formEntryLainLain['lainLainId'],
@@ -216,7 +216,7 @@ new class extends Component {
                 // Lock row RJ — update + array lokal harus atomik
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjothers')
+                DB::table('sktxn_rjothers')
                     ->where('rjo_dtl', $this->editingDtl)
                     ->update(['other_price' => $this->editRow['lainLainPrice']]);
 
@@ -258,7 +258,7 @@ new class extends Component {
                 // Lock row RJ dulu
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjothers')->where('rjo_dtl', $rjotherDtl)->delete();
+                DB::table('sktxn_rjothers')->where('rjo_dtl', $rjotherDtl)->delete();
 
                 $this->rjLainLain = collect($this->rjLainLain)->where('rjotherDtl', '!=', $rjotherDtl)->values()->toArray();
 

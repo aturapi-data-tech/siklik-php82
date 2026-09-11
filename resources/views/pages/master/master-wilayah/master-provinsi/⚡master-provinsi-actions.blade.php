@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.provinsi.openEdit')]
     public function openEdit(int $propId): void
     {
-        $row = DB::table('rsmst_propinsis')->where('prop_id', $propId)->first();
+        $row = DB::table('skmst_propinsis')->where('prop_id', $propId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -61,13 +61,13 @@ new class extends Component {
     public function deleteProvinsi(int $propId): void
     {
         try {
-            $isUsed = DB::table('rsmst_kabupatens')->where('prop_id', $propId)->exists();
+            $isUsed = DB::table('skmst_kabupatens')->where('prop_id', $propId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Provinsi tidak bisa dihapus karena masih dipakai pada data kabupaten.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_propinsis')->where('prop_id', $propId)->delete();
+            $deleted = DB::table('skmst_propinsis')->where('prop_id', $propId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data provinsi tidak ditemukan.');
                 return;
@@ -89,7 +89,7 @@ new class extends Component {
     {
         $rules = [
             'form.prop_id'   => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:99|unique:rsmst_propinsis,prop_id'
+                ? 'required|integer|min:1|max:99|unique:skmst_propinsis,prop_id'
                 : 'required|integer',
             'form.prop_name' => 'required|string|max:50',
         ];
@@ -114,9 +114,9 @@ new class extends Component {
         $payload = ['prop_name' => mb_strtoupper($this->form['prop_name'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_propinsis')->insert(['prop_id' => (int) $this->form['prop_id'], ...$payload]);
+            DB::table('skmst_propinsis')->insert(['prop_id' => (int) $this->form['prop_id'], ...$payload]);
         } else {
-            DB::table('rsmst_propinsis')->where('prop_id', $this->originalId)->update($payload);
+            DB::table('skmst_propinsis')->where('prop_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data provinsi berhasil disimpan.');

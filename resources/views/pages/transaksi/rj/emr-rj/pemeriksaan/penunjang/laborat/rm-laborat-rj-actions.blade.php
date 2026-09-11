@@ -68,7 +68,7 @@ new class extends Component {
     {
         $search = trim($this->searchItem);
 
-        return DB::table('lbmst_clabitems')->select('clabitem_id', 'clabitem_desc', 'price', 'clabitem_group', 'item_code')->whereNull('clabitem_group')->whereNotNull('clabitem_desc')->when($search, fn($q) => $q->whereRaw('UPPER(clabitem_desc) LIKE ?', ['%' . mb_strtoupper($search) . '%']))->orderBy('clabitem_desc', 'asc')->paginate(15);
+        return DB::table('skmst_clabitems')->select('clabitem_id', 'clabitem_desc', 'price', 'clabitem_group', 'item_code')->whereNull('clabitem_group')->whereNotNull('clabitem_desc')->when($search, fn($q) => $q->whereRaw('UPPER(clabitem_desc) LIKE ?', ['%' . mb_strtoupper($search) . '%']))->orderBy('clabitem_desc', 'asc')->paginate(15);
     }
 
     /* ===============================
@@ -128,10 +128,10 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
-                $checkupNo = DB::scalar('SELECT NVL(MAX(TO_NUMBER(checkup_no)) + 1, 1) FROM lbtxn_checkuphdrs');
+                $checkupNo = DB::scalar('SELECT NVL(MAX(TO_NUMBER(checkup_no)) + 1, 1) FROM sktxn_checkuphdrs');
 
-                // 5. Insert header lbtxn_checkuphdrs
-                DB::table('lbtxn_checkuphdrs')->insert([
+                // 5. Insert header sktxn_checkuphdrs
+                DB::table('sktxn_checkuphdrs')->insert([
                     'checkup_no' => $checkupNo,
                     'reg_no' => $rjData->reg_no,
                     'dr_id' => $rjData->dr_id,
@@ -190,18 +190,18 @@ new class extends Component {
      */
     private function getRjData(): ?object
     {
-        return DB::table('rstxn_rjhdrs')->select('reg_no', 'dr_id')->where('rj_no', $this->rjNo)->first();
+        return DB::table('sktxn_rjhdrs')->select('reg_no', 'dr_id')->where('rj_no', $this->rjNo)->first();
     }
 
     /**
-     * Insert satu item + child items (clabitem_group) ke lbtxn_checkupdtls.
+     * Insert satu item + child items (clabitem_group) ke sktxn_checkupdtls.
      * Dipanggil dari dalam DB::transaction.
      */
     private function insertItemAndChildren(int $checkupNo, array $item): void
     {
-        $dtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM lbtxn_checkupdtls');
+        $dtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM sktxn_checkupdtls');
 
-        DB::table('lbtxn_checkupdtls')->insert([
+        DB::table('sktxn_checkupdtls')->insert([
             'clabitem_id' => $item['clabitem_id'],
             'checkup_no' => $checkupNo,
             'checkup_dtl' => $dtlNo,
@@ -210,12 +210,12 @@ new class extends Component {
         ]);
 
         // Insert child items (sub-panel)
-        $children = DB::table('lbmst_clabitems')->select('clabitem_id', 'item_code', 'price')->where('clabitem_group', $item['clabitem_id'])->orderBy('item_seq', 'asc')->orderBy('clabitem_desc', 'asc')->get();
+        $children = DB::table('skmst_clabitems')->select('clabitem_id', 'item_code', 'price')->where('clabitem_group', $item['clabitem_id'])->orderBy('item_seq', 'asc')->orderBy('clabitem_desc', 'asc')->get();
 
         foreach ($children as $child) {
-            $childDtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM lbtxn_checkupdtls');
+            $childDtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM sktxn_checkupdtls');
 
-            DB::table('lbtxn_checkupdtls')->insert([
+            DB::table('sktxn_checkupdtls')->insert([
                 'clabitem_id' => $child->clabitem_id,
                 'checkup_no' => $checkupNo,
                 'checkup_dtl' => $childDtlNo,

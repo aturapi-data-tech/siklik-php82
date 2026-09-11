@@ -41,11 +41,11 @@ new class extends Component {
             return;
         }
 
-        $query = DB::table('rsmst_kabupatens')->select('rsmst_kabupatens.kab_id', 'rsmst_kabupatens.kab_name', 'rsmst_propinsis.prop_id', 'rsmst_propinsis.prop_name')->join('rsmst_propinsis', 'rsmst_propinsis.prop_id', 'rsmst_kabupatens.prop_id')->where('rsmst_kabupatens.kab_id', $this->initialKabId);
+        $query = DB::table('skmst_kabupatens')->select('skmst_kabupatens.kab_id', 'skmst_kabupatens.kab_name', 'skmst_propinsis.prop_id', 'skmst_propinsis.prop_name')->join('skmst_propinsis', 'skmst_propinsis.prop_id', 'skmst_kabupatens.prop_id')->where('skmst_kabupatens.kab_id', $this->initialKabId);
 
         // Jika ada filter propinsi, tambahkan ke query
         if ($this->propinsiId) {
-            $query->where('rsmst_propinsis.prop_id', $this->propinsiId);
+            $query->where('skmst_propinsis.prop_id', $this->propinsiId);
         }
 
         $row = $query->first();
@@ -82,11 +82,11 @@ new class extends Component {
 
         // ===== 1) exact match by kab_id =====
         if (ctype_digit($keyword)) {
-            $query = DB::table('rsmst_kabupatens')->select('rsmst_kabupatens.kab_id', 'rsmst_kabupatens.kab_name', 'rsmst_propinsis.prop_id', 'rsmst_propinsis.prop_name')->join('rsmst_propinsis', 'rsmst_propinsis.prop_id', 'rsmst_kabupatens.prop_id')->where('rsmst_kabupatens.kab_id', $keyword);
+            $query = DB::table('skmst_kabupatens')->select('skmst_kabupatens.kab_id', 'skmst_kabupatens.kab_name', 'skmst_propinsis.prop_id', 'skmst_propinsis.prop_name')->join('skmst_propinsis', 'skmst_propinsis.prop_id', 'skmst_kabupatens.prop_id')->where('skmst_kabupatens.kab_id', $keyword);
 
             // Jika ada filter propinsi, tambahkan ke query
             if ($this->propinsiId) {
-                $query->where('rsmst_propinsis.prop_id', $this->propinsiId);
+                $query->where('skmst_propinsis.prop_id', $this->propinsiId);
             }
 
             $exactRow = $query->first();
@@ -105,9 +105,9 @@ new class extends Component {
         // ===== 2) search by kab_name or prop_name =====
         $searchTerm = str_replace(' ', '', strtoupper($keyword));
 
-        $query = DB::table('rsmst_kabupatens')
-            ->select('rsmst_kabupatens.kab_id', 'rsmst_kabupatens.kab_name', 'rsmst_propinsis.prop_id', 'rsmst_propinsis.prop_name')
-            ->join('rsmst_propinsis', 'rsmst_propinsis.prop_id', 'rsmst_kabupatens.prop_id')
+        $query = DB::table('skmst_kabupatens')
+            ->select('skmst_kabupatens.kab_id', 'skmst_kabupatens.kab_name', 'skmst_propinsis.prop_id', 'skmst_propinsis.prop_name')
+            ->join('skmst_propinsis', 'skmst_propinsis.prop_id', 'skmst_kabupatens.prop_id')
             ->where(function ($q) use ($searchTerm) {
                 $q->whereRaw("REPLACE(UPPER(CONCAT('kab', kab_name)), ' ', '') LIKE ?", ['%' . $searchTerm . '%'])->orWhereRaw("REPLACE(UPPER(CONCAT('prop', prop_name)), ' ', '') LIKE ?", ['%' . $searchTerm . '%']);
             })
@@ -117,7 +117,7 @@ new class extends Component {
 
         // Jika ada filter propinsi, tambahkan ke query
         if ($this->propinsiId) {
-            $query->where('rsmst_propinsis.prop_id', $this->propinsiId);
+            $query->where('skmst_propinsis.prop_id', $this->propinsiId);
         }
 
         $rows = $query->get();

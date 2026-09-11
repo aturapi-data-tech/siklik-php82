@@ -14,9 +14,9 @@
  *  1) User pilih reg_no pasien via lov-pasien
  *  2) Sistem tampilkan list rj_no piutang + ringkasan tottotal/totbayar/totsisa
  *  3) User klik "Proses Pelunasan" → buka modal pilih cara bayar + tanggal
- *  4) Per rj_no yg sisa>0: insert RSTXN_RJCASHINS, set RSTXN_RJHDRS.txn_status='L', pay_date=tanggal
+ *  4) Per rj_no yg sisa>0: insert SKTXN_RJCASHINS, set SKTXN_RJHDRS.txn_status='L', pay_date=tanggal
  *
- * Sumber rumus: form Oracle Forms RSVIEW_RJKASIR (xtogle / g_rj / hitung_*).
+ * Sumber rumus: form Oracle Forms SKVIEW_RJKASIR (xtogle / g_rj / hitung_*).
  */
 
 use Livewire\Component;
@@ -57,8 +57,8 @@ new class extends Component {
         if (!$this->regNo) return collect();
 
         // Dapatkan rj_no piutang dasar
-        $headers = DB::table('rstxn_rjhdrs as h')
-            ->leftJoin('rsmst_pasiens as p', 'h.reg_no', '=', 'p.reg_no')
+        $headers = DB::table('sktxn_rjhdrs as h')
+            ->leftJoin('skmst_pasiens as p', 'h.reg_no', '=', 'p.reg_no')
             ->select([
                 'h.rj_no',
                 'h.reg_no',
@@ -93,14 +93,14 @@ new class extends Component {
                 ->pluck('total', 'rj_no');
         };
 
-        $hn    = $sumByRj('rstxn_rjaccdocs',  'accdoc_price');
-        $obat  = $sumByRj('rstxn_rjobats',    'qty*price');
-        $jk    = $sumByRj('rstxn_rjactemps',  'acte_price');
-        $lab   = $sumByRj('rstxn_rjlabs',     'lab_price');
-        $jm    = $sumByRj('rstxn_rjactparams','pact_price');
-        $rad   = $sumByRj('rstxn_rjrads',     'rad_price');
-        $other = $sumByRj('rstxn_rjothers',   'other_price');
-        $titip = $sumByRj('rstxn_rjcashins',  'rjc_nominal');
+        $hn    = $sumByRj('sktxn_rjaccdocs',  'accdoc_price');
+        $obat  = $sumByRj('sktxn_rjobats',    'qty*price');
+        $jk    = $sumByRj('sktxn_rjactemps',  'acte_price');
+        $lab   = $sumByRj('sktxn_rjlabs',     'lab_price');
+        $jm    = $sumByRj('sktxn_rjactparams','pact_price');
+        $rad   = $sumByRj('sktxn_rjrads',     'rad_price');
+        $other = $sumByRj('sktxn_rjothers',   'other_price');
+        $titip = $sumByRj('sktxn_rjcashins',  'rjc_nominal');
 
         return $headers->map(function ($r) use ($hn, $obat, $jk, $lab, $jm, $rad, $other, $titip) {
             $rj = $r->rj_no;
@@ -145,7 +145,7 @@ new class extends Component {
     /* ── Toggle cek_bayar 0/NULL ↔ 1 ── */
     public function toggleCekBayar(int $rjNo): void
     {
-        $row = DB::table('rstxn_rjhdrs')
+        $row = DB::table('sktxn_rjhdrs')
             ->where('rj_no', $rjNo)
             ->where('reg_no', $this->regNo)
             ->where('rj_status', 'L')
@@ -159,7 +159,7 @@ new class extends Component {
 
         $newVal = ((string) ($row->cek_bayar ?? '')) === '1' ? '0' : '1';
 
-        DB::table('rstxn_rjhdrs')
+        DB::table('sktxn_rjhdrs')
             ->where('rj_no', $rjNo)
             ->update(['cek_bayar' => $newVal]);
 
@@ -173,7 +173,7 @@ new class extends Component {
         $allChecked = $this->rjList->every(fn ($r) => $r->is_checked);
         $newVal = $allChecked ? '0' : '1';
 
-        DB::table('rstxn_rjhdrs')
+        DB::table('sktxn_rjhdrs')
             ->where('reg_no', $this->regNo)
             ->where('rj_status', 'L')
             ->where('txn_status', 'H')

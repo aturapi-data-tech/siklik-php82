@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.konf-akun-trans.openEdit')]
     public function openEdit(string $confId): void
     {
-        $row = DB::table('tkacc_confacctxns')->where('conf_id', $confId)->first();
+        $row = DB::table('skacc_confacctxns')->where('conf_id', $confId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -64,7 +64,7 @@ new class extends Component {
     public function deleteKonf(string $confId): void
     {
         try {
-            $deleted = DB::table('tkacc_confacctxns')->where('conf_id', $confId)->delete();
+            $deleted = DB::table('skacc_confacctxns')->where('conf_id', $confId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Konfigurasi tidak ditemukan.');
                 return;
@@ -85,10 +85,10 @@ new class extends Component {
     {
         $rules = [
             'form.conf_id' => $this->formMode === 'create'
-                ? 'required|string|max:240|regex:/^[A-Z0-9_.-]+$/|unique:tkacc_confacctxns,conf_id'
+                ? 'required|string|max:240|regex:/^[A-Z0-9_.-]+$/|unique:skacc_confacctxns,conf_id'
                 : 'required|string',
             'form.conf_desc' => 'nullable|string|max:240',
-            'form.acc_id'    => 'required|string|max:25|exists:tkacc_accountses,acc_id',
+            'form.acc_id'    => 'required|string|max:25|exists:skacc_accountses,acc_id',
         ];
 
         $messages = [
@@ -114,12 +114,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkacc_confacctxns')->insert([
+            DB::table('skacc_confacctxns')->insert([
                 'conf_id' => mb_strtoupper($this->form['conf_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkacc_confacctxns')->where('conf_id', $this->originalId)->update($payload);
+            DB::table('skacc_confacctxns')->where('conf_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Konfigurasi berhasil disimpan.');

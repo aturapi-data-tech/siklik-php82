@@ -22,7 +22,7 @@ new class extends Component {
     {
         $tahun = (int) substr($tanggal, 0, 4);
 
-        $sa = DB::table('tktxn_saldoawalakuns')
+        $sa = DB::table('sktxn_saldoawalakuns')
             ->where('acc_id', $accId)
             ->where('sa_year', (string) $tahun)
             ->first();
@@ -35,7 +35,7 @@ new class extends Component {
             ? 'NVL(txn_k,0) - NVL(txn_d,0)'
             : 'NVL(txn_d,0) - NVL(txn_k,0)';
 
-        $arus = (float) DB::table('tkview_accounts')
+        $arus = (float) DB::table('skview_accounts')
             ->where('txn_acc', $accId)
             ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                 sprintf('%04d-01-01', $tahun), $tanggal,
@@ -54,7 +54,7 @@ new class extends Component {
             ? 'NVL(txn_k,0) - NVL(txn_d,0)'
             : 'NVL(txn_d,0) - NVL(txn_k,0)';
 
-        return (float) DB::table('tkview_accounts')
+        return (float) DB::table('skview_accounts')
             ->where('txn_acc', $accId)
             ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [$dari, $sampai])
             ->sum(DB::raw($expr));
@@ -68,15 +68,15 @@ new class extends Component {
     {
         if ($this->tanggal === '') return [];
 
-        $sections = DB::table('tkacc_temlabarugineracadtls')
+        $sections = DB::table('skacc_temlabarugineracadtls')
             ->where('temp_id', 'N1')
             ->orderBy('temp_dtl_seq')
             ->get();
 
         $result = [];
         foreach ($sections as $sec) {
-            $accounts = DB::table('tkacc_temaccountes as t')
-                ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
+            $accounts = DB::table('skacc_temaccountes as t')
+                ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
                 ->where('t.temp_dtl', $sec->temp_dtl)
                 ->select('t.acc_id', 'a.acc_desc', 'a.acc_dk_status')
                 ->orderBy('t.acc_id')
@@ -133,8 +133,8 @@ new class extends Component {
 
         $totalPerSection = [];
         foreach (['1', '2', '3'] as $dtl) {
-            $accs = DB::table('tkacc_temaccountes as t')
-                ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
+            $accs = DB::table('skacc_temaccountes as t')
+                ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
                 ->where('t.temp_dtl', $dtl)
                 ->select('t.acc_id', 'a.acc_dk_status')->get();
 
@@ -206,11 +206,11 @@ new class extends Component {
                     <div class="flex-1 text-sm text-amber-900 dark:text-amber-100">
                         <p class="font-semibold">Laporan ini masih dalam masa pengembangan — verifikasi manual sebelum dipakai.</p>
                         <ul class="mt-2 ml-5 space-y-0.5 text-xs list-disc">
-                            <li><strong>Saldo awal tahun di <span class="font-mono">tktxn_saldoawalakuns</span> belum lengkap</strong> — banyak akun (Modal, Persediaan, Piutang awal, dll) masih nol. Akibatnya Aktiva ≠ Pasiva. Update via menu <em>Saldo Kas → Edit Saldo</em> (admin) atau jurnal modal awal.</li>
+                            <li><strong>Saldo awal tahun di <span class="font-mono">sktxn_saldoawalakuns</span> belum lengkap</strong> — banyak akun (Modal, Persediaan, Piutang awal, dll) masih nol. Akibatnya Aktiva ≠ Pasiva. Update via menu <em>Saldo Kas → Edit Saldo</em> (admin) atau jurnal modal awal.</li>
                             <li><strong>Laba Tahun Berjalan</strong> diambil dari Laba-Rugi YTD (Penjualan − HPP − Biaya). Jika HPP otomatis belum akurat (stock opname belum rutin), Laba bisa salah → Ekuitas ikut salah.</li>
                             <li><strong>Persediaan barang (akun 1141, dll)</strong> mengikuti pergerakan stok — masih ada potensi selisih akibat human error input penerimaan / pengeluaran (penamaan produk mirip).</li>
                             <li>Validasi <em>"Selisih ⚠"</em> di kanan atas akan flag kalau tidak balance — pakai itu sebagai pemandu mencari root cause data yang masih kurang.</li>
-                            <li>Sumber data: <span class="font-mono">tkview_accounts_neraca</span> + <span class="font-mono">tktxn_saldoawalakuns</span>. Mapping section: template <span class="font-mono">N1</span>.</li>
+                            <li>Sumber data: <span class="font-mono">skview_accounts_neraca</span> + <span class="font-mono">sktxn_saldoawalakuns</span>. Mapping section: template <span class="font-mono">N1</span>.</li>
                         </ul>
                     </div>
                 </div>

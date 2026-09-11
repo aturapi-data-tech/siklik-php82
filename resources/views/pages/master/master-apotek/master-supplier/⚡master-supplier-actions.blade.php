@@ -43,7 +43,7 @@ new class extends Component {
     #[On('master.supplier.openEdit')]
     public function openEdit(string $suppId): void
     {
-        $row = DB::table('tkmst_suppliers')->where('supp_id', $suppId)->first();
+        $row = DB::table('skmst_suppliers')->where('supp_id', $suppId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -67,9 +67,9 @@ new class extends Component {
     #[On('master.supplier.toggleActive')]
     public function toggleActive(string $suppId): void
     {
-        $cur = (string) DB::table('tkmst_suppliers')->where('supp_id', $suppId)->value('active_status');
+        $cur = (string) DB::table('skmst_suppliers')->where('supp_id', $suppId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_suppliers')->where('supp_id', $suppId)->update(['active_status' => $next]);
+        DB::table('skmst_suppliers')->where('supp_id', $suppId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status supplier → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.supplier.saved');
@@ -79,13 +79,13 @@ new class extends Component {
     public function deleteSupplier(string $suppId): void
     {
         try {
-            $isUsed = DB::table('tkmst_products')->where('supp_id', $suppId)->exists();
+            $isUsed = DB::table('skmst_products')->where('supp_id', $suppId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Supplier tidak bisa dihapus karena masih dipakai pada data produk.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_suppliers')->where('supp_id', $suppId)->delete();
+            $deleted = DB::table('skmst_suppliers')->where('supp_id', $suppId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data supplier tidak ditemukan.');
                 return;
@@ -106,7 +106,7 @@ new class extends Component {
     {
         $rules = [
             'form.supp_id'       => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkmst_suppliers,supp_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skmst_suppliers,supp_id'
                 : 'required|string',
             'form.supp_name'     => 'required|string|max:100',
             'form.supp_email'    => 'nullable|email|max:100',
@@ -147,12 +147,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_suppliers')->insert([
+            DB::table('skmst_suppliers')->insert([
                 'supp_id' => mb_strtoupper($this->form['supp_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_suppliers')->where('supp_id', $this->originalId)->update($payload);
+            DB::table('skmst_suppliers')->where('supp_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data supplier berhasil disimpan.');

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * LOV Akun (general purpose) — sumber: tkacc_accountses where active_status='1'.
+ * LOV Akun (general purpose) — sumber: skacc_accountses where active_status='1'.
  *
  * Props filter:
  *   - kasOnly: true → hanya kas_status='1' (akun kas / bank)
@@ -11,7 +11,7 @@
  * Payload: ['acc_id', 'acc_desc', 'kas_status', 'gra_id', 'gra_desc', 'acc_dk_status']
  *
  * Replace lov-akun-ci, lov-akun-co, lov-kas (sirus-only) — query tabel
- * yang benar (tkacc_accountses).
+ * yang benar (skacc_accountses).
  */
 
 use Livewire\Component;
@@ -54,8 +54,8 @@ new class extends Component {
     /* Load tanpa filter active — supaya record lama yg ke-nonaktifkan tetap nampil di edit mode */
     protected function loadSelected(string $accId): void
     {
-        $row = DB::table('tkacc_accountses as a')
-            ->leftJoin('tkacc_gr_accountses as g', 'g.gra_id', '=', 'a.gra_id')
+        $row = DB::table('skacc_accountses as a')
+            ->leftJoin('skacc_gr_accountses as g', 'g.gra_id', '=', 'a.gra_id')
             ->select('a.acc_id', 'a.acc_desc', 'a.kas_status', 'a.gra_id',
                 'g.gra_desc', 'a.acc_dk_status', 'a.active_status')
             ->where('a.acc_id', $accId)->first();
@@ -91,8 +91,8 @@ new class extends Component {
 
     protected function baseQuery(): \Illuminate\Database\Query\Builder
     {
-        $q = DB::table('tkacc_accountses as a')
-            ->leftJoin('tkacc_gr_accountses as g', 'g.gra_id', '=', 'a.gra_id')
+        $q = DB::table('skacc_accountses as a')
+            ->leftJoin('skacc_gr_accountses as g', 'g.gra_id', '=', 'a.gra_id')
             ->select('a.acc_id', 'a.acc_desc', 'a.kas_status', 'a.gra_id',
                 'g.gra_desc', 'a.acc_dk_status', 'a.active_status')
             ->where('a.active_status', '1');

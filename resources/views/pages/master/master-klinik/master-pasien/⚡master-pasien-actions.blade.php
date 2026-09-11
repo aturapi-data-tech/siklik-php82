@@ -91,7 +91,7 @@ new class extends Component {
     /** Generate regNo baru saat simpan (tidak bisa diinput manual) */
     protected function generateRegNo(): string
     {
-        $maxRegNo = DB::table('rsmst_pasiens')->whereRaw("reg_no LIKE '%A'")->whereRaw("REGEXP_LIKE(REPLACE(reg_no,'A',''), '^\d+$')")->max(DB::raw("TO_NUMBER(REPLACE(reg_no,'A',''))"));
+        $maxRegNo = DB::table('skmst_pasiens')->whereRaw("reg_no LIKE '%A'")->whereRaw("REGEXP_LIKE(REPLACE(reg_no,'A',''), '^\d+$')")->max(DB::raw("TO_NUMBER(REPLACE(reg_no,'A',''))"));
 
         $nextNo = ($maxRegNo ?? 0) + 1;
         return sprintf('%07s', $nextNo) . 'A';
@@ -261,7 +261,7 @@ new class extends Component {
             return;
         }
 
-        $lockKey = 'lock:rsmst_pasiens:create';
+        $lockKey = 'lock:skmst_pasiens:create';
 
         try {
             Cache::lock($lockKey, 15)->block(5, function () use ($pasien, $identitas, $kontak) {
@@ -306,13 +306,13 @@ new class extends Component {
 
                     if ($this->formMode === 'create') {
                         // Cek duplikat sebelum insert
-                        if (DB::table('rsmst_pasiens')->where('reg_no', $regNo)->exists()) {
+                        if (DB::table('skmst_pasiens')->where('reg_no', $regNo)->exists()) {
                             throw new \Exception("No RM {$regNo} sudah terpakai. Silakan ulangi proses pendaftaran.");
                         }
                         $saveData['reg_date'] = DB::raw('SYSDATE');
-                        DB::table('rsmst_pasiens')->insert($saveData);
+                        DB::table('skmst_pasiens')->insert($saveData);
                     } else {
-                        DB::table('rsmst_pasiens')->where('reg_no', $regNo)->update($saveData);
+                        DB::table('skmst_pasiens')->where('reg_no', $regNo)->update($saveData);
                     }
 
                     $pasienData = $this->findDataMasterPasien($regNo);
@@ -359,14 +359,14 @@ new class extends Component {
     {
         try {
             // Cek apakah pasien sudah punya transaksi
-            $isUsed = DB::table('rstxn_rjhdrs')->where('reg_no', $regNo)->exists() || DB::table('rstxn_ugdhdrs')->where('reg_no', $regNo)->exists() || DB::table('rstxn_rihdrs')->where('reg_no', $regNo)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('reg_no', $regNo)->exists() || DB::table('sktxn_ugdhdrs')->where('reg_no', $regNo)->exists() || DB::table('sktxn_rihdrs')->where('reg_no', $regNo)->exists();
 
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Pasien sudah dipakai pada transaksi, tidak bisa dihapus.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_pasiens')->where('reg_no', $regNo)->delete();
+            $deleted = DB::table('skmst_pasiens')->where('reg_no', $regNo)->delete();
 
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data pasien tidak ditemukan.');

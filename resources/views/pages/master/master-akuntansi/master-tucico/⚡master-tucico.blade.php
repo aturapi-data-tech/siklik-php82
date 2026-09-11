@@ -28,9 +28,9 @@ new class extends Component {
 
     public function toggleActive(string $id): void
     {
-        $cur = (string) DB::table('tkacc_tucicos')->where('tucico_id', $id)->value('active_status');
+        $cur = (string) DB::table('skacc_tucicos')->where('tucico_id', $id)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkacc_tucicos')->where('tucico_id', $id)->update(['active_status' => $next]);
+        DB::table('skacc_tucicos')->where('tucico_id', $id)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success', message: 'Status diubah ke ' . ($next === '1' ? 'Aktif' : 'Non-aktif'));
         $this->resetPage();
     }
@@ -41,8 +41,8 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkacc_tucicos as t')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
+        $q = DB::table('skacc_tucicos as t')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
             ->select('t.tucico_id', 't.tucico_desc', 't.tucico_status',
                 't.active_status', 't.acc_id', 'a.acc_desc as acc_name')
             ->orderByRaw("CASE WHEN t.active_status = '1' THEN 0 ELSE 1 END")
@@ -66,7 +66,7 @@ new class extends Component {
 <div>
     <x-page-title
         title="Master TUCICO (Transit Cash In/Out)"
-        subtitle="Pos kas transit untuk penerimaan/pengeluaran kas non-transaksi (mis. setoran ke bank, ambil kas dari brankas). Sumber: tkacc_tucicos." />
+        subtitle="Pos kas transit untuk penerimaan/pengeluaran kas non-transaksi (mis. setoran ke bank, ambil kas dari brankas). Sumber: skacc_tucicos." />
 
     <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
         <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">

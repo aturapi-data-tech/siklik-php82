@@ -39,7 +39,7 @@ new class extends Component {
     #[Computed]
     public function categories()
     {
-        return DB::table('tkmst_categories')
+        return DB::table('skmst_categories')
             ->select('cat_id', 'cat_desc')
             ->where('active_status', '1')
             ->orderBy('cat_desc')
@@ -49,7 +49,7 @@ new class extends Component {
     #[Computed]
     public function uoms()
     {
-        return DB::table('tkmst_uoms')
+        return DB::table('skmst_uoms')
             ->select('uom_id', 'uom_desc')
             ->where('active_status', '1')
             ->orderBy('uom_desc')
@@ -59,7 +59,7 @@ new class extends Component {
     #[Computed]
     public function suppliers()
     {
-        return DB::table('tkmst_suppliers')
+        return DB::table('skmst_suppliers')
             ->select('supp_id', 'supp_name')
             ->where('active_status', '1')
             ->orderBy('supp_name')
@@ -94,7 +94,7 @@ new class extends Component {
     #[On('master.product.openEdit')]
     public function openEdit(string $productId): void
     {
-        $row = DB::table('tkmst_products')->where('product_id', $productId)->first();
+        $row = DB::table('skmst_products')->where('product_id', $productId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -124,9 +124,9 @@ new class extends Component {
     #[On('master.product.toggleActive')]
     public function toggleActive(string $productId): void
     {
-        $cur = (string) DB::table('tkmst_products')->where('product_id', $productId)->value('active_status');
+        $cur = (string) DB::table('skmst_products')->where('product_id', $productId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_products')->where('product_id', $productId)->update(['active_status' => $next]);
+        DB::table('skmst_products')->where('product_id', $productId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status produk → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.product.saved');
@@ -136,14 +136,14 @@ new class extends Component {
     public function deleteProduct(string $productId): void
     {
         try {
-            $isUsedSls = DB::table('tktxn_slsdtls')->where('product_id', $productId)->exists();
-            $isUsedRcv = DB::table('tktxn_rcvdtls')->where('product_id', $productId)->exists();
+            $isUsedSls = DB::table('sktxn_slsdtls')->where('product_id', $productId)->exists();
+            $isUsedRcv = DB::table('sktxn_rcvdtls')->where('product_id', $productId)->exists();
             if ($isUsedSls || $isUsedRcv) {
                 $this->dispatch('toast', type: 'error', message: 'Produk tidak bisa dihapus karena masih dipakai pada transaksi penjualan/pembelian.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_products')->where('product_id', $productId)->delete();
+            $deleted = DB::table('skmst_products')->where('product_id', $productId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data produk tidak ditemukan.');
                 return;
@@ -164,14 +164,14 @@ new class extends Component {
     {
         $rules = [
             'form.product_id'    => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkmst_products,product_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skmst_products,product_id'
                 : 'required|string',
             'form.product_name'  => 'required|string|max:100',
             'form.product_type'  => 'required|string|max:3',
             'form.product_rak'   => 'nullable|string|max:100',
-            'form.cat_id'        => 'required|string|exists:tkmst_categories,cat_id',
-            'form.uom_id'        => 'required|string|exists:tkmst_uoms,uom_id',
-            'form.supp_id'       => 'required|string|exists:tkmst_suppliers,supp_id',
+            'form.cat_id'        => 'required|string|exists:skmst_categories,cat_id',
+            'form.uom_id'        => 'required|string|exists:skmst_uoms,uom_id',
+            'form.supp_id'       => 'required|string|exists:skmst_suppliers,supp_id',
             'form.cost_price'    => 'required|numeric|min:0',
             'form.sales_price'   => 'required|numeric|min:0',
             'form.margin_persen' => 'nullable|numeric',
@@ -225,12 +225,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_products')->insert([
+            DB::table('skmst_products')->insert([
                 'product_id' => mb_strtoupper($this->form['product_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_products')->where('product_id', $this->originalId)->update($payload);
+            DB::table('skmst_products')->where('product_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data produk berhasil disimpan.');

@@ -46,7 +46,7 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkacc_gr_accountses')
+        $q = DB::table('skacc_gr_accountses')
             ->select('gra_id', 'gra_desc', 'gra_status', 'dk_status')
             ->orderBy('gra_id');
 
@@ -66,7 +66,7 @@ new class extends Component {
 <div>
     <x-page-title
         title="Master Group Akun"
-        subtitle="Pengelompokan akun (mis. AKTIVA, PASIVA, MODAL, PENDAPATAN, BIAYA) — sumber: tkacc_gr_accountses." />
+        subtitle="Pengelompokan akun (mis. AKTIVA, PASIVA, MODAL, PENDAPATAN, BIAYA) — sumber: skacc_gr_accountses." />
 
     <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
         <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">

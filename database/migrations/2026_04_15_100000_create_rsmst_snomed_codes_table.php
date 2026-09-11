@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('rsmst_snomed_codes', function (Blueprint $table) {
+        Schema::create('skmst_snomed_codes', function (Blueprint $table) {
             $table->string('snomed_code', 20);
             $table->primary('snomed_code', 'pk_snomed_codes');
             $table->string('display_en', 500);
@@ -17,13 +17,13 @@ return new class extends Migration {
         });
 
         // Index untuk pencarian
-        Schema::table('rsmst_snomed_codes', function (Blueprint $table) {
+        Schema::table('skmst_snomed_codes', function (Blueprint $table) {
             $table->index('value_set', 'idx_snomed_vs');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('rsmst_snomed_codes');
+        Schema::dropIfExists('skmst_snomed_codes');
     }
 };

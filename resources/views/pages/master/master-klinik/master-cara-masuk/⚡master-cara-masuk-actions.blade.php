@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.cara-masuk.openEdit')]
     public function openEdit(string $entryId): void
     {
-        $row = DB::table('rsmst_entrytypes')->where('entry_id', $entryId)->first();
+        $row = DB::table('skmst_entrytypes')->where('entry_id', $entryId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -58,7 +58,7 @@ new class extends Component {
     public function deleteCaraMasuk(string $entryId): void
     {
         try {
-            $deleted = DB::table('rsmst_entrytypes')->where('entry_id', $entryId)->delete();
+            $deleted = DB::table('skmst_entrytypes')->where('entry_id', $entryId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data cara masuk tidak ditemukan.');
                 return;
@@ -79,7 +79,7 @@ new class extends Component {
     {
         $rules = [
             'form.entry_id'   => $this->formMode === 'create'
-                ? 'required|string|max:3|regex:/^[A-Z0-9]+$/|unique:rsmst_entrytypes,entry_id'
+                ? 'required|string|max:3|regex:/^[A-Z0-9]+$/|unique:skmst_entrytypes,entry_id'
                 : 'required|string',
             'form.entry_desc' => 'required|string|max:50',
         ];
@@ -103,12 +103,12 @@ new class extends Component {
         $payload = ['entry_desc' => mb_strtoupper($this->form['entry_desc'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_entrytypes')->insert([
+            DB::table('skmst_entrytypes')->insert([
                 'entry_id' => mb_strtoupper($this->form['entry_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_entrytypes')->where('entry_id', $this->originalId)->update($payload);
+            DB::table('skmst_entrytypes')->where('entry_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data cara masuk berhasil disimpan.');

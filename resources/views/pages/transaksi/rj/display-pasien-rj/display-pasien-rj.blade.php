@@ -49,7 +49,7 @@ new class extends Component {
             $nut = $rj['pemeriksaan']['nutrisi'] ?? [];
             $fun = $rj['pemeriksaan']['fungsional'] ?? [];
 
-            $klaim = DB::table('rsmst_klaimtypes')
+            $klaim = DB::table('skmst_klaimtypes')
                 ->where('klaim_id', $rj['klaimId'] ?? null)
                 ->select('klaim_desc')
                 ->first();

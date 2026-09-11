@@ -55,14 +55,14 @@ new class extends Component {
 
     protected function loadSelected(string $poliId): void
     {
-        // Guard: rsmst_polis.poli_id bertipe NUMBER di Oracle — kalau parent
+        // Guard: skmst_polis.poli_id bertipe NUMBER di Oracle — kalau parent
         // kirim value non-numeric (mis. partial typing / leak state), skip
         // daripada ORA-01722 invalid number.
         if (!is_numeric($poliId)) {
             return;
         }
 
-        $row = DB::table('rsmst_polis')
+        $row = DB::table('skmst_polis')
             ->select('poli_id', 'poli_desc', 'kd_poli_bpjs', 'poli_uuid')
             ->where('poli_id', $poliId)
             ->first();
@@ -89,9 +89,9 @@ new class extends Component {
         }
 
         // 1) Exact match by poli_id — HANYA kalau keyword numeric, karena
-        //    rsmst_polis.poli_id bertipe NUMBER di Oracle (huruf → ORA-01722).
+        //    skmst_polis.poli_id bertipe NUMBER di Oracle (huruf → ORA-01722).
         if (is_numeric($keyword)) {
-            $exact = DB::table('rsmst_polis')
+            $exact = DB::table('skmst_polis')
                 ->select('poli_id', 'poli_desc', 'kd_poli_bpjs', 'poli_uuid')
                 ->where('poli_id', $keyword)
                 ->first();
@@ -105,7 +105,7 @@ new class extends Component {
         // 2) Partial search
         $upperKw = mb_strtoupper($keyword);
 
-        $rows = DB::table('rsmst_polis')
+        $rows = DB::table('skmst_polis')
             ->select('poli_id', 'poli_desc', 'kd_poli_bpjs', 'poli_uuid')
             ->where(function ($q) use ($upperKw) {
                 // TO_CHAR eksplisit pada poli_id (NUMBER) supaya aman di driver Oracle apapun.

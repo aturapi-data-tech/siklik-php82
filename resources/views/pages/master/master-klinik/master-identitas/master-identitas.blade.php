@@ -1,6 +1,6 @@
 <?php
 // resources/views/pages/master/master-klinik/master-identitas/master-identitas.blade.php
-// Master Identitas Klinik — edit 1 baris dimst_identitases (kop cetak: nama/alamat/kota/telp/fax).
+// Master Identitas Klinik — edit 1 baris skmst_identitases (kop cetak: nama/alamat/kota/telp/fax).
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +20,7 @@ new class extends Component {
     {
         abort_unless(auth()->user()?->hasRole('Admin'), 403, 'Hanya Admin yang dapat mengelola Identitas Klinik.');
 
-        $row = (array) (DB::table('dimst_identitases')->first() ?? []);
+        $row = (array) (DB::table('skmst_identitases')->first() ?? []);
         foreach (array_keys($this->form) as $k) {
             $this->form[$k] = (string) ($row[$k] ?? '');
         }
@@ -66,8 +66,8 @@ new class extends Component {
 
         $this->validate();
 
-        // dimst_identitases = tabel config 1-baris; update seluruh field kop.
-        DB::table('dimst_identitases')->update([
+        // skmst_identitases = tabel config 1-baris; update seluruh field kop.
+        DB::table('skmst_identitases')->update([
             'int_name' => trim($this->form['int_name']),
             'int_address' => trim($this->form['int_address']),
             'int_city' => trim($this->form['int_city']),

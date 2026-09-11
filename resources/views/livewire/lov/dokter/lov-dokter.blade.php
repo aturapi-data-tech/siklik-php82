@@ -57,7 +57,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('rsmst_doctors as a')->leftJoin('rsmst_polis as b', 'a.poli_id', '=', 'b.poli_id')->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')->where('a.dr_id', $this->initialDrId)->first();
+        $row = DB::table('skmst_doctors as a')->leftJoin('skmst_polis as b', 'a.poli_id', '=', 'b.poli_id')->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')->where('a.dr_id', $this->initialDrId)->first();
 
         if ($row) {
             $this->setSelectedFromRow($row);
@@ -104,7 +104,7 @@ new class extends Component {
 
         // ===== 1) exact match by dr_id =====
         if (ctype_digit($keyword)) {
-            $exactQuery = DB::table('rsmst_doctors as a')->leftJoin('rsmst_polis as b', 'a.poli_id', '=', 'b.poli_id')->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')->where('a.dr_id', $keyword)->where('a.active_status', '1');
+            $exactQuery = DB::table('skmst_doctors as a')->leftJoin('skmst_polis as b', 'a.poli_id', '=', 'b.poli_id')->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')->where('a.dr_id', $keyword)->where('a.active_status', '1');
 
             // Tambah filter poli jika ada
             if (!empty($this->filterPoliId)) {
@@ -122,8 +122,8 @@ new class extends Component {
         // ===== 2) search by dr_name / poli_desc partial =====
         $upperKeyword = mb_strtoupper($keyword);
 
-        $query = DB::table('rsmst_doctors as a')
-            ->leftJoin('rsmst_polis as b', 'a.poli_id', '=', 'b.poli_id')
+        $query = DB::table('skmst_doctors as a')
+            ->leftJoin('skmst_polis as b', 'a.poli_id', '=', 'b.poli_id')
             ->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')
             ->where(function ($q) use ($keyword, $upperKeyword) {
                 if (ctype_digit($keyword)) {
@@ -356,7 +356,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('rsmst_doctors as a')->leftJoin('rsmst_polis as b', 'a.poli_id', '=', 'b.poli_id')->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')->where('a.dr_id', $value)->first();
+        $row = DB::table('skmst_doctors as a')->leftJoin('skmst_polis as b', 'a.poli_id', '=', 'b.poli_id')->select('a.dr_id', 'a.dr_address', 'a.dr_phone', 'a.dr_name', 'a.poli_id', 'a.poli_price', 'a.active_status', 'a.rs_admin', 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik', 'b.poli_desc', 'b.kd_poli_bpjs', 'b.poli_uuid')->where('a.dr_id', $value)->first();
 
         if ($row) {
             $this->setSelectedFromRow($row);

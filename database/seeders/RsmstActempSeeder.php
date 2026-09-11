@@ -17,7 +17,7 @@ class RsmstActempSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_actemps')->updateOrInsert(['acte_id' => $row['acte_id']], $row);
+            DB::table('skmst_actemps')->updateOrInsert(['acte_id' => $row['acte_id']], $row);
         }
     }
 }

@@ -53,7 +53,7 @@ new class extends Component {
         }
 
         // ── 3. Identitas Klinik ──
-        $identitasRs = DB::table('dimst_identitases')->select('int_name', 'int_phone1', 'int_phone2', 'int_fax', 'int_address', 'int_city')->first();
+        $identitasRs = DB::table('skmst_identitases')->select('int_name', 'int_phone1', 'int_phone2', 'int_fax', 'int_address', 'int_city')->first();
 
         // ── 4. TTD Petugas ──
         $ttdPetugasPath = null;

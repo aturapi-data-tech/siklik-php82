@@ -19,7 +19,7 @@ class RsmstEntrytypeSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_entrytypes')->updateOrInsert(['entry_id' => $row['entry_id']], $row);
+            DB::table('skmst_entrytypes')->updateOrInsert(['entry_id' => $row['entry_id']], $row);
         }
     }
 }

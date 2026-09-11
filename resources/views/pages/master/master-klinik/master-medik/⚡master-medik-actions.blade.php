@@ -46,7 +46,7 @@ new class extends Component {
     #[On('master.medik.openEdit')]
     public function openEdit(string $medikNo): void
     {
-        $row = DB::table('rsmst_medik')->where('medik_no', $medikNo)->first();
+        $row = DB::table('skmst_medik')->where('medik_no', $medikNo)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -76,7 +76,7 @@ new class extends Component {
     public function deleteMedik(string $medikNo): void
     {
         try {
-            $deleted = DB::table('rsmst_medik')->where('medik_no', $medikNo)->delete();
+            $deleted = DB::table('skmst_medik')->where('medik_no', $medikNo)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data alat medis tidak ditemukan.');
                 return;
@@ -97,7 +97,7 @@ new class extends Component {
     {
         $rules = [
             'form.medik_no'   => $this->formMode === 'create'
-                ? 'required|string|max:20|unique:rsmst_medik,medik_no'
+                ? 'required|string|max:20|unique:skmst_medik,medik_no'
                 : 'required|string',
             'form.medik_name' => 'required|string|max:200',
             'form.condition'  => 'nullable|string|max:20',
@@ -145,12 +145,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_medik')->insert([
+            DB::table('skmst_medik')->insert([
                 'medik_no' => mb_strtoupper($this->form['medik_no']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_medik')->where('medik_no', $this->originalId)->update($payload);
+            DB::table('skmst_medik')->where('medik_no', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data alat medis berhasil disimpan.');

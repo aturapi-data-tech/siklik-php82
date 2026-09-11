@@ -19,7 +19,7 @@ class RsmstKlaimtypeSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_klaimtypes')->updateOrInsert(['klaim_id' => $row['klaim_id']], $row);
+            DB::table('skmst_klaimtypes')->updateOrInsert(['klaim_id' => $row['klaim_id']], $row);
         }
     }
 }

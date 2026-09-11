@@ -82,7 +82,7 @@ new class extends Component {
 
         $tahun = (int) substr($tanggal, 0, 4);
 
-        $sa = DB::table('tktxn_saldoawalakuns')
+        $sa = DB::table('sktxn_saldoawalakuns')
             ->where('acc_id', $this->accId)
             ->where('sa_year', (string) $tahun)
             ->first();
@@ -95,7 +95,7 @@ new class extends Component {
             ? 'NVL(txn_k,0) - NVL(txn_d,0)'
             : 'NVL(txn_d,0) - NVL(txn_k,0)';
 
-        $arus = (float) DB::table('tkview_accounts')
+        $arus = (float) DB::table('skview_accounts')
             ->where('txn_acc', $this->accId)
             ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                 sprintf('%04d-01-01', $tahun), $tanggal,
@@ -118,8 +118,8 @@ new class extends Component {
     {
         if ($this->accId === '' || $this->periode === '') return collect();
 
-        $rows = DB::table('tkview_accounts as v')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc_k')
+        $rows = DB::table('skview_accounts as v')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc_k')
             ->select(
                 'v.txn_date', 'v.txn_name',
                 'v.txn_acc_k as lawan_acc_id',

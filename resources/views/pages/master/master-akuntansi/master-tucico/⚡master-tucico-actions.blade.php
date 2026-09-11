@@ -37,7 +37,7 @@ new class extends Component {
     #[On('master.tucico.openEdit')]
     public function openEdit(string $tucicoId): void
     {
-        $row = DB::table('tkacc_tucicos')->where('tucico_id', $tucicoId)->first();
+        $row = DB::table('skacc_tucicos')->where('tucico_id', $tucicoId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -65,7 +65,7 @@ new class extends Component {
     public function deleteTucico(string $tucicoId): void
     {
         try {
-            $deleted = DB::table('tkacc_tucicos')->where('tucico_id', $tucicoId)->delete();
+            $deleted = DB::table('skacc_tucicos')->where('tucico_id', $tucicoId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'TUCICO tidak ditemukan.');
                 return;
@@ -86,12 +86,12 @@ new class extends Component {
     {
         $rules = [
             'form.tucico_id'     => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkacc_tucicos,tucico_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skacc_tucicos,tucico_id'
                 : 'required|string',
             'form.tucico_desc'   => 'required|string|max:100',
             'form.tucico_status' => 'required|in:CI,CO',
             'form.active_status' => 'required|in:0,1',
-            'form.acc_id'        => 'required|string|max:25|exists:tkacc_accountses,acc_id',
+            'form.acc_id'        => 'required|string|max:25|exists:skacc_accountses,acc_id',
         ];
 
         $messages = [
@@ -117,12 +117,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkacc_tucicos')->insert([
+            DB::table('skacc_tucicos')->insert([
                 'tucico_id' => mb_strtoupper($this->form['tucico_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkacc_tucicos')->where('tucico_id', $this->originalId)->update($payload);
+            DB::table('skacc_tucicos')->where('tucico_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'TUCICO berhasil disimpan.');
@@ -219,7 +219,7 @@ new class extends Component {
                                     <option value="CO">CO — Cash Out (Pengeluaran)</option>
                                 </x-select-input>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Dipakai TKTXN_TUCASHINS (CI) atau TKTXN_TUCASHOUTS (CO).
+                                    Dipakai SKTXN_TUCASHINS (CI) atau SKTXN_TUCASHOUTS (CO).
                                 </p>
                                 <x-input-error :messages="$errors->get('form.tucico_status')" class="mt-1" />
                             </div>

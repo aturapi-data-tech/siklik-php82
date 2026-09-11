@@ -58,8 +58,8 @@ new class extends Component {
      * ======================= */
     private function loadDtlRows(): void
     {
-        $query = DB::table('lbtxn_checkupdtls as a')
-            ->join('lbmst_clabitems as b', 'a.clabitem_id', '=', 'b.clabitem_id')
+        $query = DB::table('sktxn_checkupdtls as a')
+            ->join('skmst_clabitems as b', 'a.clabitem_id', '=', 'b.clabitem_id')
             ->select(
                 'a.checkup_dtl',
                 'a.clabitem_id',
@@ -221,7 +221,7 @@ new class extends Component {
     {
         $search = trim($this->searchLabItem);
 
-        return DB::table('lbmst_clabitems')
+        return DB::table('skmst_clabitems')
             ->select('clabitem_id', 'clabitem_desc', 'price', 'item_code')
             ->whereNull('clabitem_group')
             ->whereNotNull('clabitem_desc')
@@ -297,16 +297,16 @@ new class extends Component {
     }
 
     /**
-     * Insert satu item + child items (group) ke lbtxn_checkupdtls.
+     * Insert satu item + child items (group) ke sktxn_checkupdtls.
      */
     private function insertItemAndChildren(array $item): void
     {
         $clabitemId = $item['clabitem_id'];
 
         // Insert parent item dulu (yang punya price)
-        $dtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM lbtxn_checkupdtls');
+        $dtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM sktxn_checkupdtls');
 
-        DB::table('lbtxn_checkupdtls')->insert([
+        DB::table('sktxn_checkupdtls')->insert([
             'clabitem_id' => $clabitemId,
             'checkup_no' => $this->checkupNo,
             'checkup_dtl' => $dtlNo,
@@ -315,16 +315,16 @@ new class extends Component {
         ]);
 
         // Insert child items (yang clabitem_group = parent, tanpa price)
-        $children = DB::table('lbmst_clabitems')
+        $children = DB::table('skmst_clabitems')
             ->where('clabitem_group', $clabitemId)
             ->orderBy('item_seq')
             ->orderBy('clabitem_desc')
             ->get();
 
         foreach ($children as $child) {
-            $childDtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM lbtxn_checkupdtls');
+            $childDtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(checkup_dtl)) + 1, 1) FROM sktxn_checkupdtls');
 
-            DB::table('lbtxn_checkupdtls')->insert([
+            DB::table('sktxn_checkupdtls')->insert([
                 'clabitem_id' => $child->clabitem_id,
                 'checkup_no' => $this->checkupNo,
                 'checkup_dtl' => $childDtlNo,
@@ -348,7 +348,7 @@ new class extends Component {
 
         // If empty, clear result and status
         if ($value === '') {
-            DB::table('lbtxn_checkupdtls')
+            DB::table('sktxn_checkupdtls')
                 ->where('checkup_no', $this->checkupNo)
                 ->where('checkup_dtl', $checkupDtl)
                 ->update([
@@ -407,7 +407,7 @@ new class extends Component {
             }
         }
 
-        DB::table('lbtxn_checkupdtls')
+        DB::table('sktxn_checkupdtls')
             ->where('checkup_no', $this->checkupNo)
             ->where('checkup_dtl', $checkupDtl)
             ->update([
@@ -451,7 +451,7 @@ new class extends Component {
                 // 2. Update patient_name di header
                 $patientName = $mindrayResults[0]->patientname ?? null;
                 if ($patientName) {
-                    DB::table('lbtxn_checkuphdrs')
+                    DB::table('sktxn_checkuphdrs')
                         ->where('checkup_no', $this->checkupNo)
                         ->update(['patient_name' => $patientName]);
                 }
@@ -478,7 +478,7 @@ new class extends Component {
                         };
                     }
 
-                    DB::table('lbtxn_checkupdtls')
+                    DB::table('sktxn_checkupdtls')
                         ->where('checkup_no', $this->checkupNo)
                         ->where('lab_item_code', $itemCode)
                         ->update(['lab_result' => (string) $labResult]);
@@ -486,7 +486,7 @@ new class extends Component {
 
                 // 4. Zero out item tertentu
                 $zeroItems = ['EO00006', 'BA00007', 'BA00008'];
-                DB::table('lbtxn_checkupdtls')
+                DB::table('sktxn_checkupdtls')
                     ->where('checkup_no', $this->checkupNo)
                     ->whereIn('clabitem_id', $zeroItems)
                     ->update(['lab_result' => '0']);
@@ -508,8 +508,8 @@ new class extends Component {
      * ======================= */
     private function recalculateAllResultStatus(): void
     {
-        $items = DB::table('lbtxn_checkupdtls as a')
-            ->join('lbmst_clabitems as b', 'a.clabitem_id', '=', 'b.clabitem_id')
+        $items = DB::table('sktxn_checkupdtls as a')
+            ->join('skmst_clabitems as b', 'a.clabitem_id', '=', 'b.clabitem_id')
             ->select(
                 'a.checkup_dtl',
                 'a.lab_result',
@@ -526,7 +526,7 @@ new class extends Component {
             $value = trim($item->lab_result ?? '');
 
             if ($value === '') {
-                DB::table('lbtxn_checkupdtls')
+                DB::table('sktxn_checkupdtls')
                     ->where('checkup_no', $this->checkupNo)
                     ->where('checkup_dtl', $item->checkup_dtl)
                     ->update(['lab_result_status' => null]);
@@ -558,7 +558,7 @@ new class extends Component {
                 }
             }
 
-            DB::table('lbtxn_checkupdtls')
+            DB::table('sktxn_checkupdtls')
                 ->where('checkup_no', $this->checkupNo)
                 ->where('checkup_dtl', $item->checkup_dtl)
                 ->update(['lab_result_status' => $resultStatus]);
@@ -576,7 +576,7 @@ new class extends Component {
         }
 
         // Ambil clabitem_id dari row yang akan dihapus
-        $row = DB::table('lbtxn_checkupdtls')
+        $row = DB::table('sktxn_checkupdtls')
             ->where('checkup_no', $this->checkupNo)
             ->where('checkup_dtl', $checkupDtl)
             ->first();
@@ -587,17 +587,17 @@ new class extends Component {
 
         DB::transaction(function () use ($row, $checkupDtl) {
             // 1. Hapus children (item yang clabitem_group = clabitem_id ini)
-            DB::table('lbtxn_checkupdtls')
+            DB::table('sktxn_checkupdtls')
                 ->where('checkup_no', $this->checkupNo)
                 ->whereIn('clabitem_id', function ($q) use ($row) {
                     $q->select('clabitem_id')
-                      ->from('lbmst_clabitems')
+                      ->from('skmst_clabitems')
                       ->where('clabitem_group', $row->clabitem_id);
                 })
                 ->delete();
 
             // 2. Hapus item itu sendiri
-            DB::table('lbtxn_checkupdtls')
+            DB::table('sktxn_checkupdtls')
                 ->where('checkup_no', $this->checkupNo)
                 ->where('checkup_dtl', $checkupDtl)
                 ->delete();

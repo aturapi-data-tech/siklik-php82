@@ -49,13 +49,13 @@ new class extends Component {
     /**
      * Saldo per tanggal untuk D-natured account.
      * Logic dari legacy: saldo = saldo_awal_tahun + sum(txn_k - txn_d) dari Jan 1 s/d tanggal,
-     * filter txn_acc_k = acc_id (rumus "counter row" di tkview_accounts).
+     * filter txn_acc_k = acc_id (rumus "counter row" di skview_accounts).
      */
     private function hitungSaldoTanggal(string $accId, string $dkStatus, string $tanggal): float
     {
         $tahun = (int) substr($tanggal, 0, 4);
 
-        $sa = DB::table('tktxn_saldoawalakuns')
+        $sa = DB::table('sktxn_saldoawalakuns')
             ->where('acc_id', $accId)
             ->where('sa_year', (string) $tahun)
             ->first();
@@ -67,7 +67,7 @@ new class extends Component {
         // Untuk akun D-natured (kas/bank): filter txn_acc_k = acc, sum (K - D)
         // Untuk akun K-natured: filter txn_acc = acc, sum (D - K) — tidak terjadi di cara-bayar tapi disediakan.
         if ($dkStatus === 'D') {
-            $arus = (float) DB::table('tkview_accounts')
+            $arus = (float) DB::table('skview_accounts')
                 ->where('txn_acc_k', $accId)
                 ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                     sprintf('%04d-01-01', $tahun),
@@ -75,7 +75,7 @@ new class extends Component {
                 ])
                 ->sum(DB::raw('NVL(txn_k,0) - NVL(txn_d,0)'));
         } else {
-            $arus = (float) DB::table('tkview_accounts')
+            $arus = (float) DB::table('skview_accounts')
                 ->where('txn_acc', $accId)
                 ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                     sprintf('%04d-01-01', $tahun),
@@ -90,8 +90,8 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $cb = DB::table('tkacc_carabayars as cb')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
+        $cb = DB::table('skacc_carabayars as cb')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.acc_id', 'cb.active_status',
                 'a.acc_desc', 'a.acc_dk_status')
             ->where('cb.active_status', '1');

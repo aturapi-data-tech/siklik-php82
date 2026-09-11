@@ -37,7 +37,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('tkmst_products')
+        $row = DB::table('skmst_products')
             ->select(['product_id', 'product_name', 'sales_price', 'cost_price'])
             ->where('product_id', $this->initialProductId)
             ->where('active_status', '1')
@@ -69,7 +69,7 @@ new class extends Component {
 
         // ===== 1) exact match by product_id =====
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('tkmst_products')
+            $exactRow = DB::table('skmst_products')
                 ->select(['product_id', 'product_name', 'sales_price', 'cost_price'])
                 ->where('active_status', '1')
                 ->where('product_id', $keyword)
@@ -87,8 +87,8 @@ new class extends Component {
         }
 
         // ===== 2) search by name / content / id partial =====
-        // tkmst_products = master toko/apotek (yg dijual). immst_productcontents
-        // & immst_contents tetap dipakai utk lookup kandungan (shared master).
+        // skmst_products = master toko/apotek (yg dijual). skmst_productcontents
+        // & skmst_contents tetap dipakai utk lookup kandungan (shared master).
         $rows = DB::select(
             "select * from (
                     select product_id,
@@ -97,16 +97,16 @@ new class extends Component {
                     cost_price,
 
                     (select replace(string_agg(cont_desc),',','')||product_name
-                    from immst_productcontents z,immst_contents x
+                    from skmst_productcontents z,skmst_contents x
                     where z.product_id=a.product_id
                     and z.cont_id=x.cont_id)elasticsearch,
 
                     (select string_agg(cont_desc)
-                    from immst_productcontents z,immst_contents x
+                    from skmst_productcontents z,skmst_contents x
                     where z.product_id=a.product_id
                     and z.cont_id=x.cont_id)product_content
 
-                    from tkmst_products a
+                    from skmst_products a
                     where active_status='1'
                     group by product_id,product_name, sales_price, cost_price
                     order by product_name)

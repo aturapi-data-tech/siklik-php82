@@ -43,7 +43,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('immst_catproducts')
+        $row = DB::table('skmst_catproducts')
             ->select(['cat_id', 'cat_desc'])
             ->where('cat_id', $this->initialCatId)
             ->first();
@@ -63,7 +63,7 @@ new class extends Component {
 
     public function loadAllCategories(): void
     {
-        $rows = DB::table('immst_catproducts')
+        $rows = DB::table('skmst_catproducts')
             ->select(['cat_id', 'cat_desc'])
             ->orderBy('cat_id')
             ->get();
@@ -106,7 +106,7 @@ new class extends Component {
 
         // Exact match by cat_id
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('immst_catproducts')
+            $exactRow = DB::table('skmst_catproducts')
                 ->select(['cat_id', 'cat_desc'])
                 ->where('cat_id', $keyword)
                 ->first();
@@ -123,7 +123,7 @@ new class extends Component {
         // Search by cat_desc
         $upperKeyword = mb_strtoupper($keyword);
 
-        $rows = DB::table('immst_catproducts')
+        $rows = DB::table('skmst_catproducts')
             ->select(['cat_id', 'cat_desc'])
             ->whereRaw("UPPER(cat_desc) LIKE '%' || ? || '%'", [$upperKeyword])
             ->orderBy('cat_id')

@@ -36,9 +36,9 @@ new class extends Component {
 
     public function toggleActive(string $accId): void
     {
-        $cur = (string) DB::table('tkacc_accountses')->where('acc_id', $accId)->value('active_status');
+        $cur = (string) DB::table('skacc_accountses')->where('acc_id', $accId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkacc_accountses')->where('acc_id', $accId)->update(['active_status' => $next]);
+        DB::table('skacc_accountses')->where('acc_id', $accId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status akun → ' . ($next === '1' ? 'Aktif' : 'Non-aktif'));
         $this->resetPage();
@@ -46,9 +46,9 @@ new class extends Component {
 
     public function toggleKas(string $accId): void
     {
-        $cur = (string) DB::table('tkacc_accountses')->where('acc_id', $accId)->value('kas_status');
+        $cur = (string) DB::table('skacc_accountses')->where('acc_id', $accId)->value('kas_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkacc_accountses')->where('acc_id', $accId)->update(['kas_status' => $next]);
+        DB::table('skacc_accountses')->where('acc_id', $accId)->update(['kas_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Tipe akun → ' . ($next === '1' ? 'Akun Kas' : 'Bukan Kas'));
         $this->resetPage();
@@ -60,7 +60,7 @@ new class extends Component {
     #[Computed]
     public function groupOptions()
     {
-        return DB::table('tkacc_gr_accountses')
+        return DB::table('skacc_gr_accountses')
             ->select('gra_id', 'gra_desc')
             ->orderBy('gra_id')
             ->get();
@@ -69,8 +69,8 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkacc_accountses as a')
-            ->leftJoin('tkacc_gr_accountses as g', 'g.gra_id', '=', 'a.gra_id')
+        $q = DB::table('skacc_accountses as a')
+            ->leftJoin('skacc_gr_accountses as g', 'g.gra_id', '=', 'a.gra_id')
             ->select('a.acc_id', 'a.acc_desc', 'a.active_status', 'a.kas_status',
                 'a.gra_id', 'g.gra_desc', 'a.acc_dk_status')
             ->orderBy('a.acc_id');

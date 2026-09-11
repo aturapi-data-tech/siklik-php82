@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.procedure.openEdit')]
     public function openEdit(string $procId): void
     {
-        $row = DB::table('rsmst_mstprocedures')->where('proc_id', $procId)->first();
+        $row = DB::table('skmst_mstprocedures')->where('proc_id', $procId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -58,7 +58,7 @@ new class extends Component {
     public function deleteProsedur(string $procId): void
     {
         try {
-            $deleted = DB::table('rsmst_mstprocedures')->where('proc_id', $procId)->delete();
+            $deleted = DB::table('skmst_mstprocedures')->where('proc_id', $procId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data prosedur tidak ditemukan.');
                 return;
@@ -79,7 +79,7 @@ new class extends Component {
     {
         $rules = [
             'form.proc_id'   => $this->formMode === 'create'
-                ? 'required|string|max:15|regex:/^[A-Z0-9]+$/|unique:rsmst_mstprocedures,proc_id'
+                ? 'required|string|max:15|regex:/^[A-Z0-9]+$/|unique:skmst_mstprocedures,proc_id'
                 : 'required|string',
             'form.proc_desc' => 'required|string|max:250',
         ];
@@ -103,12 +103,12 @@ new class extends Component {
         $payload = ['proc_desc' => mb_strtoupper($this->form['proc_desc'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_mstprocedures')->insert([
+            DB::table('skmst_mstprocedures')->insert([
                 'proc_id' => mb_strtoupper($this->form['proc_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_mstprocedures')->where('proc_id', $this->originalId)->update($payload);
+            DB::table('skmst_mstprocedures')->where('proc_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data prosedur berhasil disimpan.');

@@ -16,7 +16,7 @@ trait MasterPasienTrait
     protected function findDataMasterPasien(string $regNo): array
     {
         // 1. Ambil JSON dari DB
-        $row = DB::table('rsmst_pasiens')
+        $row = DB::table('skmst_pasiens')
             ->select([
                 'reg_no',
                 'reg_name',
@@ -33,35 +33,35 @@ trait MasterPasienTrait
                 'birth_place',
                 'blood',
                 'marital_status',
-                'rsmst_religions.rel_id as rel_id',
+                'skmst_religions.rel_id as rel_id',
                 'rel_desc',
-                'rsmst_educations.edu_id as edu_id',
+                'skmst_educations.edu_id as edu_id',
                 'edu_desc',
-                'rsmst_jobs.job_id as job_id',
+                'skmst_jobs.job_id as job_id',
                 'job_name',
                 'kk',
                 'nyonya',
                 'no_kk',
                 'address',
-                'rsmst_desas.des_id as des_id',
+                'skmst_desas.des_id as des_id',
                 'des_name',
                 'rt',
                 'rw',
-                'rsmst_kecamatans.kec_id as kec_id',
+                'skmst_kecamatans.kec_id as kec_id',
                 'kec_name',
-                'rsmst_kabupatens.kab_id as kab_id',
+                'skmst_kabupatens.kab_id as kab_id',
                 'kab_name',
-                'rsmst_propinsis.prop_id as prop_id',
+                'skmst_propinsis.prop_id as prop_id',
                 'prop_name',
                 'phone'
             ])
-            ->join('rsmst_religions', 'rsmst_religions.rel_id', '=', 'rsmst_pasiens.rel_id')
-            ->join('rsmst_educations', 'rsmst_educations.edu_id', '=', 'rsmst_pasiens.edu_id')
-            ->join('rsmst_jobs', 'rsmst_jobs.job_id', '=', 'rsmst_pasiens.job_id')
-            ->join('rsmst_desas', 'rsmst_desas.des_id', '=', 'rsmst_pasiens.des_id')
-            ->join('rsmst_kecamatans', 'rsmst_kecamatans.kec_id', '=', 'rsmst_pasiens.kec_id')
-            ->join('rsmst_kabupatens', 'rsmst_kabupatens.kab_id', '=', 'rsmst_pasiens.kab_id')
-            ->join('rsmst_propinsis', 'rsmst_propinsis.prop_id', '=', 'rsmst_pasiens.prop_id')
+            ->join('skmst_religions', 'skmst_religions.rel_id', '=', 'skmst_pasiens.rel_id')
+            ->join('skmst_educations', 'skmst_educations.edu_id', '=', 'skmst_pasiens.edu_id')
+            ->join('skmst_jobs', 'skmst_jobs.job_id', '=', 'skmst_pasiens.job_id')
+            ->join('skmst_desas', 'skmst_desas.des_id', '=', 'skmst_pasiens.des_id')
+            ->join('skmst_kecamatans', 'skmst_kecamatans.kec_id', '=', 'skmst_pasiens.kec_id')
+            ->join('skmst_kabupatens', 'skmst_kabupatens.kab_id', '=', 'skmst_pasiens.kab_id')
+            ->join('skmst_propinsis', 'skmst_propinsis.prop_id', '=', 'skmst_pasiens.prop_id')
             ->where('reg_no', $regNo)
             ->first();
 
@@ -424,7 +424,7 @@ trait MasterPasienTrait
                 throw new \RuntimeException("regNo dalam payload tidak sesuai dengan parameter");
             }
 
-            DB::table('rsmst_pasiens')
+            DB::table('skmst_pasiens')
                 ->where('reg_no', $regNo)
                 ->update([
                     'meta_data_pasien_json' => json_encode(

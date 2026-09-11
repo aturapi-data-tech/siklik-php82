@@ -78,7 +78,7 @@ new class extends Component {
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('rsmst_radiologis')->select('rad_id', 'rad_desc', 'rad_price', 'active_status', 'rad_jd')->orderBy('rad_desc', 'asc');
+        $queryBuilder = DB::table('skmst_radiologis')->select('rad_id', 'rad_desc', 'rad_price', 'active_status', 'rad_jd')->orderBy('rad_desc', 'asc');
 
         if ($searchKeyword !== '') {
             $uppercaseKeyword = mb_strtoupper($searchKeyword);

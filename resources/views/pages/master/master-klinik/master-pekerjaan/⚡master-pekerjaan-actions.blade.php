@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.pekerjaan.openEdit')]
     public function openEdit(int $jobId): void
     {
-        $row = DB::table('rsmst_jobs')->where('job_id', $jobId)->first();
+        $row = DB::table('skmst_jobs')->where('job_id', $jobId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -58,13 +58,13 @@ new class extends Component {
     public function deletePekerjaan(int $jobId): void
     {
         try {
-            $isUsed = DB::table('rsmst_pasiens')->where('job_id', $jobId)->exists();
+            $isUsed = DB::table('skmst_pasiens')->where('job_id', $jobId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Pekerjaan tidak bisa dihapus karena masih dipakai pada data pasien.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_jobs')->where('job_id', $jobId)->delete();
+            $deleted = DB::table('skmst_jobs')->where('job_id', $jobId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data pekerjaan tidak ditemukan.');
                 return;
@@ -85,7 +85,7 @@ new class extends Component {
     {
         $rules = [
             'form.job_id'   => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:99|unique:rsmst_jobs,job_id'
+                ? 'required|integer|min:1|max:99|unique:skmst_jobs,job_id'
                 : 'required|integer',
             'form.job_name' => 'required|string|max:25',
         ];
@@ -110,9 +110,9 @@ new class extends Component {
         $payload = ['job_name' => mb_strtoupper($this->form['job_name'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_jobs')->insert(['job_id' => (int) $this->form['job_id'], ...$payload]);
+            DB::table('skmst_jobs')->insert(['job_id' => (int) $this->form['job_id'], ...$payload]);
         } else {
-            DB::table('rsmst_jobs')->where('job_id', $this->originalId)->update($payload);
+            DB::table('skmst_jobs')->where('job_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data pekerjaan berhasil disimpan.');

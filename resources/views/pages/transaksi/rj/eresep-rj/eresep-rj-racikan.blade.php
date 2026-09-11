@@ -189,13 +189,13 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Insert ke tabel transaksi
-                $lastInserted = DB::table('rstxn_rjobatracikans')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
+                $lastInserted = DB::table('sktxn_rjobatracikans')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
 
-                // Siklik (klinik pratama): kolom 'takar' tdk ada di tkmst_products,
+                // Siklik (klinik pratama): kolom 'takar' tdk ada di skmst_products,
                 // siklik-lite default 'Tablet'.
                 $takar = 'Tablet';
 
-                DB::table('rstxn_rjobatracikans')->insert([
+                DB::table('sktxn_rjobatracikans')->insert([
                     'rjobat_dtl' => $lastInserted->rjobat_dtl_max,
                     'rj_no' => $this->rjNo,
                     'product_name' => $this->formEresepRacikan['productName'],
@@ -269,7 +269,7 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Update tabel transaksi
-                DB::table('rstxn_rjobatracikans')
+                DB::table('sktxn_rjobatracikans')
                     ->where('rjobat_dtl', $rjobatDtl)
                     ->update([
                         'qty' => $qty ?: null,
@@ -325,7 +325,7 @@ new class extends Component {
                 }
 
                 // 3. Hapus dari tabel transaksi
-                DB::table('rstxn_rjobatracikans')->where('rjobat_dtl', $rjObatDtl)->delete();
+                DB::table('sktxn_rjobatracikans')->where('rjobat_dtl', $rjObatDtl)->delete();
 
                 // 4. Hapus dari array lokal
                 $this->dataDaftarPoliRJ['eresepRacikan'] = collect($this->dataDaftarPoliRJ['eresepRacikan'] ?? [])

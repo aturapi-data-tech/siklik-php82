@@ -4,106 +4,109 @@ FOREIGN KEY RELATIONSHIPS — schema SIKLIK
 
 TABLE_NAME                     COLUMN_NAME               CONSTRAINT_NAME                     R_TABLE                        R_COLUMN
 ------------------------------ ------------------------- ----------------------------------- ------------------------------ -------------------------
-DIMST_USERAPPLICATIONS         APP_CODE                  SU1_SA_FK                           DIMST_APPLICATIONS             APP_CODE
-DIMST_USERAPPLICATIONS         USER_CODE                 SU1_SU_FK                           DIMST_USERS                    USER_CODE
-IMMST_PRODUCTCONTENTS          CONT_ID                   IP1_IC1XX_FK                        IMMST_CONTENTS                 CONT_ID
-LBMST_CLABITEMS                CLAB_ID                   LC2_LC1_FK                          LBMST_CLABS                    CLAB_ID
-LBTXN_CHECKUPDTLS              CLABITEM_ID               LC3_LC2_FK                          LBMST_CLABITEMS                CLABITEM_ID
-LBTXN_CHECKUPHDRS              KASIR_ID                  FK_KASIR_LAB                        TKMST_KASIRS                   KASIR_ID
-LBTXN_CHECKUPHDRS              DR_ID                     LC_RD_FK                            RSMST_DOCTORS                  DR_ID
-LBTXN_CHECKUPOBATS             PRODUCT_ID                FK_OBAT_LAB                         TKMST_PRODUCTS                 PRODUCT_ID
-LBTXN_CHECKUPOUTDTLS           CHECKUP_NO                LC5_LC_FK                           LBTXN_CHECKUPHDRS              CHECKUP_NO
 MODEL_HAS_PERMISSIONS          PERMISSION_ID             MODEL_HAS_PERMX2                    PERMISSIONS                    ID
 MODEL_HAS_ROLES                ROLE_ID                   MODEL_HAS_ROLES_ROLE_ID_FK          ROLES                          ID
 ROLE_HAS_PERMISSIONS           PERMISSION_ID             MODEL_HAS_PERMX1S                   PERMISSIONS                    ID
 ROLE_HAS_PERMISSIONS           ROLE_ID                   MODEL_HAS_PERMX1SS                  ROLES                          ID
-RSMST_ACTEOTHERS               OTHER_ID                  RA9_RO7_FK                          RSMST_OTHERS                   OTHER_ID
-RSMST_ACTEOTHERS               ACTE_ID                   RA9_RA1_FK                          RSMST_ACTEMPS                  ACTE_ID
-RSMST_DESAS                    KEC_ID                    RD1_RK1_FK                          RSMST_KECAMATANS               KEC_ID
-RSMST_DOCTORS                  POLI_ID                   RD_RP1_FK                           RSMST_POLIS                    POLI_ID
-RSMST_KABUPATENS               PROP_ID                   RK_RP2_FK                           RSMST_PROPINSIS                PROP_ID
-RSMST_KECAMATANS               KAB_ID                    RK1_RK_FK                           RSMST_KABUPATENS               KAB_ID
-RSMST_PASIENS                  KEC_ID                    RP_RK1_FK                           RSMST_KECAMATANS               KEC_ID
-RSMST_PASIENS                  KAB_ID                    RP_RK_FK                            RSMST_KABUPATENS               KAB_ID
-RSMST_PASIENS                  REL_ID                    RP_RR_FK                            RSMST_RELIGIONS                REL_ID
-RSMST_PASIENS                  PROP_ID                   RP_RP2_FK                           RSMST_PROPINSIS                PROP_ID
-RSMST_PASIENS                  EDU_ID                    RP_RE_FK                            RSMST_EDUCATIONS               EDU_ID
-RSMST_PASIENS                  DES_ID                    RP_RD1_FK                           RSMST_DESAS                    DES_ID
-RSMST_PASIENS                  JOB_ID                    RP_RJ_FK                            RSMST_JOBS                     JOB_ID
-RSTXN_RJACTPARAMS              RJ_NO                     RR8_RR2_FK                          RSTXN_RJHDRS                   RJ_NO
-RSTXN_RJACTPARAMS              PACT_ID                   RR8_RA2_FK                          RSMST_ACTPARAMEDICS            PACT_ID
-RSTXN_RJCASHINS                KASIR_ID                  FK_KASIR_CASHINRJ                   TKMST_KASIRS                   KASIR_ID
-RSTXN_RJCASHINS                RJ_NO                     RR32_RR2_FK                         RSTXN_RJHDRS                   RJ_NO
-RSTXN_RJCASHINS                CB_ID                     FK_CI_CB_01                         TKACC_CARABAYARS               CB_ID
-RSTXN_RJDTLS                   DIAG_ID                   RR3_RM_FK                           RSMST_MSTDIAGS                 DIAG_ID
-RSTXN_RJHDRS                   DR_ID                     RR2_RD_FK                           RSMST_DOCTORS                  DR_ID
-RSTXN_RJHDRS                   KLAIM_ID                  RR2_RK2_1_FK                        RSMST_KLAIMTYPES               KLAIM_ID
-RSTXN_RJHDRS                   POLI_ID                   RR2_RP1_FK                          RSMST_POLIS                    POLI_ID
-RSTXN_RJHDRS                   CB_ID                     FK_CB_RJ                            TKACC_CARABAYARS               CB_ID
-RSTXN_RJHDRS                   KASIR_ID                  FK_KASIR_RJ                         TKMST_KASIRS                   KASIR_ID
-RSTXN_RJLABS                   CHECKUP_NO                RR5_LC_FK                           LBTXN_CHECKUPHDRS              CHECKUP_NO
-RSTXN_RJOBATS                  RJHN_DTL                  RR4_RR9_FK                          RSTXN_RJACCDOCS                RJHN_DTL
-RSTXN_RJOBATS                  ACTE_DTL                  RR4_RR7_FK                          RSTXN_RJACTEMPS                ACTE_DTL
-RSTXN_RJOBATS                  PACT_DTL                  RR4_RR8_FK                          RSTXN_RJACTPARAMS              PACT_DTL
-RSTXN_RJOBATS                  PRODUCT_ID                FK_OBAT_RJ                          TKMST_PRODUCTS                 PRODUCT_ID
-RSTXN_RJOTHERS                 RJ_NO                     RR25_RR2_FK                         RSTXN_RJHDRS                   RJ_NO
-RSTXN_RJOTHERS                 PACT_DTL                  RR25_RR8_FK                         RSTXN_RJACTPARAMS              PACT_DTL
-RSTXN_RJOTHERS                 ACTE_DTL                  RR25_RR7_FK                         RSTXN_RJACTEMPS                ACTE_DTL
-RSTXN_RJOTHERS                 RJHN_DTL                  RR25_RR9_FK                         RSTXN_RJACCDOCS                RJHN_DTL
-RSTXN_RJOTHERS                 OTHER_ID                  RR25_RO7_FK                         RSMST_OTHERS                   OTHER_ID
-RSTXN_RJRADS                   RJ_NO                     RR6_RR2_FK                          RSTXN_RJHDRS                   RJ_NO
-RSTXN_RJRADS                   RAD_ID                    RR6_RR1_FK                          RSMST_RADIOLOGIS               RAD_ID
-RSTXN_RJUPLOADBPJSES           RJ_NO                     RR33_RR2_FK                         RSTXN_RJHDRS                   RJ_NO
-TKACC_ACCOUNTSES               GRA_ID                    TA_TGA_FK                           TKACC_GR_ACCOUNTSES            GRA_ID
-TKACC_CONFACCTXNS              ACC_ID                    TC5_TA_FK                           TKACC_ACCOUNTSES               ACC_ID
-TKACC_TEMACCOUNTES             TEMP_DTL                  TT3_TT2_FK                          TKACC_TEMLABARUGINERACADTLS    TEMP_DTL
-TKACC_TEMACCOUNTES             ACC_ID                    TT3_TA_FK                           TKACC_ACCOUNTSES               ACC_ID
-TKACC_TEMLABARUGINERACADTLS    TEMP_ID                   TT2_TTLN_FK                         TKACC_TEMLABARUGINERACAHDRS    TEMP_ID
-TKACC_TEMLABARUGINERACADTLS    GRA_ID                    TT2_TGA_FK                          TKACC_GR_ACCOUNTSES            GRA_ID
-TKACC_TUCICOS                  ACC_ID                    TT1_TA_FK                           TKACC_ACCOUNTSES               ACC_ID
-TKMST_CUSTOMERS                KOTA_ID                   TC2_TK1_FK                          TKMST_KOTAS                    KOTA_ID
-TKMST_CUSTOMERS                PROV_ID                   TC2_TK1_FK                          TKMST_KOTAS                    PROV_ID
-TKMST_KOTAS                    PROV_ID                   TK1_TP2_FK                          TKMST_PROVS                    PROV_ID
-TKMST_PRODUCTPAKETS            PRODUCT_ID                TP1_TP_PRODX_FK                     TKMST_PRODUCTS                 PRODUCT_ID
-TKMST_PRODUCTPAKETS            PRODUCT_ID_PROD           TP1_TP_FK                           TKMST_PRODUCTS                 PRODUCT_ID
-TKMST_PRODUCTS                 CAT_ID                    TP_TC_FK                            TKMST_CATEGORIES               CAT_ID
-TKMST_PRODUCTS                 UOM_ID                    TP_TU_FK                            TKMST_UOMS                     UOM_ID
-TKMST_PRODUCTS                 SUPP_ID                   TP_TS_FK                            TKMST_SUPPLIERS                SUPP_ID
-TKTXN_CASHINDTLS               SLS_NO                    TC4_TS1_FK                          TKTXN_SLSHDRS                  SLS_NO
-TKTXN_CASHINDTLS               CASHIN_NO                 TC4_TC3_FK                          TKTXN_CASHINHDRS               CASHIN_NO
-TKTXN_CASHINHDRS               CB_ID                     TC3_TC1_FK                          TKACC_CARABAYARS               CB_ID
-TKTXN_CASHINHDRS               KASIR_ID                  TC3_TK_FK                           TKMST_KASIRS                   KASIR_ID
-TKTXN_CASHINHDRS               CM_ID                     TC3_TC2_FK                          TKMST_CUSTOMERS                CM_ID
-TKTXN_CASHOUTDTLS              CASHOUT_NO                TC4_TC3___FKRCVRCV                  TKTXN_CASHOUTHDRS              CASHOUT_NO
-TKTXN_CASHOUTDTLS              RCV_NO                    TC4_TS1___FKRCVRCV                  TKTXN_RCVHDRS                  RCV_NO
-TKTXN_CASHOUTHDRS              SUPP_ID                   TC3_TC2___FKRCVRCV                  TKMST_SUPPLIERS                SUPP_ID
-TKTXN_CASHOUTHDRS              CB_ID                     TC3_TC1___FKRCVRCV                  TKACC_CARABAYARS               CB_ID
-TKTXN_CASHOUTHDRS              KASIR_ID                  TC3_TK___FKRCVRCV                   TKMST_KASIRS                   KASIR_ID
-TKTXN_RCVDTLS                  RCV_NO                    TS2_TS1___FKRCVRCV                  TKTXN_RCVHDRS                  RCV_NO
-TKTXN_RCVDTLS                  PRODUCT_ID                TS2_TP___FKRCVRCV                   TKMST_PRODUCTS                 PRODUCT_ID
-TKTXN_RCVHDRS                  SUPP_ID                   TS1_TC2___FKRCVRCV                  TKMST_SUPPLIERS                SUPP_ID
-TKTXN_RCVHDRS                  KASIR_ID                  TS1_TK___FKRCVRCV                   TKMST_KASIRS                   KASIR_ID
-TKTXN_RCVHDRS                  CB_ID                     TS1_TC1___FKRCVRCV                  TKACC_CARABAYARS               CB_ID
-TKTXN_RCVPAYMENTS              RCV_NO                    TS3_TS1___FKRCVRCV                  TKTXN_RCVHDRS                  RCV_NO
-TKTXN_SALDOAWALAKUNS           ACC_ID                    TS5_TA_FK                           TKACC_ACCOUNTSES               ACC_ID
-TKTXN_SALDOAWALHUTANGS         SUPP_ID                   TS7_TS_FK                           TKMST_SUPPLIERS                SUPP_ID
-TKTXN_SALDOAWALPIUTANGS        CM_ID                     TS6_TC2_FK                          TKMST_CUSTOMERS                CM_ID
-TKTXN_SALDOAWALSTOCKS          PRODUCT_ID                TS4_TP_FK                           TKMST_PRODUCTS                 PRODUCT_ID
-TKTXN_SLSDTLS                  SLS_NO                    TS2_TS1_FK                          TKTXN_SLSHDRS                  SLS_NO
-TKTXN_SLSDTLS                  PRODUCT_ID                TS2_TP_FK                           TKMST_PRODUCTS                 PRODUCT_ID
-TKTXN_SLSHDRS                  KASIR_ID                  TS1_TK_FK                           TKMST_KASIRS                   KASIR_ID
-TKTXN_SLSHDRS                  CB_ID                     TS1_TC1_FK                          TKACC_CARABAYARS               CB_ID
-TKTXN_SLSHDRS                  CM_ID                     TS1_TC2_FK                          TKMST_CUSTOMERS                CM_ID
-TKTXN_SLSKIRIMS                KOTA_ID                   TS8_TK1_FK                          TKMST_KOTAS                    KOTA_ID
-TKTXN_SLSKIRIMS                SLS_NO                    TS8_TS1_FK                          TKTXN_SLSHDRS                  SLS_NO
-TKTXN_SLSKIRIMS                PROV_ID                   TS8_TK1_FK                          TKMST_KOTAS                    PROV_ID
-TKTXN_SLSPAYMENTS              SLS_NO                    TS3_TS1_FK                          TKTXN_SLSHDRS                  SLS_NO
-TKTXN_TUCASHINS                KASIR_ID                  TT_TK_FK123123                      TKMST_KASIRS                   KASIR_ID
-TKTXN_TUCASHINS                TUCICO_ID                 TT_TT1_FK123123                     TKACC_TUCICOS                  TUCICO_ID
-TKTXN_TUCASHINS                CB_ID                     TT_TC1_FK123123                     TKACC_CARABAYARS               CB_ID
-TKTXN_TUCASHOUTS               KASIR_ID                  TT_TK_FK                            TKMST_KASIRS                   KASIR_ID
-TKTXN_TUCASHOUTS               TUCICO_ID                 TT_TT1_FK                           TKACC_TUCICOS                  TUCICO_ID
-TKTXN_TUCASHOUTS               CB_ID                     TT_TC1_FK                           TKACC_CARABAYARS               CB_ID
+SKACC_ACCOUNTSES               GRA_ID                    ACCOUNTSES_GRA_FK                   SKACC_GR_ACCOUNTSES            GRA_ID
+SKACC_CONFACCTXNS              ACC_ID                    CONFACCTXNS_ACC_FK                  SKACC_ACCOUNTSES               ACC_ID
+SKACC_TEMACCOUNTES             ACC_ID                    TEMACCOUNTES_ACC_FK                 SKACC_ACCOUNTSES               ACC_ID
+SKACC_TEMACCOUNTES             TEMP_DTL                  TEMACCOUNTES_TEMP_DTL_FK            SKACC_TEMLABARUGINERACADTLS    TEMP_DTL
+SKACC_TEMLABARUGINERACADTLS    GRA_ID                    TEMLABARUGINERACADTLS_GRA_FK        SKACC_GR_ACCOUNTSES            GRA_ID
+SKACC_TEMLABARUGINERACADTLS    TEMP_ID                   TEMLABARUGINERACADTLS_TEMP_FK       SKACC_TEMLABARUGINERACAHDRS    TEMP_ID
+SKACC_TUCICOS                  ACC_ID                    TUCICOS_ACC_FK                      SKACC_ACCOUNTSES               ACC_ID
+SKMST_ACTEOTHERS               OTHER_ID                  ACTEOTHERS_OTHER_FK                 SKMST_OTHERS                   OTHER_ID
+SKMST_ACTEOTHERS               ACTE_ID                   ACTEOTHERS_ACTE_FK                  SKMST_ACTEMPS                  ACTE_ID
+SKMST_CLABITEMS                CLAB_ID                   CLABITEMS_CLAB_FK                   SKMST_CLABS                    CLAB_ID
+SKMST_CUSTOMERS                KOTA_ID                   CUSTOMERS_KOTA_PROV_FK              SKMST_KOTAS                    KOTA_ID
+SKMST_CUSTOMERS                PROV_ID                   CUSTOMERS_KOTA_PROV_FK              SKMST_KOTAS                    PROV_ID
+SKMST_DESAS                    KEC_ID                    DESAS_KEC_FK                        SKMST_KECAMATANS               KEC_ID
+SKMST_DOCTORS                  POLI_ID                   DOCTORS_POLI_FK                     SKMST_POLIS                    POLI_ID
+SKMST_KABUPATENS               PROP_ID                   KABUPATENS_PROP_FK                  SKMST_PROPINSIS                PROP_ID
+SKMST_KECAMATANS               KAB_ID                    KECAMATANS_KAB_FK                   SKMST_KABUPATENS               KAB_ID
+SKMST_KOTAS                    PROV_ID                   KOTAS_PROV_FK                       SKMST_PROVS                    PROV_ID
+SKMST_PASIENS                  EDU_ID                    PASIENS_EDU_FK                      SKMST_EDUCATIONS               EDU_ID
+SKMST_PASIENS                  JOB_ID                    PASIENS_JOB_FK                      SKMST_JOBS                     JOB_ID
+SKMST_PASIENS                  KEC_ID                    PASIENS_KEC_FK                      SKMST_KECAMATANS               KEC_ID
+SKMST_PASIENS                  DES_ID                    PASIENS_DES_FK                      SKMST_DESAS                    DES_ID
+SKMST_PASIENS                  KAB_ID                    PASIENS_KAB_FK                      SKMST_KABUPATENS               KAB_ID
+SKMST_PASIENS                  REL_ID                    PASIENS_REL_FK                      SKMST_RELIGIONS                REL_ID
+SKMST_PASIENS                  PROP_ID                   PASIENS_PROP_FK                     SKMST_PROPINSIS                PROP_ID
+SKMST_PRODUCTCONTENTS          CONT_ID                   PRODUCTCONTENTS_CONT_FK             SKMST_CONTENTS                 CONT_ID
+SKMST_PRODUCTPAKETS            PRODUCT_ID                PRODUCTPAKETS_PRODUCT_FK            SKMST_PRODUCTS                 PRODUCT_ID
+SKMST_PRODUCTPAKETS            PRODUCT_ID_PROD           PRODUCTPAKE_PRODUCT_ID_PROD_FK      SKMST_PRODUCTS                 PRODUCT_ID
+SKMST_PRODUCTS                 SUPP_ID                   PRODUCTS_SUPP_FK                    SKMST_SUPPLIERS                SUPP_ID
+SKMST_PRODUCTS                 UOM_ID                    PRODUCTS_UOM_FK                     SKMST_UOMS                     UOM_ID
+SKMST_PRODUCTS                 CAT_ID                    PRODUCTS_CAT_FK                     SKMST_CATEGORIES               CAT_ID
+SKMST_USERAPPLICATIONS         USER_CODE                 USERAPPLICATIONS_USER_CODE_FK       SKMST_USERS                    USER_CODE
+SKMST_USERAPPLICATIONS         APP_CODE                  USERAPPLICATIONS_APP_CODE_FK        SKMST_APPLICATIONS             APP_CODE
+SKTXN_CASHINDTLS               SLS_NO                    CASHINDTLS_SLS_NO_FK                SKTXN_SLSHDRS                  SLS_NO
+SKTXN_CASHINDTLS               CASHIN_NO                 CASHINDTLS_CASHIN_NO_FK             SKTXN_CASHINHDRS               CASHIN_NO
+SKTXN_CASHINHDRS               CB_ID                     CASHINHDRS_CB_FK                    SKACC_CARABAYARS               CB_ID
+SKTXN_CASHINHDRS               CM_ID                     CASHINHDRS_CM_FK                    SKMST_CUSTOMERS                CM_ID
+SKTXN_CASHINHDRS               KASIR_ID                  CASHINHDRS_KASIR_FK                 SKMST_KASIRS                   KASIR_ID
+SKTXN_CASHOUTDTLS              CASHOUT_NO                CASHOUTDTLS_CASHOUT_NO_FK           SKTXN_CASHOUTHDRS              CASHOUT_NO
+SKTXN_CASHOUTDTLS              RCV_NO                    CASHOUTDTLS_RCV_NO_FK               SKTXN_RCVHDRS                  RCV_NO
+SKTXN_CASHOUTHDRS              SUPP_ID                   CASHOUTHDRS_SUPP_FK                 SKMST_SUPPLIERS                SUPP_ID
+SKTXN_CASHOUTHDRS              KASIR_ID                  CASHOUTHDRS_KASIR_FK                SKMST_KASIRS                   KASIR_ID
+SKTXN_CASHOUTHDRS              CB_ID                     CASHOUTHDRS_CB_FK                   SKACC_CARABAYARS               CB_ID
+SKTXN_CHECKUPDTLS              CLABITEM_ID               CHECKUPDTLS_CLABITEM_FK             SKMST_CLABITEMS                CLABITEM_ID
+SKTXN_CHECKUPHDRS              DR_ID                     CHECKUPHDRS_DR_FK                   SKMST_DOCTORS                  DR_ID
+SKTXN_CHECKUPHDRS              KASIR_ID                  CHECKUPHDRS_KASIR_FK                SKMST_KASIRS                   KASIR_ID
+SKTXN_CHECKUPOBATS             PRODUCT_ID                CHECKUPOBATS_PRODUCT_FK             SKMST_PRODUCTS                 PRODUCT_ID
+SKTXN_CHECKUPOUTDTLS           CHECKUP_NO                CHECKUPOUTDTLS_CHECKUP_NO_FK        SKTXN_CHECKUPHDRS              CHECKUP_NO
+SKTXN_RCVDTLS                  RCV_NO                    RCVDTLS_RCV_NO_FK                   SKTXN_RCVHDRS                  RCV_NO
+SKTXN_RCVDTLS                  PRODUCT_ID                RCVDTLS_PRODUCT_FK                  SKMST_PRODUCTS                 PRODUCT_ID
+SKTXN_RCVHDRS                  SUPP_ID                   RCVHDRS_SUPP_FK                     SKMST_SUPPLIERS                SUPP_ID
+SKTXN_RCVHDRS                  CB_ID                     RCVHDRS_CB_FK                       SKACC_CARABAYARS               CB_ID
+SKTXN_RCVHDRS                  KASIR_ID                  RCVHDRS_KASIR_FK                    SKMST_KASIRS                   KASIR_ID
+SKTXN_RCVPAYMENTS              RCV_NO                    RCVPAYMENTS_RCV_NO_FK               SKTXN_RCVHDRS                  RCV_NO
+SKTXN_RJACCDOCS                DR_ID                     RJACCDOCS_DR_FK                     SKMST_DOCTORS                  DR_ID
+SKTXN_RJACTPARAMS              RJ_NO                     RJACTPARAMS_RJ_NO_FK                SKTXN_RJHDRS                   RJ_NO
+SKTXN_RJACTPARAMS              PACT_ID                   RJACTPARAMS_PACT_FK                 SKMST_ACTPARAMEDICS            PACT_ID
+SKTXN_RJCASHINS                KASIR_ID                  RJCASHINS_KASIR_FK                  SKMST_KASIRS                   KASIR_ID
+SKTXN_RJCASHINS                RJ_NO                     RJCASHINS_RJ_NO_FK                  SKTXN_RJHDRS                   RJ_NO
+SKTXN_RJCASHINS                CB_ID                     RJCASHINS_CB_FK                     SKACC_CARABAYARS               CB_ID
+SKTXN_RJDTLS                   DIAG_ID                   RJDTLS_DIAG_FK                      SKMST_MSTDIAGS                 DIAG_ID
+SKTXN_RJHDRS                   CB_ID                     RJHDRS_CB_FK                        SKACC_CARABAYARS               CB_ID
+SKTXN_RJHDRS                   KASIR_ID                  RJHDRS_KASIR_FK                     SKMST_KASIRS                   KASIR_ID
+SKTXN_RJHDRS                   DR_ID                     RJHDRS_DR_FK                        SKMST_DOCTORS                  DR_ID
+SKTXN_RJHDRS                   KLAIM_ID                  RJHDRS_KLAIM_FK                     SKMST_KLAIMTYPES               KLAIM_ID
+SKTXN_RJHDRS                   POLI_ID                   RJHDRS_POLI_FK                      SKMST_POLIS                    POLI_ID
+SKTXN_RJLABS                   CHECKUP_NO                RJLABS_CHECKUP_NO_FK                SKTXN_CHECKUPHDRS              CHECKUP_NO
+SKTXN_RJOBATS                  RJHN_DTL                  RJOBATS_RJHN_DTL_FK                 SKTXN_RJACCDOCS                RJHN_DTL
+SKTXN_RJOBATS                  PACT_DTL                  RJOBATS_PACT_DTL_FK                 SKTXN_RJACTPARAMS              PACT_DTL
+SKTXN_RJOBATS                  PRODUCT_ID                RJOBATS_PRODUCT_FK                  SKMST_PRODUCTS                 PRODUCT_ID
+SKTXN_RJOBATS                  ACTE_DTL                  RJOBATS_ACTE_DTL_FK                 SKTXN_RJACTEMPS                ACTE_DTL
+SKTXN_RJOTHERS                 OTHER_ID                  RJOTHERS_OTHER_FK                   SKMST_OTHERS                   OTHER_ID
+SKTXN_RJOTHERS                 ACTE_DTL                  RJOTHERS_ACTE_DTL_FK                SKTXN_RJACTEMPS                ACTE_DTL
+SKTXN_RJOTHERS                 PACT_DTL                  RJOTHERS_PACT_DTL_FK                SKTXN_RJACTPARAMS              PACT_DTL
+SKTXN_RJOTHERS                 RJHN_DTL                  RJOTHERS_RJHN_DTL_FK                SKTXN_RJACCDOCS                RJHN_DTL
+SKTXN_RJOTHERS                 RJ_NO                     RJOTHERS_RJ_NO_FK                   SKTXN_RJHDRS                   RJ_NO
+SKTXN_RJRADS                   RJ_NO                     RJRADS_RJ_NO_FK                     SKTXN_RJHDRS                   RJ_NO
+SKTXN_RJRADS                   RAD_ID                    RJRADS_RAD_FK                       SKMST_RADIOLOGIS               RAD_ID
+SKTXN_RJUPLOADBPJSES           RJ_NO                     RJUPLOADBPJSES_RJ_NO_FK             SKTXN_RJHDRS                   RJ_NO
+SKTXN_SALDOAWALAKUNS           ACC_ID                    SALDOAWALAKUNS_ACC_FK               SKACC_ACCOUNTSES               ACC_ID
+SKTXN_SALDOAWALHUTANGS         SUPP_ID                   SALDOAWALHUTANGS_SUPP_FK            SKMST_SUPPLIERS                SUPP_ID
+SKTXN_SALDOAWALPIUTANGS        CM_ID                     SALDOAWALPIUTANGS_CM_FK             SKMST_CUSTOMERS                CM_ID
+SKTXN_SALDOAWALSTOCKS          PRODUCT_ID                SALDOAWALSTOCKS_PRODUCT_FK          SKMST_PRODUCTS                 PRODUCT_ID
+SKTXN_SLSDTLS                  PRODUCT_ID                SLSDTLS_PRODUCT_FK                  SKMST_PRODUCTS                 PRODUCT_ID
+SKTXN_SLSDTLS                  SLS_NO                    SLSDTLS_SLS_NO_FK                   SKTXN_SLSHDRS                  SLS_NO
+SKTXN_SLSHDRS                  CB_ID                     SLSHDRS_CB_FK                       SKACC_CARABAYARS               CB_ID
+SKTXN_SLSHDRS                  CM_ID                     SLSHDRS_CM_FK                       SKMST_CUSTOMERS                CM_ID
+SKTXN_SLSHDRS                  KASIR_ID                  SLSHDRS_KASIR_FK                    SKMST_KASIRS                   KASIR_ID
+SKTXN_SLSKIRIMS                KOTA_ID                   SLSKIRIMS_KOTA_PROV_FK              SKMST_KOTAS                    KOTA_ID
+SKTXN_SLSKIRIMS                SLS_NO                    SLSKIRIMS_SLS_NO_FK                 SKTXN_SLSHDRS                  SLS_NO
+SKTXN_SLSKIRIMS                PROV_ID                   SLSKIRIMS_KOTA_PROV_FK              SKMST_KOTAS                    PROV_ID
+SKTXN_SLSPAYMENTS              SLS_NO                    SLSPAYMENTS_SLS_NO_FK               SKTXN_SLSHDRS                  SLS_NO
+SKTXN_SOWHS                    KASIR_ID                  SOWHS_KASIR_FK                      SKMST_KASIRS                   KASIR_ID
+SKTXN_SOWHS                    PRODUCT_ID                SOWHS_PRODUCT_FK                    SKMST_PRODUCTS                 PRODUCT_ID
+SKTXN_TUCASHINS                CB_ID                     TUCASHINS_CB_FK                     SKACC_CARABAYARS               CB_ID
+SKTXN_TUCASHINS                KASIR_ID                  TUCASHINS_KASIR_FK                  SKMST_KASIRS                   KASIR_ID
+SKTXN_TUCASHINS                TUCICO_ID                 TUCASHINS_TUCICO_FK                 SKACC_TUCICOS                  TUCICO_ID
+SKTXN_TUCASHOUTS               CB_ID                     TUCASHOUTS_CB_FK                    SKACC_CARABAYARS               CB_ID
+SKTXN_TUCASHOUTS               TUCICO_ID                 TUCASHOUTS_TUCICO_FK                SKACC_TUCICOS                  TUCICO_ID
+SKTXN_TUCASHOUTS               KASIR_ID                  TUCASHOUTS_KASIR_FK                 SKMST_KASIRS                   KASIR_ID
 
 =========================================================================
 PRIMARY KEYS — schema SIKLIK
@@ -113,20 +116,9 @@ TABLE_NAME                     COLUMN_NAME               CONSTRAINT_NAME
 ------------------------------ ------------------------- -----------------------------------
 CACHE                          KEY                       PK_CACHE
 CACHE_LOCKS                    KEY                       PK_CACHE_LOCKS
-DIMST_APPLICATIONS             APP_CODE                  SA_PK
-DIMST_IDENTITASES              INT_NAME                  SI_PK
-DIMST_USERAPPLICATIONS         USER_CODE                 SU1_PK
-DIMST_USERAPPLICATIONS         APP_CODE                  SU1_PK
-DIMST_USERS                    USER_CODE                 SU_PK
 FAILED_JOBS                    ID                        FAILED_JOBS_ID_PK
-IMMST_CONTENTS                 CONT_ID                   IC1_PK
-IMMST_PRODUCTCONTENTS          PRC_DTL                   IP1XX_PK
-LBMST_CLABITEMS                CLABITEM_ID               LC1_PK
-LBMST_CLABS                    CLAB_ID                   LC_PK
-LBTXN_CHECKUPDTLS              CHECKUP_DTL               LC3_PK
-LBTXN_CHECKUPHDRS              CHECKUP_NO                LC2_PK
-LBTXN_CHECKUPOBATS             ID                        PK_ID_LAB001
-LBTXN_CHECKUPOUTDTLS           LABOUT_DTL                LC5_PK
+JOBS                           ID                        PK_JOBS
+JOB_BATCHES                    ID                        PK_JOB_BATCHES
 MIGRATIONS                     ID                        MIGRATIONS_ID_PK
 MODEL_HAS_PERMISSIONS          PERMISSION_ID             MODEL_HAS_PERMX1PK
 MODEL_HAS_PERMISSIONS          MODEL_ID                  MODEL_HAS_PERMX1PK
@@ -141,82 +133,98 @@ REF_BPJS_TABLE                 REF_KETERANGAN            REF_BPJS_TABLE_PK
 ROLES                          ID                        ROLES_ID_PK
 ROLE_HAS_PERMISSIONS           PERMISSION_ID             MODEL_HAS_PERMXOKD
 ROLE_HAS_PERMISSIONS           ROLE_ID                   MODEL_HAS_PERMXOKD
-RSMST_ACCDOCS                  ACCDOC_ID                 RH_PK
-RSMST_ACTEMPS                  ACTE_ID                   PK_RSMST_ACTEMPS
-RSMST_ACTEOTHERS               ACTE_ID                   RA9_PK
-RSMST_ACTEOTHERS               OTHER_ID                  RA9_PK
-RSMST_ACTPARAMEDICS            PACT_ID                   RA_PK
-RSMST_DESAS                    DES_ID                    DES_PK
-RSMST_DOCTORS                  DR_ID                     DOCTOR_PK
-RSMST_EDUCATIONS               EDU_ID                    RE_PK
-RSMST_ENTRYTYPES               ENTRY_ID                  RE1_PK
-RSMST_JOBS                     JOB_ID                    RJ_PK
-RSMST_KABUPATENS               KAB_ID                    KAB_PK
-RSMST_KECAMATANS               KEC_ID                    KEC_PK
-RSMST_KLAIMTYPES               KLAIM_ID                  RK2_1_PK
-RSMST_LOINC_CODES              LOINC_CODE                PK_RSMST_LOINC_CODES
-RSMST_MEDIK                    MEDIK_NO                  RM1_PK
-RSMST_MSTDIAGS                 DIAG_ID                   RM_PK
-RSMST_MSTPROCEDURES            PROC_ID                   RSMST_MSTPROCEDURES_PK
-RSMST_OTHERS                   OTHER_ID                  PK_RSMST_OTHERS
-RSMST_OUTS                     OUT_NO                    RO_PK
-RSMST_PARAMETERS               PAR_ID                    RP1_PK
-RSMST_PASIENS                  REG_NO                    RP_PK
-RSMST_POLIS                    POLI_ID                   POLI_PK
-RSMST_PROPINSIS                PROP_ID                   PROP_PK
-RSMST_RADIOLOGIS               RAD_ID                    RR8_PK
-RSMST_RELIGIONS                REL_ID                    RR_PK
-RSTXN_RJACCDOCS                RJHN_DTL                  RR4_PK
-RSTXN_RJACTEMPS                ACTE_DTL                  PK_RSMST_ACTEMPSX
-RSTXN_RJACTPARAMS              PACT_DTL                  PK_RSTXN_RJACTPARAMS
-RSTXN_RJCASHINS                RJC_DTL                   RR32_PK
-RSTXN_RJDTLS                   RJDTL_DTL                 RR3_PK
-RSTXN_RJHDRS                   RJ_NO                     RR1_PK
-RSTXN_RJLABS                   LAB_DTL                   RR16_PK
-RSTXN_RJOBATS                  RJOBAT_DTL                RR4_PKT
-RSTXN_RJOTHERS                 RJO_DTL                   PK_RSTXN_RJOTHERS
-RSTXN_RJRADS                   RAD_DTL                   RR17_PK
-RSTXN_RJUPLOADBPJSES           UPLOADBPJS                RR33_PK
 SESSIONS                       ID                        PK_SESSIONS
-TKACC_ACCOUNTSES               ACC_ID                    TA_PK
-TKACC_CARABAYARS               CB_ID                     TC1_PK
-TKACC_CONFACCTXNS              CONF_ID                   TC5_PK
-TKACC_GR_ACCOUNTSES            GRA_ID                    TGA_PK
-TKACC_TEMACCOUNTES             ACC_ID                    TT3_PK
-TKACC_TEMACCOUNTES             TEMP_DTL                  TT3_PK
-TKACC_TEMLABARUGINERACADTLS    TEMP_DTL                  TT2_PK
-TKACC_TEMLABARUGINERACAHDRS    TEMP_ID                   TTLN_PK
-TKACC_TUCICOS                  TUCICO_ID                 TT1_PK
-TKMST_CATEGORIES               CAT_ID                    TC_PK
-TKMST_CUSTOMERS                CM_ID                     TC2_PK
-TKMST_EX_IMS                   ID_EX                     TEI_PK
-TKMST_KASIRS                   KASIR_ID                  TK_PK
-TKMST_KOTAS                    KOTA_ID                   TK1_PK
-TKMST_KOTAS                    PROV_ID                   TK1_PK
-TKMST_PRODUCTPAKETS            PAKET_DTL                 TP1_PK
-TKMST_PRODUCTS                 PRODUCT_ID                TP_PK
-TKMST_PROVS                    PROV_ID                   TP2_PK
-TKMST_SUPPLIERS                SUPP_ID                   TS_PK
-TKMST_UOMS                     UOM_ID                    TU_PK
-TKTXN_CASHINDTLS               CASHIN_DTL                TC4_PK
-TKTXN_CASHINHDRS               CASHIN_NO                 TC3_PK
-TKTXN_CASHOUTDTLS              CASHOUT_DTL               TC4_PKRCV
-TKTXN_CASHOUTHDRS              CASHOUT_NO                TC3_PKRCV
-TKTXN_RCVDTLS                  RCV_DTL                   TS2_PKRCV
-TKTXN_RCVHDRS                  RCV_NO                    TS1_PKRCV
-TKTXN_RCVPAYMENTS              RCVP_NO                   TS3_PKRCV
-TKTXN_SALDOAWALAKUNS           SA_YEAR                   TS5_PK
-TKTXN_SALDOAWALAKUNS           ACC_ID                    TS5_PK
-TKTXN_SALDOAWALHUTANGS         SAH_YEAR                  TS7_PK
-TKTXN_SALDOAWALHUTANGS         SUPP_ID                   TS7_PK
-TKTXN_SALDOAWALPIUTANGS        SAP_YEAR                  TS6_PK
-TKTXN_SALDOAWALPIUTANGS        CM_ID                     TS6_PK
-TKTXN_SALDOAWALSTOCKS          SA_YEAR                   TS4_PK
-TKTXN_SALDOAWALSTOCKS          PRODUCT_ID                TS4_PK
-TKTXN_SLSDTLS                  SLS_DTL                   TS2_PK
-TKTXN_SLSHDRS                  SLS_NO                    TS1_PK
-TKTXN_SLSKIRIMS                SLS_NO                    TS8_PK
-TKTXN_SLSPAYMENTS              SLSP_NO                   TS3_PK
-TKTXN_TUCASHINS                CI_NO                     TT_PK123123
-TKTXN_TUCASHOUTS               CO_NO                     TT_PK
+SKACC_ACCOUNTSES               ACC_ID                    ACCOUNTSES_PK
+SKACC_CARABAYARS               CB_ID                     CARABAYARS_PK
+SKACC_CONFACCTXNS              CONF_ID                   CONFACCTXNS_PK
+SKACC_GR_ACCOUNTSES            GRA_ID                    GR_ACCOUNTSES_PK
+SKACC_TEMACCOUNTES             ACC_ID                    TEMACCOUNTES_PK
+SKACC_TEMACCOUNTES             TEMP_DTL                  TEMACCOUNTES_PK
+SKACC_TEMLABARUGINERACADTLS    TEMP_DTL                  TEMLABARUGINERACADTLS_PK
+SKACC_TEMLABARUGINERACAHDRS    TEMP_ID                   TEMLABARUGINERACAHDRS_PK
+SKACC_TUCICOS                  TUCICO_ID                 TUCICOS_PK
+SKMST_ACCDOCS                  ACCDOC_ID                 ACCDOCS_PK
+SKMST_ACTEMPS                  ACTE_ID                   ACTEMPS_PK
+SKMST_ACTEOTHERS               ACTE_ID                   ACTEOTHERS_PK
+SKMST_ACTEOTHERS               OTHER_ID                  ACTEOTHERS_PK
+SKMST_ACTPARAMEDICS            PACT_ID                   ACTPARAMEDICS_PK
+SKMST_APPLICATIONS             APP_CODE                  APPLICATIONS_PK
+SKMST_CATEGORIES               CAT_ID                    CATEGORIES_PK
+SKMST_CLABITEMS                CLABITEM_ID               CLABITEMS_PK
+SKMST_CLABS                    CLAB_ID                   CLABS_PK
+SKMST_CONTENTS                 CONT_ID                   CONTENTS_PK
+SKMST_CUSTOMERS                CM_ID                     CUSTOMERS_PK
+SKMST_DESAS                    DES_ID                    DESAS_PK
+SKMST_DOCTORS                  DR_ID                     DOCTORS_PK
+SKMST_EDUCATIONS               EDU_ID                    EDUCATIONS_PK
+SKMST_ENTRYTYPES               ENTRY_ID                  ENTRYTYPES_PK
+SKMST_EX_IMS                   ID_EX                     EX_IMS_PK
+SKMST_IDENTITASES              INT_NAME                  IDENTITASES_PK
+SKMST_JOBS                     JOB_ID                    JOBS_PK
+SKMST_KABUPATENS               KAB_ID                    KABUPATENS_PK
+SKMST_KASIRS                   KASIR_ID                  KASIRS_PK
+SKMST_KECAMATANS               KEC_ID                    KECAMATANS_PK
+SKMST_KLAIMTYPES               KLAIM_ID                  KLAIMTYPES_PK
+SKMST_KOTAS                    KOTA_ID                   KOTAS_PK
+SKMST_KOTAS                    PROV_ID                   KOTAS_PK
+SKMST_LOINC_CODES              LOINC_CODE                LOINC_CODES_PK
+SKMST_MEDIK                    MEDIK_NO                  MEDIK_PK
+SKMST_MSTDIAGS                 DIAG_ID                   MSTDIAGS_PK
+SKMST_MSTPROCEDURES            PROC_ID                   MSTPROCEDURES_PK
+SKMST_OTHERS                   OTHER_ID                  OTHERS_PK
+SKMST_OUTS                     OUT_NO                    OUTS_PK
+SKMST_PARAMETERS               PAR_ID                    PARAMETERS_PK
+SKMST_PASIENS                  REG_NO                    PASIENS_PK
+SKMST_POLIS                    POLI_ID                   POLIS_PK
+SKMST_PRODUCTCONTENTS          PRC_DTL                   PRODUCTCONTENTS_PK
+SKMST_PRODUCTPAKETS            PAKET_DTL                 PRODUCTPAKETS_PK
+SKMST_PRODUCTS                 PRODUCT_ID                PRODUCTS_PK
+SKMST_PROPINSIS                PROP_ID                   PROPINSIS_PK
+SKMST_PROVS                    PROV_ID                   PROVS_PK
+SKMST_RADIOLOGIS               RAD_ID                    RADIOLOGIS_PK
+SKMST_RELIGIONS                REL_ID                    RELIGIONS_PK
+SKMST_SCDAYS                   DAY_ID                    SCDAYS_PK
+SKMST_SNOMED_CODES             SNOMED_CODE               SNOMED_CODES_PK
+SKMST_SUPPLIERS                SUPP_ID                   SUPPLIERS_PK
+SKMST_UOMS                     UOM_ID                    UOMS_PK
+SKMST_USERAPPLICATIONS         USER_CODE                 USERAPPLICATIONS_PK
+SKMST_USERAPPLICATIONS         APP_CODE                  USERAPPLICATIONS_PK
+SKMST_USERS                    USER_CODE                 USERS_PK
+SKTXN_CASHINDTLS               CASHIN_DTL                CASHINDTLS_PK
+SKTXN_CASHINHDRS               CASHIN_NO                 CASHINHDRS_PK
+SKTXN_CASHOUTDTLS              CASHOUT_DTL               CASHOUTDTLS_PK
+SKTXN_CASHOUTHDRS              CASHOUT_NO                CASHOUTHDRS_PK
+SKTXN_CHECKUPDTLS              CHECKUP_DTL               CHECKUPDTLS_PK
+SKTXN_CHECKUPHDRS              CHECKUP_NO                CHECKUPHDRS_PK
+SKTXN_CHECKUPOBATS             ID                        CHECKUPOBATS_PK
+SKTXN_CHECKUPOUTDTLS           LABOUT_DTL                CHECKUPOUTDTLS_PK
+SKTXN_RCVDTLS                  RCV_DTL                   RCVDTLS_PK
+SKTXN_RCVHDRS                  RCV_NO                    RCVHDRS_PK
+SKTXN_RCVPAYMENTS              RCVP_NO                   RCVPAYMENTS_PK
+SKTXN_RJACCDOCS                RJHN_DTL                  RJACCDOCS_PK
+SKTXN_RJACTEMPS                ACTE_DTL                  RJACTEMPS_PK
+SKTXN_RJACTPARAMS              PACT_DTL                  RJACTPARAMS_PK
+SKTXN_RJCASHINS                RJC_DTL                   RJCASHINS_PK
+SKTXN_RJDTLS                   RJDTL_DTL                 RJDTLS_PK
+SKTXN_RJHDRS                   RJ_NO                     RJHDRS_PK
+SKTXN_RJLABS                   LAB_DTL                   RJLABS_PK
+SKTXN_RJOBATS                  RJOBAT_DTL                RJOBATS_PK
+SKTXN_RJOTHERS                 RJO_DTL                   RJOTHERS_PK
+SKTXN_RJRADS                   RAD_DTL                   RJRADS_PK
+SKTXN_RJUPLOADBPJSES           UPLOADBPJS                RJUPLOADBPJSES_PK
+SKTXN_SALDOAWALAKUNS           SA_YEAR                   SALDOAWALAKUNS_PK
+SKTXN_SALDOAWALAKUNS           ACC_ID                    SALDOAWALAKUNS_PK
+SKTXN_SALDOAWALHUTANGS         SAH_YEAR                  SALDOAWALHUTANGS_PK
+SKTXN_SALDOAWALHUTANGS         SUPP_ID                   SALDOAWALHUTANGS_PK
+SKTXN_SALDOAWALPIUTANGS        SAP_YEAR                  SALDOAWALPIUTANGS_PK
+SKTXN_SALDOAWALPIUTANGS        CM_ID                     SALDOAWALPIUTANGS_PK
+SKTXN_SALDOAWALSTOCKS          SA_YEAR                   SALDOAWALSTOCKS_PK
+SKTXN_SALDOAWALSTOCKS          PRODUCT_ID                SALDOAWALSTOCKS_PK
+SKTXN_SLSDTLS                  SLS_DTL                   SLSDTLS_PK
+SKTXN_SLSHDRS                  SLS_NO                    SLSHDRS_PK
+SKTXN_SLSKIRIMS                SLS_NO                    SLSKIRIMS_PK
+SKTXN_SLSPAYMENTS              SLSP_NO                   SLSPAYMENTS_PK
+SKTXN_SOWHS                    SO_NO                     SOWHS_PK
+SKTXN_TUCASHINS                CI_NO                     TUCASHINS_PK
+SKTXN_TUCASHOUTS               CO_NO                     TUCASHOUTS_PK
 USERS                          ID                        USERS_ID_PK

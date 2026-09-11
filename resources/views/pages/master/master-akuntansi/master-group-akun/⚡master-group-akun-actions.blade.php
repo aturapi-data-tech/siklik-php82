@@ -39,7 +39,7 @@ new class extends Component {
     #[On('master.group-akun.openEdit')]
     public function openEdit(string $graId): void
     {
-        $row = DB::table('tkacc_gr_accountses')->where('gra_id', $graId)->first();
+        $row = DB::table('skacc_gr_accountses')->where('gra_id', $graId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -60,7 +60,7 @@ new class extends Component {
     public function deleteGroupAkun(string $graId): void
     {
         try {
-            $deleted = DB::table('tkacc_gr_accountses')->where('gra_id', $graId)->delete();
+            $deleted = DB::table('skacc_gr_accountses')->where('gra_id', $graId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Group akun tidak ditemukan.');
                 return;
@@ -81,7 +81,7 @@ new class extends Component {
     {
         $rules = [
             'form.gra_id'     => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkacc_gr_accountses,gra_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skacc_gr_accountses,gra_id'
                 : 'required|string',
             'form.gra_desc'   => 'required|string|max:100',
             'form.gra_status' => 'required|in:N,L',
@@ -115,12 +115,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkacc_gr_accountses')->insert([
+            DB::table('skacc_gr_accountses')->insert([
                 'gra_id' => mb_strtoupper($this->form['gra_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkacc_gr_accountses')->where('gra_id', $this->originalId)->update($payload);
+            DB::table('skacc_gr_accountses')->where('gra_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Group akun berhasil disimpan.');

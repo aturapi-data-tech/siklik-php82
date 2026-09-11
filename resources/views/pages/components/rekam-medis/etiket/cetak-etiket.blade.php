@@ -37,7 +37,7 @@ new class extends Component {
         }
 
         // Nama instansi dari master identitas (jangan hardcode)
-        $klinikName = DB::table('dimst_identitases')->value('int_name') ?: config('app.name');
+        $klinikName = DB::table('skmst_identitases')->value('int_name') ?: config('app.name');
 
         // Langsung cetak
         $pdf = Pdf::loadView('pages.components.rekam-medis.etiket.cetak-etiket-print', [

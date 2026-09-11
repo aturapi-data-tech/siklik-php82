@@ -51,7 +51,7 @@ new class extends Component {
         }
 
         // Cek berdasarkan proc_id
-        $row = DB::table('rsmst_mstprocedures')->where('proc_id', $this->initialProcedureId)->first();
+        $row = DB::table('skmst_mstprocedures')->where('proc_id', $this->initialProcedureId)->first();
 
         if ($row) {
             $this->setSelectedFromRow($row);
@@ -82,7 +82,7 @@ new class extends Component {
         }
 
         // ===== 1) exact match by proc_id =====
-        $exactQuery = DB::table('rsmst_mstprocedures')->where('proc_id', $keyword);
+        $exactQuery = DB::table('skmst_mstprocedures')->where('proc_id', $keyword);
 
         $exactRow = $exactQuery->first();
 
@@ -94,7 +94,7 @@ new class extends Component {
         // ===== 2) search by proc_id / proc_desc partial =====
         $upperKeyword = mb_strtoupper($keyword);
 
-        $query = DB::table('rsmst_mstprocedures')
+        $query = DB::table('skmst_mstprocedures')
             ->where(function ($q) use ($upperKeyword) {
                 $q->whereRaw('UPPER(proc_id) LIKE ?', ["%{$upperKeyword}%"])->orWhereRaw('UPPER(proc_desc) LIKE ?', ["%{$upperKeyword}%"]);
             })
@@ -246,7 +246,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('rsmst_mstprocedures')->where('proc_id', $value)->first();
+        $row = DB::table('skmst_mstprocedures')->where('proc_id', $value)->first();
 
         if ($row) {
             $this->setSelectedFromRow($row);

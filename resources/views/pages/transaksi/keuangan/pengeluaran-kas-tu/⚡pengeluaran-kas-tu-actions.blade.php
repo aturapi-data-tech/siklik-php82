@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Pengeluaran Kas TU — TKTXN_TUCASHOUTS (CO = Cash Out).
+ * Pengeluaran Kas TU — SKTXN_TUCASHOUTS (CO = Cash Out).
  *
  * Schema:
  *   co_no (PK), co_date, co_desc, co_nominal, co_status,
- *   tucico_id (FK → TKACC_TUCICOS where tucico_status='CO'),
- *   kasir_id  (FK → TKMST_KASIRS),
- *   cb_id     (FK → TKACC_CARABAYARS).
+ *   tucico_id (FK → SKACC_TUCICOS where tucico_status='CO'),
+ *   kasir_id  (FK → SKMST_KASIRS),
+ *   cb_id     (FK → SKACC_CARABAYARS).
  */
 
 use Livewire\Component;
@@ -24,7 +24,7 @@ new class extends Component {
     public ?string $editNo = null;
     public array $renderVersions = [];
 
-    // ── Form fields (TKTXN_TUCASHOUTS) ──
+    // ── Form fields (SKTXN_TUCASHOUTS) ──
     public ?string $tucicoId = null;
     public ?string $cbId = null;
     public ?string $coDate = null;
@@ -53,7 +53,7 @@ new class extends Component {
     #[On('pengeluaran-kas.openEdit')]
     public function openEdit(string $coNo): void
     {
-        $row = DB::table('tktxn_tucashouts')->where('co_no', $coNo)->first();
+        $row = DB::table('sktxn_tucashouts')->where('co_no', $coNo)->first();
         if (!$row) {
             $this->dispatch('toast', type: 'error', message: 'Data tidak ditemukan.');
             return;
@@ -97,8 +97,8 @@ new class extends Component {
     public function save(): void
     {
         $this->validate([
-            'tucicoId'  => 'required|string|exists:tkacc_tucicos,tucico_id',
-            'cbId'      => 'required|string|exists:tkacc_carabayars,cb_id',
+            'tucicoId'  => 'required|string|exists:skacc_tucicos,tucico_id',
+            'cbId'      => 'required|string|exists:skacc_carabayars,cb_id',
             'coDate'    => 'required|date_format:d/m/Y H:i:s',
             'coDesc'    => 'required|string|min:3|max:100',
             'coNominal' => 'required|integer|min:1',
@@ -118,7 +118,7 @@ new class extends Component {
         // Resolve kasir_id dari USERS.kasir_id (mapping di User Control).
         $kasirId = auth()->user()->kasir_id ?? null;
         if ($kasirId) {
-            $valid = DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->where('active_status', '1')->exists();
+            $valid = DB::table('skmst_kasirs')->where('kasir_id', $kasirId)->where('active_status', '1')->exists();
             if (!$valid) $kasirId = null;
         }
         if (!$kasirId) {
@@ -140,12 +140,12 @@ new class extends Component {
                 ];
 
                 if ($this->editNo) {
-                    DB::table('tktxn_tucashouts')
+                    DB::table('sktxn_tucashouts')
                         ->where('co_no', $this->editNo)
                         ->update($payload);
                 } else {
-                    $nextNo = (int) DB::table('tktxn_tucashouts')->max('co_no') + 1;
-                    DB::table('tktxn_tucashouts')->insert(array_merge(['co_no' => $nextNo], $payload));
+                    $nextNo = (int) DB::table('sktxn_tucashouts')->max('co_no') + 1;
+                    DB::table('sktxn_tucashouts')->insert(array_merge(['co_no' => $nextNo], $payload));
                 }
             });
 
@@ -167,7 +167,7 @@ new class extends Component {
         }
 
         try {
-            $deleted = DB::table('tktxn_tucashouts')->where('co_no', $coNo)->delete();
+            $deleted = DB::table('sktxn_tucashouts')->where('co_no', $coNo)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data transaksi tidak ditemukan.');
                 return;

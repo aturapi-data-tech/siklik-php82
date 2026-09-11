@@ -54,7 +54,7 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkmst_uoms')
+        $q = DB::table('skmst_uoms')
             ->select('uom_id', 'uom_desc', 'active_status')
             ->orderBy('uom_id');
 

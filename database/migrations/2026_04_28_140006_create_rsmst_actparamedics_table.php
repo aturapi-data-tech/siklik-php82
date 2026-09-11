@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('rsmst_actparamedics', function (Blueprint $table) {
+        Schema::create('skmst_actparamedics', function (Blueprint $table) {
             $table->string('pact_id', 10);
             $table->primary('pact_id', 'pk_rsmst_actparamedics');
             $table->string('pact_desc', 100)->nullable();
@@ -18,6 +18,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('rsmst_actparamedics');
+        Schema::dropIfExists('skmst_actparamedics');
     }
 };

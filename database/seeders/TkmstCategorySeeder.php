@@ -19,7 +19,7 @@ class TkmstCategorySeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('tkmst_categories')->updateOrInsert(['cat_id' => $row['cat_id']], $row);
+            DB::table('skmst_categories')->updateOrInsert(['cat_id' => $row['cat_id']], $row);
         }
     }
 }

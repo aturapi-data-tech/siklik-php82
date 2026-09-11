@@ -80,7 +80,7 @@ new class extends Component {
             ? 'NVL(txn_k,0) - NVL(txn_d,0)'
             : 'NVL(txn_d,0) - NVL(txn_k,0)';
 
-        return (float) DB::table('tkview_accounts')
+        return (float) DB::table('skview_accounts')
             ->where('txn_acc', $accId)
             ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [$dari, $sampai])
             ->sum(DB::raw($expr));
@@ -101,7 +101,7 @@ new class extends Component {
     {
         if ($this->periode === '') return [];
 
-        $sections = DB::table('tkacc_temlabarugineracadtls')
+        $sections = DB::table('skacc_temlabarugineracadtls')
             ->where('temp_id', 'L1')
             ->orderBy('temp_dtl_seq')
             ->get()
@@ -115,8 +115,8 @@ new class extends Component {
         $result = [];
         foreach ($sections as $sec) {
             // Ambil akun-akun di section
-            $accounts = DB::table('tkacc_temaccountes as t')
-                ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
+            $accounts = DB::table('skacc_temaccountes as t')
+                ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
                 ->where('t.temp_dtl', $sec['temp_dtl'])
                 ->select('t.acc_id', 'a.acc_desc', 'a.acc_dk_status')
                 ->orderBy('t.acc_id')
@@ -222,9 +222,9 @@ new class extends Component {
                         <p class="font-semibold">Laporan ini masih dalam masa pengembangan — verifikasi manual sebelum dipakai.</p>
                         <ul class="mt-2 ml-5 space-y-0.5 text-xs list-disc">
                             <li><strong>HPP otomatis dari pergerakan stok belum reliabel</strong> — stock opname belum rutin & ada potensi selisih input barang masuk/keluar (penamaan produk mirip). Pakai <em>toggle "Override HPP Manual"</em> di bawah kalau tahu HPP fisik yang benar.</li>
-                            <li><strong>Saldo awal akun 2026</strong> di <span class="font-mono">tktxn_saldoawalakuns</span> belum lengkap — belum mempengaruhi LR (LR cuma pakai arus periode), tapi mempengaruhi Neraca.</li>
+                            <li><strong>Saldo awal akun 2026</strong> di <span class="font-mono">sktxn_saldoawalakuns</span> belum lengkap — belum mempengaruhi LR (LR cuma pakai arus periode), tapi mempengaruhi Neraca.</li>
                             <li>Penjualan &amp; Biaya non-stok (gaji, listrik, dll) sudah benar; yang perlu kehati-hatian adalah HPP dan akun yang berasal dari movement persediaan.</li>
-                            <li>Sumber data: <span class="font-mono">tkview_accounts_labarugi</span>. Section &amp; mapping akun: template <span class="font-mono">L1</span> di <span class="font-mono">tkacc_temaccountes</span>.</li>
+                            <li>Sumber data: <span class="font-mono">skview_accounts_labarugi</span>. Section &amp; mapping akun: template <span class="font-mono">L1</span> di <span class="font-mono">skacc_temaccountes</span>.</li>
                         </ul>
                     </div>
                 </div>

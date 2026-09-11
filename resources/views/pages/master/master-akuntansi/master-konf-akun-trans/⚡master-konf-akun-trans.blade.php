@@ -43,8 +43,8 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkacc_confacctxns as c')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'c.acc_id')
+        $q = DB::table('skacc_confacctxns as c')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'c.acc_id')
             ->select('c.conf_id', 'c.conf_desc', 'c.acc_id', 'a.acc_desc')
             ->orderBy('c.conf_id');
 
@@ -66,7 +66,7 @@ new class extends Component {
 <div>
     <x-page-title
         title="Master Konfigurasi Akun Transaksi"
-        subtitle="Mapping akun-default per jenis transaksi. Sumber: tkacc_confacctxns. Tiap CONF_ID menunjuk ke satu ACC_ID di tkacc_accountses." />
+        subtitle="Mapping akun-default per jenis transaksi. Sumber: skacc_confacctxns. Tiap CONF_ID menunjuk ke satu ACC_ID di skacc_accountses." />
 
     <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
         <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">

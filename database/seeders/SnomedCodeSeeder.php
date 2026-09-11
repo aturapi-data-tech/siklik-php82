@@ -9,7 +9,7 @@ class SnomedCodeSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('rsmst_snomed_codes')->truncate();
+        DB::table('skmst_snomed_codes')->truncate();
 
         $data = $this->getData();
 
@@ -17,7 +17,7 @@ class SnomedCodeSeeder extends Seeder
 
         foreach (array_chunk($data, 50) as $chunk) {
             $chunk = array_map(fn($row) => [...$row, 'created_at' => $now], $chunk);
-            DB::table('rsmst_snomed_codes')->insert($chunk);
+            DB::table('skmst_snomed_codes')->insert($chunk);
         }
 
         $this->command->info('SnomedCodeSeeder: ' . count($data) . ' codes seeded.');

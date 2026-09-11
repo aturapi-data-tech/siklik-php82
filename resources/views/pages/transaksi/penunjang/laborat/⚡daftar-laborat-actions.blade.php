@@ -87,9 +87,9 @@ new class extends Component {
      * ======================= */
     private function loadHeader(): void
     {
-        $header = DB::table('lbtxn_checkuphdrs as a')
-            ->join('rsmst_pasiens as c', 'a.reg_no', '=', 'c.reg_no')
-            ->leftJoin('rsmst_doctors as f', 'a.dr_id', '=', 'f.dr_id')
+        $header = DB::table('sktxn_checkuphdrs as a')
+            ->join('skmst_pasiens as c', 'a.reg_no', '=', 'c.reg_no')
+            ->leftJoin('skmst_doctors as f', 'a.dr_id', '=', 'f.dr_id')
             ->select(
                 'a.checkup_no',
                 DB::raw("to_char(a.checkup_date,'dd/mm/yyyy hh24:mi:ss') as checkup_date"),
@@ -121,15 +121,15 @@ new class extends Component {
             return;
         }
 
-        $this->countDtl = (int) DB::table('lbtxn_checkupdtls')
+        $this->countDtl = (int) DB::table('sktxn_checkupdtls')
             ->where('checkup_no', $this->checkupNo)
             ->count();
 
-        $this->countOutDtl = (int) DB::table('lbtxn_checkupoutdtls')
+        $this->countOutDtl = (int) DB::table('sktxn_checkupoutdtls')
             ->where('checkup_no', $this->checkupNo)
             ->count();
 
-        $this->countObat = (int) DB::table('lbtxn_checkupobats')
+        $this->countObat = (int) DB::table('sktxn_checkupobats')
             ->where('checkup_no', $this->checkupNo)
             ->count();
     }
@@ -143,18 +143,18 @@ new class extends Component {
             return;
         }
 
-        // Total pemeriksaan lab (price dari LBTXN_CHECKUPDTLS)
-        $this->sumPemeriksaan = (int) DB::table('lbtxn_checkupdtls')
+        // Total pemeriksaan lab (price dari SKTXN_CHECKUPDTLS)
+        $this->sumPemeriksaan = (int) DB::table('sktxn_checkupdtls')
             ->where('checkup_no', $this->checkupNo)
             ->sum('price');
 
-        // Total pemeriksaan luar (labout_price dari LBTXN_CHECKUPOUTDTLS)
-        $this->sumPemeriksaanLuar = (int) DB::table('lbtxn_checkupoutdtls')
+        // Total pemeriksaan luar (labout_price dari SKTXN_CHECKUPOUTDTLS)
+        $this->sumPemeriksaanLuar = (int) DB::table('sktxn_checkupoutdtls')
             ->where('checkup_no', $this->checkupNo)
             ->sum('labout_price');
 
-        // Total obat/bahan (qty * price dari LBTXN_CHECKUPOBATS)
-        $this->sumObat = (int) DB::table('lbtxn_checkupobats')
+        // Total obat/bahan (qty * price dari SKTXN_CHECKUPOBATS)
+        $this->sumObat = (int) DB::table('sktxn_checkupobats')
             ->where('checkup_no', $this->checkupNo)
             ->selectRaw('NVL(SUM(NVL(price, 0) * NVL(qty, 0)), 0) as total')
             ->value('total');
@@ -198,7 +198,7 @@ new class extends Component {
 
             try {
                 DB::transaction(function () {
-                    $hdr = DB::table('lbtxn_checkuphdrs')
+                    $hdr = DB::table('sktxn_checkuphdrs')
                         ->where('checkup_no', $this->checkupNo)
                         ->lockForUpdate()
                         ->first();
@@ -212,15 +212,15 @@ new class extends Component {
                     $checkupDate = $hdr->checkup_date;
 
                     // Hitung total biaya lab (pemeriksaan + luar + obat)
-                    $totalCheckup = (int) DB::table('lbtxn_checkupdtls')
+                    $totalCheckup = (int) DB::table('sktxn_checkupdtls')
                         ->where('checkup_no', $this->checkupNo)
                         ->sum('price');
 
-                    $totalCheckupOut = (int) DB::table('lbtxn_checkupoutdtls')
+                    $totalCheckupOut = (int) DB::table('sktxn_checkupoutdtls')
                         ->where('checkup_no', $this->checkupNo)
                         ->sum('labout_price');
 
-                    $totalBahanAlat = (int) DB::table('lbtxn_checkupobats')
+                    $totalBahanAlat = (int) DB::table('sktxn_checkupobats')
                         ->where('checkup_no', $this->checkupNo)
                         ->selectRaw('NVL(SUM(NVL(price, 0) * NVL(qty, 0)), 0) as total')
                         ->value('total');
@@ -231,8 +231,8 @@ new class extends Component {
 
                     // Insert biaya lab ke tabel transaksi sesuai layanan (RJ/UGD/RI)
                     if ($statusRjri === 'RJ' && $refNo) {
-                        $dtlNo = DB::scalar('SELECT NVL(MAX(lab_dtl) + 1, 1) FROM rstxn_rjlabs');
-                        DB::table('rstxn_rjlabs')->insert([
+                        $dtlNo = DB::scalar('SELECT NVL(MAX(lab_dtl) + 1, 1) FROM sktxn_rjlabs');
+                        DB::table('sktxn_rjlabs')->insert([
                             'lab_desc' => $labDesc,
                             'lab_dtl' => $dtlNo,
                             'lab_price' => $totalLabPrice,
@@ -240,8 +240,8 @@ new class extends Component {
                             'checkup_no' => $this->checkupNo,
                         ]);
                     } elseif ($statusRjri === 'UGD' && $refNo) {
-                        $dtlNo = DB::scalar('SELECT NVL(MAX(lab_dtl) + 1, 1) FROM rstxn_ugdlabs');
-                        DB::table('rstxn_ugdlabs')->insert([
+                        $dtlNo = DB::scalar('SELECT NVL(MAX(lab_dtl) + 1, 1) FROM sktxn_ugdlabs');
+                        DB::table('sktxn_ugdlabs')->insert([
                             'lab_desc' => $labDesc,
                             'lab_dtl' => $dtlNo,
                             'lab_price' => $totalLabPrice,
@@ -249,8 +249,8 @@ new class extends Component {
                             'checkup_no' => $this->checkupNo,
                         ]);
                     } elseif ($statusRjri === 'RI' && $refNo) {
-                        $dtlNo = DB::scalar('SELECT NVL(MAX(lab_dtl) + 1, 1) FROM rstxn_rilabs');
-                        DB::table('rstxn_rilabs')->insert([
+                        $dtlNo = DB::scalar('SELECT NVL(MAX(lab_dtl) + 1, 1) FROM sktxn_rilabs');
+                        DB::table('sktxn_rilabs')->insert([
                             'lab_desc' => $labDesc,
                             'lab_dtl' => $dtlNo,
                             'lab_price' => $totalLabPrice,
@@ -261,8 +261,8 @@ new class extends Component {
                     }
 
                     // Update header: status, kasir_id, waktu_masuk
-                    // (siklik: kolom di LBTXN_CHECKUPHDRS = kasir_id, bukan emp_id;
-                    //  USERS.emp_id user di-mapping ke TKMST_KASIRS.kasir_id)
+                    // (siklik: kolom di SKTXN_CHECKUPHDRS = kasir_id, bukan emp_id;
+                    //  USERS.emp_id user di-mapping ke SKMST_KASIRS.kasir_id)
                     $updateData = ['checkup_status' => 'C'];
 
                     if (empty($hdr->kasir_id)) {
@@ -277,7 +277,7 @@ new class extends Component {
                         $updateData['waktu_masuk_pelayanan'] = DB::raw('SYSDATE');
                     }
 
-                    DB::table('lbtxn_checkuphdrs')
+                    DB::table('sktxn_checkuphdrs')
                         ->where('checkup_no', $this->checkupNo)
                         ->update($updateData);
                 });
@@ -310,7 +310,7 @@ new class extends Component {
             }
 
             // Validasi kasir_id harus terisi
-            $empId = DB::table('lbtxn_checkuphdrs')
+            $empId = DB::table('sktxn_checkuphdrs')
                 ->where('checkup_no', $this->checkupNo)
                 ->value('kasir_id');
 
@@ -321,7 +321,7 @@ new class extends Component {
 
             try {
                 DB::transaction(function () {
-                    $hdr = DB::table('lbtxn_checkuphdrs')
+                    $hdr = DB::table('sktxn_checkuphdrs')
                         ->where('checkup_no', $this->checkupNo)
                         ->lockForUpdate()
                         ->first();
@@ -344,7 +344,7 @@ new class extends Component {
                         $updateData['waktu_selesai_pelayanan'] = DB::raw('SYSDATE');
                     }
 
-                    DB::table('lbtxn_checkuphdrs')
+                    DB::table('sktxn_checkuphdrs')
                         ->where('checkup_no', $this->checkupNo)
                         ->update($updateData);
                 });
@@ -367,7 +367,7 @@ new class extends Component {
      * ======================= */
     public function saveKesimpulan(string $value): void
     {
-        DB::table('lbtxn_checkuphdrs')
+        DB::table('sktxn_checkuphdrs')
             ->where('checkup_no', $this->checkupNo)
             ->update(['checkup_kesimpulan' => $value]);
 
@@ -401,7 +401,7 @@ new class extends Component {
 
         try {
             DB::transaction(function () {
-                $hdr = DB::table('lbtxn_checkuphdrs')
+                $hdr = DB::table('sktxn_checkuphdrs')
                     ->where('checkup_no', $this->checkupNo)
                     ->lockForUpdate()
                     ->first();
@@ -419,7 +419,7 @@ new class extends Component {
 
                 // Cek status transaksi induk (RJ/UGD/RI)
                 if ($statusRjri === 'RJ' && $refNo) {
-                    $rjStatus = DB::table('rstxn_rjhdrs')->where('rj_no', $refNo)->value('rj_status');
+                    $rjStatus = DB::table('sktxn_rjhdrs')->where('rj_no', $refNo)->value('rj_status');
                     if ($rjStatus === 'L') {
                         throw new \RuntimeException('Tidak bisa membatalkan, transaksi RJ sudah ditutup.');
                     }
@@ -430,9 +430,9 @@ new class extends Component {
                         throw new \RuntimeException('Tidak bisa membatalkan, transaksi RJ ditransfer ke rawat inap.');
                     }
                     // Hapus biaya lab dari RJ
-                    DB::table('rstxn_rjlabs')->where('checkup_no', $this->checkupNo)->delete();
+                    DB::table('sktxn_rjlabs')->where('checkup_no', $this->checkupNo)->delete();
                 } elseif ($statusRjri === 'UGD' && $refNo) {
-                    $ugdStatus = DB::table('rstxn_ugdhdrs')->where('rj_no', $refNo)->value('rj_status');
+                    $ugdStatus = DB::table('sktxn_ugdhdrs')->where('rj_no', $refNo)->value('rj_status');
                     if ($ugdStatus === 'L') {
                         throw new \RuntimeException('Tidak bisa membatalkan, transaksi UGD sudah ditutup.');
                     }
@@ -443,18 +443,18 @@ new class extends Component {
                         throw new \RuntimeException('Tidak bisa membatalkan, transaksi UGD ditransfer ke rawat inap.');
                     }
                     // Hapus biaya lab dari UGD
-                    DB::table('rstxn_ugdlabs')->where('checkup_no', $this->checkupNo)->delete();
+                    DB::table('sktxn_ugdlabs')->where('checkup_no', $this->checkupNo)->delete();
                 } elseif ($statusRjri === 'RI' && $refNo) {
-                    $riStatus = DB::table('rstxn_rihdrs')->where('rihdr_no', $refNo)->value('ri_status');
+                    $riStatus = DB::table('sktxn_rihdrs')->where('rihdr_no', $refNo)->value('ri_status');
                     if ($riStatus === 'P') {
                         throw new \RuntimeException('Tidak bisa membatalkan, transaksi RI sudah ditutup.');
                     }
                     // Hapus biaya lab dari RI
-                    DB::table('rstxn_rilabs')->where('checkup_no', $this->checkupNo)->delete();
+                    DB::table('sktxn_rilabs')->where('checkup_no', $this->checkupNo)->delete();
                 }
 
                 // Reset status lab ke P, hapus waktu pelayanan
-                DB::table('lbtxn_checkuphdrs')
+                DB::table('sktxn_checkuphdrs')
                     ->where('checkup_no', $this->checkupNo)
                     ->update([
                         'checkup_status' => 'P',
@@ -491,10 +491,10 @@ new class extends Component {
                        a.reg_no, reg_name, a.dr_id, dr_name,
                        sex, birth_date, c.address, kasir_name,
                        waktu_selesai_pelayanan, checkup_kesimpulan
-                FROM lbtxn_checkuphdrs a
-                JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-                JOIN rsmst_doctors f ON a.dr_id = f.dr_id
-                LEFT JOIN tkmst_kasirs g ON a.kasir_id = g.kasir_id
+                FROM sktxn_checkuphdrs a
+                JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+                JOIN skmst_doctors f ON a.dr_id = f.dr_id
+                LEFT JOIN skmst_kasirs g ON a.kasir_id = g.kasir_id
                 WHERE a.checkup_no = :cno
             ", ['cno' => $this->checkupNo]),
         )->first();
@@ -510,13 +510,13 @@ new class extends Component {
                    normal_f, normal_m, high_limit_m, high_limit_f,
                    low_limit_m, low_limit_f, lowhigh_status, lab_result_status,
                    sex, a.dr_id, dr_name, a.kasir_id, kasir_name
-            FROM lbtxn_checkuphdrs a
-            JOIN lbtxn_checkupdtls b ON a.checkup_no = b.checkup_no
-            JOIN rsmst_pasiens c ON a.reg_no = c.reg_no
-            JOIN lbmst_clabitems d ON b.clabitem_id = d.clabitem_id
-            JOIN lbmst_clabs e ON d.clab_id = e.clab_id
-            JOIN rsmst_doctors f ON a.dr_id = f.dr_id
-            LEFT JOIN tkmst_kasirs g ON a.kasir_id = g.kasir_id
+            FROM sktxn_checkuphdrs a
+            JOIN sktxn_checkupdtls b ON a.checkup_no = b.checkup_no
+            JOIN skmst_pasiens c ON a.reg_no = c.reg_no
+            JOIN skmst_clabitems d ON b.clabitem_id = d.clabitem_id
+            JOIN skmst_clabs e ON d.clab_id = e.clab_id
+            JOIN skmst_doctors f ON a.dr_id = f.dr_id
+            LEFT JOIN skmst_kasirs g ON a.kasir_id = g.kasir_id
             WHERE a.checkup_no = :cno
               AND nvl(hidden_status,'N') = 'N'
             ORDER BY app_seq, item_seq, clabitem_desc
@@ -524,8 +524,8 @@ new class extends Component {
 
         $txnLuar = DB::select("
             SELECT ('  ' || labout_desc) AS labout_desc, labout_result, labout_normal
-            FROM lbtxn_checkuphdrs a
-            JOIN lbtxn_checkupoutdtls b ON a.checkup_no = b.checkup_no
+            FROM sktxn_checkuphdrs a
+            JOIN sktxn_checkupoutdtls b ON a.checkup_no = b.checkup_no
             WHERE a.checkup_no = :cno
             ORDER BY labout_dtl, labout_desc
         ", ['cno' => $this->checkupNo]);

@@ -1,9 +1,9 @@
 <?php
 
 /**
- * LOV Kasir — sumber: TKMST_KASIRS (siklik klinik pratama).
+ * LOV Kasir — sumber: SKMST_KASIRS (siklik klinik pratama).
  *
- * Sebelumnya pakai IMMST_EMPLOYERS (sirus only) — tabel itu nggak ada
+ * Sebelumnya pakai SKMST_EMPLOYERS (sirus only) — tabel itu nggak ada
  * di siklik. Klinik pratama cuma punya master kasir simple
  * (kasir_id, kasir_name, active_status).
  *
@@ -63,7 +63,7 @@ new class extends Component {
     protected function loadSelected(string $empId): void
     {
         // Load tanpa filter active supaya record lama tetap nampil saat edit.
-        $row = DB::table('tkmst_kasirs')
+        $row = DB::table('skmst_kasirs')
             ->select('kasir_id', 'kasir_name', 'active_status')
             ->where('kasir_id', $empId)
             ->first();
@@ -73,11 +73,11 @@ new class extends Component {
         }
     }
 
-    /* ── Query dasar — TKMST_KASIRS, hanya yang aktif ── */
+    /* ── Query dasar — SKMST_KASIRS, hanya yang aktif ── */
 
     protected function baseQuery(): \Illuminate\Database\Query\Builder
     {
-        return DB::table('tkmst_kasirs')
+        return DB::table('skmst_kasirs')
             ->select('kasir_id', 'kasir_name', 'active_status')
             ->where('active_status', '1');
     }
@@ -138,7 +138,7 @@ new class extends Component {
             // Compat alias supaya parent yg masih pakai emp_id/emp_name jalan
             'emp_id'     => (string) ($row->kasir_id ?? ''),
             'emp_name'   => (string) ($row->kasir_name ?? ''),
-            // Native key TKMST_KASIRS
+            // Native key SKMST_KASIRS
             'kasir_id'   => (string) ($row->kasir_id ?? ''),
             'kasir_name' => (string) ($row->kasir_name ?? ''),
         ];

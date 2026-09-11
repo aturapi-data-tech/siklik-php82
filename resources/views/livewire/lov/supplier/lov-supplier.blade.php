@@ -31,7 +31,7 @@ new class extends Component {
     public bool $readonly = false;
 
     /**
-     * Legacy prop (sirus) — diabaikan di siklik karena tabel tkmst_suppliers
+     * Legacy prop (sirus) — diabaikan di siklik karena tabel skmst_suppliers
      * tidak punya kolom medis/nonmedis. Dipertahankan supaya pemanggil lama
      * tidak rusak. Klinik pratama tidak membedakan jenis supplier.
      */
@@ -43,7 +43,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('tkmst_suppliers')
+        $row = DB::table('skmst_suppliers')
             ->select(['supp_id', 'supp_name', 'supp_phone1', 'supp_address'])
             ->where('supp_id', $this->initialSuppId)
             ->where('active_status', '1')
@@ -76,7 +76,7 @@ new class extends Component {
 
         // ===== 1) exact match by supp_id =====
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('tkmst_suppliers')
+            $exactRow = DB::table('skmst_suppliers')
                 ->select(['supp_id', 'supp_name', 'supp_phone1', 'supp_address'])
                 ->where('active_status', '1')
                 ->where('supp_id', $keyword)
@@ -96,7 +96,7 @@ new class extends Component {
         // ===== 2) search by supp_name partial =====
         $upperKeyword = mb_strtoupper($keyword);
 
-        $rows = DB::table('tkmst_suppliers')
+        $rows = DB::table('skmst_suppliers')
             ->select(['supp_id', 'supp_name', 'supp_phone1', 'supp_address'])
             ->where('active_status', '1')
             ->where(function ($q) use ($upperKeyword) {

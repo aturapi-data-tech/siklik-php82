@@ -20,7 +20,7 @@ new class extends Component {
     public string $searchKeyword = '';
     public string $filterTanggal = '';
     public string $filterStatus = 'A';
-    public string $filterKlaim = ''; // '' | 'BPJS' | 'UMUM' — pakai klaim_status di rsmst_klaimtypes (JM dianggap BPJS)
+    public string $filterKlaim = ''; // '' | 'BPJS' | 'UMUM' — pakai klaim_status di skmst_klaimtypes (JM dianggap BPJS)
     public string $filterDokter = '';
     public int $itemsPerPage = 10;
     public string $autoRefresh = 'Ya';
@@ -121,14 +121,14 @@ new class extends Component {
         [$start, $end] = $this->dateRange();
 
         // Sub-query lab/rad untuk badge "Laborat" / "Radiologi" (selaras pelayanan-rj)
-        $labSub = DB::table('lbtxn_checkuphdrs')->select('ref_no', DB::raw('COUNT(*) as lab_status'))->where('status_rjri', 'RJ')->where('checkup_status', '!=', 'B')->groupBy('ref_no');
-        $radSub = DB::table('rstxn_rjrads')->select('rj_no', DB::raw('COUNT(*) as rad_status'))->groupBy('rj_no');
+        $labSub = DB::table('sktxn_checkuphdrs')->select('ref_no', DB::raw('COUNT(*) as lab_status'))->where('status_rjri', 'RJ')->where('checkup_status', '!=', 'B')->groupBy('ref_no');
+        $radSub = DB::table('sktxn_rjrads')->select('rj_no', DB::raw('COUNT(*) as rad_status'))->groupBy('rj_no');
 
-        $query = DB::table('rstxn_rjhdrs as h')
-            ->join('rsmst_pasiens as p', 'p.reg_no', '=', 'h.reg_no')
-            ->leftJoin('rsmst_polis as po', 'po.poli_id', '=', 'h.poli_id')
-            ->leftJoin('rsmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
-            ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
+        $query = DB::table('sktxn_rjhdrs as h')
+            ->join('skmst_pasiens as p', 'p.reg_no', '=', 'h.reg_no')
+            ->leftJoin('skmst_polis as po', 'po.poli_id', '=', 'h.poli_id')
+            ->leftJoin('skmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
+            ->leftJoin('skmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
             ->leftJoinSub($labSub, 'lab', fn($j) => $j->on('lab.ref_no', '=', 'h.rj_no'))
             ->leftJoinSub($radSub, 'rad', fn($j) => $j->on('rad.rj_no', '=', 'h.rj_no'))
             ->select(['h.rj_no', DB::raw("to_char(h.rj_date,'dd/mm/yyyy hh24:mi:ss') as rj_date_display"), 'h.reg_no', 'p.reg_name', 'p.sex', 'p.address', DB::raw("to_char(p.birth_date,'dd/mm/yyyy') as birth_date"), 'h.no_antrian', 'h.poli_id', 'po.poli_desc', 'h.dr_id', 'd.dr_name', 'h.klaim_id', 'h.shift', 'h.rj_status', 'h.vno_sep', 'h.nobooking', 'h.datadaftarpolirj_json', 'k.klaim_desc', 'k.klaim_status', 'h.waktu_masuk_apt', 'h.waktu_selesai_pelayanan', DB::raw('COALESCE(lab.lab_status, 0) as lab_status'), DB::raw('COALESCE(rad.rad_status, 0) as rad_status')])
@@ -136,7 +136,7 @@ new class extends Component {
             ->where(DB::raw("NVL(h.rj_status,'A')"), $this->filterStatus);
 
         // Filter Klaim BPJS / UMUM
-        // BPJS = klaim_status='BPJS' (di rsmst_klaimtypes) ATAU klaim_id='JM' (JKN Mobile)
+        // BPJS = klaim_status='BPJS' (di skmst_klaimtypes) ATAU klaim_id='JM' (JKN Mobile)
         // UMUM = bukan keduanya
         if ($this->filterKlaim === 'BPJS') {
             $query->where(function ($q) {
@@ -292,11 +292,11 @@ new class extends Component {
     {
         [$start, $end] = $this->dateRange();
 
-        return DB::table('rstxn_rjhdrs')
-            ->join('rsmst_doctors', 'rsmst_doctors.dr_id', '=', 'rstxn_rjhdrs.dr_id')
-            ->select('rstxn_rjhdrs.dr_id', DB::raw('MAX(rsmst_doctors.dr_name) as dr_name'), DB::raw('COUNT(DISTINCT rstxn_rjhdrs.rj_no) as total_pasien'))
-            ->whereBetween('rstxn_rjhdrs.rj_date', [$start, $end])
-            ->groupBy('rstxn_rjhdrs.dr_id')
+        return DB::table('sktxn_rjhdrs')
+            ->join('skmst_doctors', 'skmst_doctors.dr_id', '=', 'sktxn_rjhdrs.dr_id')
+            ->select('sktxn_rjhdrs.dr_id', DB::raw('MAX(skmst_doctors.dr_name) as dr_name'), DB::raw('COUNT(DISTINCT sktxn_rjhdrs.rj_no) as total_pasien'))
+            ->whereBetween('sktxn_rjhdrs.rj_date', [$start, $end])
+            ->groupBy('sktxn_rjhdrs.dr_id')
             ->orderBy('dr_name')
             ->get();
     }

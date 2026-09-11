@@ -30,7 +30,7 @@ new class extends Component {
     #[Computed]
     public function parents()
     {
-        return DB::table('tkmst_provs')
+        return DB::table('skmst_provs')
             ->select('prov_id', 'prov_name')
             ->orderBy('prov_name')
             ->get();
@@ -50,7 +50,7 @@ new class extends Component {
     #[On('master.kota-toko.openEdit')]
     public function openEdit(string $kotaId): void
     {
-        $row = DB::table('tkmst_kotas')->where('kota_id', $kotaId)->first();
+        $row = DB::table('skmst_kotas')->where('kota_id', $kotaId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -71,13 +71,13 @@ new class extends Component {
     public function deleteKotaToko(string $kotaId): void
     {
         try {
-            $isUsed = DB::table('tkmst_customers')->where('kota_id', $kotaId)->exists();
+            $isUsed = DB::table('skmst_customers')->where('kota_id', $kotaId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Kota Toko tidak bisa dihapus karena masih punya kecamatan turunannya.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_kotas')->where('kota_id', $kotaId)->delete();
+            $deleted = DB::table('skmst_kotas')->where('kota_id', $kotaId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data kota-toko tidak ditemukan.');
                 return;
@@ -98,10 +98,10 @@ new class extends Component {
     {
         $rules = [
             'form.kota_id'   => $this->formMode === 'create'
-                ? 'required|string|max:15|regex:/^[A-Z0-9_-]+$/|unique:tkmst_kotas,kota_id'
+                ? 'required|string|max:15|regex:/^[A-Z0-9_-]+$/|unique:skmst_kotas,kota_id'
                 : 'required|string',
             'form.kota_name' => 'required|string|max:100',
-            'form.prov_id'  => 'required|string|exists:tkmst_provs,prov_id',
+            'form.prov_id'  => 'required|string|exists:skmst_provs,prov_id',
         ];
 
         $messages = [
@@ -126,9 +126,9 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_kotas')->insert(['kota_id' => (string) $this->form['kota_id'], ...$payload]);
+            DB::table('skmst_kotas')->insert(['kota_id' => (string) $this->form['kota_id'], ...$payload]);
         } else {
-            DB::table('tkmst_kotas')->where('kota_id', $this->originalId)->update($payload);
+            DB::table('skmst_kotas')->where('kota_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data kota-toko berhasil disimpan.');

@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.jasa-paramedis.openEdit')]
     public function openEdit(string $pactId): void
     {
-        $row = DB::table('rsmst_actparamedics')->where('pact_id', $pactId)->first();
+        $row = DB::table('skmst_actparamedics')->where('pact_id', $pactId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -61,9 +61,9 @@ new class extends Component {
     #[On('master.jasa-paramedis.toggleActive')]
     public function toggleActive(string $pactId): void
     {
-        $cur = (string) DB::table('rsmst_actparamedics')->where('pact_id', $pactId)->value('active_status');
+        $cur = (string) DB::table('skmst_actparamedics')->where('pact_id', $pactId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('rsmst_actparamedics')->where('pact_id', $pactId)->update(['active_status' => $next]);
+        DB::table('skmst_actparamedics')->where('pact_id', $pactId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status jasa paramedis → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.jasa-paramedis.saved');
@@ -73,13 +73,13 @@ new class extends Component {
     public function deleteJasaDokter(string $pactId): void
     {
         try {
-            $isUsed = DB::table('rstxn_rjactparams')->where('pact_id', $pactId)->exists();
+            $isUsed = DB::table('sktxn_rjactparams')->where('pact_id', $pactId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Jasa dokter tidak bisa dihapus karena masih dipakai pada transaksi rawat jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_actparamedics')->where('pact_id', $pactId)->delete();
+            $deleted = DB::table('skmst_actparamedics')->where('pact_id', $pactId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data jasa paramedis tidak ditemukan.');
                 return;
@@ -100,7 +100,7 @@ new class extends Component {
     {
         $rules = [
             'form.pact_id'     => $this->formMode === 'create'
-                ? 'required|string|max:10|regex:/^[A-Z0-9_-]+$/|unique:rsmst_actparamedics,pact_id'
+                ? 'required|string|max:10|regex:/^[A-Z0-9_-]+$/|unique:skmst_actparamedics,pact_id'
                 : 'required|string',
             'form.pact_desc'   => 'required|string|max:100',
             'form.pact_price'  => 'required|numeric|min:0|max:999999999',
@@ -137,12 +137,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_actparamedics')->insert([
+            DB::table('skmst_actparamedics')->insert([
                 'pact_id' => mb_strtoupper($this->form['pact_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_actparamedics')->where('pact_id', $this->originalId)->update($payload);
+            DB::table('skmst_actparamedics')->where('pact_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data jasa paramedis berhasil disimpan.');

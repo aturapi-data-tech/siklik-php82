@@ -96,10 +96,10 @@ trait DokumenViewSupportTrait
             : null;
     }
 
-    /** Identitas RS untuk kop cetak. Siklik memakai tabel dimst_identitases. */
+    /** Identitas RS untuk kop cetak. Siklik memakai tabel skmst_identitases. */
     protected function dvIdentitasRs()
     {
-        return DB::table('dimst_identitases')
+        return DB::table('skmst_identitases')
             ->select('int_name', 'int_phone1', 'int_phone2', 'int_fax', 'int_address', 'int_city')
             ->first();
     }

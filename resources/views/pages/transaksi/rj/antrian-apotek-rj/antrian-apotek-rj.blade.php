@@ -122,11 +122,11 @@ new class extends Component {
     {
         [$start, $end] = $this->dateRange();
 
-        $query = DB::table('rstxn_rjhdrs as h')
-            ->join('rsmst_pasiens as p', 'p.reg_no', '=', 'h.reg_no')
-            ->leftJoin('rsmst_polis as po', 'po.poli_id', '=', 'h.poli_id')
-            ->leftJoin('rsmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
-            ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
+        $query = DB::table('sktxn_rjhdrs as h')
+            ->join('skmst_pasiens as p', 'p.reg_no', '=', 'h.reg_no')
+            ->leftJoin('skmst_polis as po', 'po.poli_id', '=', 'h.poli_id')
+            ->leftJoin('skmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
+            ->leftJoin('skmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
             ->select(['h.rj_no', DB::raw("to_char(h.rj_date,'dd/mm/yyyy hh24:mi:ss') as rj_date_display"), 'h.reg_no', 'p.reg_name', 'p.sex', 'p.address', DB::raw("to_char(p.birth_date,'dd/mm/yyyy') as birth_date"), 'h.no_antrian', 'h.poli_id', 'po.poli_desc', 'h.dr_id', 'd.dr_name', 'h.klaim_id', 'h.shift', 'h.rj_status', 'h.vno_sep', 'h.nobooking', 'h.datadaftarpolirj_json', 'k.klaim_desc', 'k.klaim_status', 'h.waktu_masuk_apt', 'h.waktu_selesai_pelayanan'])
             ->whereBetween('h.rj_date', [$start, $end])
             ->where(DB::raw("NVL(h.rj_status,'A')"), $this->filterStatus);
@@ -255,11 +255,11 @@ new class extends Component {
     {
         [$start, $end] = $this->dateRange();
 
-        return DB::table('rstxn_rjhdrs')
-            ->join('rsmst_doctors', 'rsmst_doctors.dr_id', '=', 'rstxn_rjhdrs.dr_id')
-            ->select('rstxn_rjhdrs.dr_id', DB::raw('MAX(rsmst_doctors.dr_name) as dr_name'), DB::raw('COUNT(DISTINCT rstxn_rjhdrs.rj_no) as total_pasien'))
-            ->whereBetween('rstxn_rjhdrs.rj_date', [$start, $end])
-            ->groupBy('rstxn_rjhdrs.dr_id')
+        return DB::table('sktxn_rjhdrs')
+            ->join('skmst_doctors', 'skmst_doctors.dr_id', '=', 'sktxn_rjhdrs.dr_id')
+            ->select('sktxn_rjhdrs.dr_id', DB::raw('MAX(skmst_doctors.dr_name) as dr_name'), DB::raw('COUNT(DISTINCT sktxn_rjhdrs.rj_no) as total_pasien'))
+            ->whereBetween('sktxn_rjhdrs.rj_date', [$start, $end])
+            ->groupBy('sktxn_rjhdrs.dr_id')
             ->orderBy('dr_name')
             ->get();
     }

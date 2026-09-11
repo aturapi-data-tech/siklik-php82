@@ -54,7 +54,7 @@ new class extends Component {
             return;
         }
 
-        $kodeDokter = DB::table('rsmst_doctors')->select('kd_dr_bpjs')->where('dr_id', $drId)->first();
+        $kodeDokter = DB::table('skmst_doctors')->select('kd_dr_bpjs')->where('dr_id', $drId)->first();
 
         if (!$kodeDokter || !$kodeDokter->kd_dr_bpjs) {
             $this->dispatch('toast', type: 'error', message: 'Dokter tidak memiliki hak akses untuk I-Care.');

@@ -121,7 +121,7 @@ new class extends Component {
 
         $this->validate(
             [
-                'formEntryJasaMedis.jasaMedisId' => 'bail|required|exists:rsmst_actparamedics,pact_id',
+                'formEntryJasaMedis.jasaMedisId' => 'bail|required|exists:skmst_actparamedics,pact_id',
                 'formEntryJasaMedis.jasaMedisDesc' => 'bail|required',
                 'formEntryJasaMedis.jasaMedisPrice' => 'bail|required|numeric',
             ],
@@ -140,9 +140,9 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Insert ke tabel transaksi
-                $lastInserted = DB::table('rstxn_rjactparams')->select(DB::raw('nvl(max(pact_dtl)+1,1) as pact_dtl_max'))->first();
+                $lastInserted = DB::table('sktxn_rjactparams')->select(DB::raw('nvl(max(pact_dtl)+1,1) as pact_dtl_max'))->first();
 
-                DB::table('rstxn_rjactparams')->insert([
+                DB::table('sktxn_rjactparams')->insert([
                     'pact_dtl' => $lastInserted->pact_dtl_max,
                     'rj_no' => $this->rjNo,
                     'pact_id' => $this->formEntryJasaMedis['jasaMedisId'],
@@ -204,7 +204,7 @@ new class extends Component {
                 $this->removepaketObatJasaMedis($rjpactDtl);
 
                 // 3. Hapus dari tabel transaksi
-                DB::table('rstxn_rjactparams')->where('pact_dtl', $rjpactDtl)->delete();
+                DB::table('sktxn_rjactparams')->where('pact_dtl', $rjpactDtl)->delete();
 
                 // 4. Hapus dari array lokal
                 $this->dataDaftarPoliRJ['JasaMedis'] = collect($this->dataDaftarPoliRJ['JasaMedis'])->where('rjpactDtl', '!=', $rjpactDtl)->values()->toArray();
@@ -233,7 +233,7 @@ new class extends Component {
      =============================== */
     private function paketLainLainJasaMedis(string $pactId, int $rjNo, int $pactDtl): void
     {
-        $items = DB::table('rsmst_actparothers')->select('other_id', 'acto_price')->where('pact_id', $pactId)->orderBy('pact_id')->get();
+        $items = DB::table('skmst_actparothers')->select('other_id', 'acto_price')->where('pact_id', $pactId)->orderBy('pact_id')->get();
 
         foreach ($items as $item) {
             $this->insertLainLain($pactId, $rjNo, $pactDtl, $item->other_id, 'Paket JM', $item->acto_price);
@@ -252,7 +252,7 @@ new class extends Component {
                 'rjNo' => $rjNo,
             ],
             [
-                'LainLainId' => 'bail|required|exists:rsmst_others,other_id',
+                'LainLainId' => 'bail|required|exists:skmst_others,other_id',
                 'LainLainDesc' => 'bail|required',
                 'LainLainPrice' => 'bail|required|numeric',
                 'pactId' => 'bail|required',
@@ -265,9 +265,9 @@ new class extends Component {
             throw new \RuntimeException('Validasi paket lain-lain gagal: ' . $validator->errors()->first());
         }
 
-        $last = DB::table('rstxn_rjothers')->select(DB::raw('nvl(max(rjo_dtl)+1,1) as rjo_dtl_max'))->first();
+        $last = DB::table('sktxn_rjothers')->select(DB::raw('nvl(max(rjo_dtl)+1,1) as rjo_dtl_max'))->first();
 
-        DB::table('rstxn_rjothers')->insert([
+        DB::table('sktxn_rjothers')->insert([
             'rjo_dtl' => $last->rjo_dtl_max,
             'pact_dtl' => $pactDtl,
             'rj_no' => $rjNo,
@@ -287,10 +287,10 @@ new class extends Component {
 
     private function removepaketLainLainJasaMedis(int $rjpactDtl): void
     {
-        $items = DB::table('rstxn_rjothers')->select('rjo_dtl')->where('pact_dtl', $rjpactDtl)->get();
+        $items = DB::table('sktxn_rjothers')->select('rjo_dtl')->where('pact_dtl', $rjpactDtl)->get();
 
         foreach ($items as $item) {
-            DB::table('rstxn_rjothers')->where('rjo_dtl', $item->rjo_dtl)->delete();
+            DB::table('sktxn_rjothers')->where('rjo_dtl', $item->rjo_dtl)->delete();
 
             $this->dataDaftarPoliRJ['LainLain'] = collect($this->dataDaftarPoliRJ['LainLain'] ?? [])
                 ->where('rjotherDtl', '!=', $item->rjo_dtl)
@@ -305,7 +305,7 @@ new class extends Component {
      =============================== */
     private function paketObatJasaMedis(string $pactId, int $rjNo, int $pactDtl): void
     {
-        $items = DB::table('rsmst_actparproducts')->join('tkmst_products', 'tkmst_products.product_id', 'rsmst_actparproducts.product_id')->select('tkmst_products.product_id', 'tkmst_products.product_name', 'tkmst_products.sales_price', 'rsmst_actparproducts.actprod_qty')->where('pact_id', $pactId)->orderBy('pact_id')->get();
+        $items = DB::table('skmst_actparproducts')->join('skmst_products', 'skmst_products.product_id', 'skmst_actparproducts.product_id')->select('skmst_products.product_id', 'skmst_products.product_name', 'skmst_products.sales_price', 'skmst_actparproducts.actprod_qty')->where('pact_id', $pactId)->orderBy('pact_id')->get();
 
         foreach ($items as $item) {
             $this->insertObat($pactId, $rjNo, $pactDtl, $item->product_id, 'Paket JM ' . $item->product_name, $item->sales_price, $item->actprod_qty);
@@ -325,7 +325,7 @@ new class extends Component {
                 'rjNo' => $rjNo,
             ],
             [
-                'productId' => 'bail|required|exists:tkmst_products,product_id',
+                'productId' => 'bail|required|exists:skmst_products,product_id',
                 'productName' => 'bail|required',
                 'qty' => 'bail|required|numeric|min:1',
                 'productPrice' => 'bail|required|numeric',
@@ -339,9 +339,9 @@ new class extends Component {
             throw new \RuntimeException('Validasi paket obat gagal: ' . $validator->errors()->first());
         }
 
-        $last = DB::table('rstxn_rjobats')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
+        $last = DB::table('sktxn_rjobats')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
 
-        DB::table('rstxn_rjobats')->insert([
+        DB::table('sktxn_rjobats')->insert([
             'rjobat_dtl' => $last->rjobat_dtl_max,
             'pact_dtl' => $pactDtl,
             'rj_no' => $rjNo,
@@ -359,10 +359,10 @@ new class extends Component {
 
     private function removepaketObatJasaMedis(int $rjpactDtl): void
     {
-        $items = DB::table('rstxn_rjobats')->select('rjobat_dtl')->where('pact_dtl', $rjpactDtl)->get();
+        $items = DB::table('sktxn_rjobats')->select('rjobat_dtl')->where('pact_dtl', $rjpactDtl)->get();
 
         foreach ($items as $item) {
-            DB::table('rstxn_rjobats')->where('rjobat_dtl', $item->rjobat_dtl)->delete();
+            DB::table('sktxn_rjobats')->where('rjobat_dtl', $item->rjobat_dtl)->delete();
         }
     }
 

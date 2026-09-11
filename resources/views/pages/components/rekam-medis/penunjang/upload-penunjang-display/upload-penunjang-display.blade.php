@@ -68,7 +68,7 @@ new class extends Component {
             return collect();
         }
 
-        return DB::table('rstxn_rjhdrs as rj')->join('rsview_rjkasir as v', 'v.rj_no', '=', 'rj.rj_no')->where('v.reg_no', $this->regNo)->whereNotNull('rj.datadaftarpolirj_json')->select(DB::raw('DISTINCT EXTRACT(YEAR FROM rj.rj_date) as tahun'))->orderByDesc('tahun')->pluck('tahun');
+        return DB::table('sktxn_rjhdrs as rj')->join('skview_rjkasir as v', 'v.rj_no', '=', 'rj.rj_no')->where('v.reg_no', $this->regNo)->whereNotNull('rj.datadaftarpolirj_json')->select(DB::raw('DISTINCT EXTRACT(YEAR FROM rj.rj_date) as tahun'))->orderByDesc('tahun')->pluck('tahun');
     }
 
     /* =======================
@@ -91,8 +91,8 @@ new class extends Component {
             return [];
         }
 
-        $rows = DB::table('rstxn_rjhdrs as rj')
-            ->join('rsview_rjkasir as v', 'v.rj_no', '=', 'rj.rj_no')
+        $rows = DB::table('sktxn_rjhdrs as rj')
+            ->join('skview_rjkasir as v', 'v.rj_no', '=', 'rj.rj_no')
             ->where('v.reg_no', $this->regNo)
             ->whereNotNull('rj.datadaftarpolirj_json')
             ->select(['rj.rj_no', DB::raw("TO_CHAR(rj.rj_date, 'dd/mm/yyyy hh24:mi:ss') as rj_date"), 'v.reg_name', 'v.poli_desc', 'v.dr_name', 'rj.datadaftarpolirj_json'])

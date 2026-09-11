@@ -11,20 +11,20 @@ use Illuminate\Support\Facades\DB;
  *
  * Slim-port dari sirus-php82 PendapatanRsTrait, dibuang komponen UGD/RI/OK/kamar/visite.
  * Komponen pendapatan:
- *   RJ (rstxn_rjhdrs, rj_status='L', tanggal rj_date):
- *     - Jasa Dokter RJ       rstxn_rjaccdocs.accdoc_price
- *     - Jasa Karyawan        rstxn_rjactemps.acte_price
- *     - Jasa Paramedis       rstxn_rjactparams.pact_price
- *     - Obat RJ              rstxn_rjobats   SUM(qty * price)
- *     - Obat Racikan RJ      rstxn_rjobatracikans SUM(qty * price)  (NVL → 0 bila price NULL)
- *     - Laborat              rstxn_rjlabs.lab_price
- *     - Radiologi            rstxn_rjrads.rad_price
- *     - Lain-lain            rstxn_rjothers.other_price
- *     - Admin RS / RJ / Poli rstxn_rjhdrs.rs_admin + rj_admin + poli_price
- *   Apotek (tktxn_slshdrs, tanggal sls_date):
- *     - Penjualan Bebas      tktxn_slsdtls SUM(qty * sales_price - NVL(dtl_diskon,0))
+ *   RJ (sktxn_rjhdrs, rj_status='L', tanggal rj_date):
+ *     - Jasa Dokter RJ       sktxn_rjaccdocs.accdoc_price
+ *     - Jasa Karyawan        sktxn_rjactemps.acte_price
+ *     - Jasa Paramedis       sktxn_rjactparams.pact_price
+ *     - Obat RJ              sktxn_rjobats   SUM(qty * price)
+ *     - Obat Racikan RJ      sktxn_rjobatracikans SUM(qty * price)  (NVL → 0 bila price NULL)
+ *     - Laborat              sktxn_rjlabs.lab_price
+ *     - Radiologi            sktxn_rjrads.rad_price
+ *     - Lain-lain            sktxn_rjothers.other_price
+ *     - Admin RS / RJ / Poli sktxn_rjhdrs.rs_admin + rj_admin + poli_price
+ *   Apotek (sktxn_slshdrs, tanggal sls_date):
+ *     - Penjualan Bebas      sktxn_slsdtls SUM(qty * sales_price - NVL(dtl_diskon,0))
  *
- * Catatan klaim: split BPJS vs UMUM via rsmst_klaimtypes.klaim_status. Penjualan bebas
+ * Catatan klaim: split BPJS vs UMUM via skmst_klaimtypes.klaim_status. Penjualan bebas
  * apotek selalu masuk kategori UMUM (tidak ada klaim BPJS untuk obat bebas).
  */
 trait PendapatanKlinikTrait
@@ -73,16 +73,16 @@ trait PendapatanKlinikTrait
                       + NVL(obt.v,0)  + NVL(rac.v,0)  + NVL(lab.v,0)
                       + NVL(rad.v,0)  + NVL(oth.v,0)";
 
-        return DB::table('rstxn_rjhdrs as h')
-            ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
-            ->leftJoinSub(DB::table('rstxn_rjactemps')->select('rj_no', DB::raw('NVL(SUM(acte_price),0) as v'))->groupBy('rj_no'),         'acte', 'acte.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjactparams')->select('rj_no', DB::raw('NVL(SUM(pact_price),0) as v'))->groupBy('rj_no'),       'actp', 'actp.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjaccdocs')->select('rj_no', DB::raw('NVL(SUM(accdoc_price),0) as v'))->groupBy('rj_no'),       'actd', 'actd.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjobats')->select('rj_no', DB::raw('NVL(SUM(qty * price),0) as v'))->groupBy('rj_no'),          'obt',  'obt.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjobatracikans')->select('rj_no', DB::raw('NVL(SUM(NVL(qty,0) * NVL(price,0)),0) as v'))->groupBy('rj_no'), 'rac', 'rac.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjlabs')->select('rj_no', DB::raw('NVL(SUM(lab_price),0) as v'))->groupBy('rj_no'),             'lab',  'lab.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjrads')->select('rj_no', DB::raw('NVL(SUM(rad_price),0) as v'))->groupBy('rj_no'),             'rad',  'rad.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjothers')->select('rj_no', DB::raw('NVL(SUM(other_price),0) as v'))->groupBy('rj_no'),         'oth',  'oth.rj_no', '=', 'h.rj_no')
+        return DB::table('sktxn_rjhdrs as h')
+            ->leftJoin('skmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
+            ->leftJoinSub(DB::table('sktxn_rjactemps')->select('rj_no', DB::raw('NVL(SUM(acte_price),0) as v'))->groupBy('rj_no'),         'acte', 'acte.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjactparams')->select('rj_no', DB::raw('NVL(SUM(pact_price),0) as v'))->groupBy('rj_no'),       'actp', 'actp.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjaccdocs')->select('rj_no', DB::raw('NVL(SUM(accdoc_price),0) as v'))->groupBy('rj_no'),       'actd', 'actd.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjobats')->select('rj_no', DB::raw('NVL(SUM(qty * price),0) as v'))->groupBy('rj_no'),          'obt',  'obt.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjobatracikans')->select('rj_no', DB::raw('NVL(SUM(NVL(qty,0) * NVL(price,0)),0) as v'))->groupBy('rj_no'), 'rac', 'rac.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjlabs')->select('rj_no', DB::raw('NVL(SUM(lab_price),0) as v'))->groupBy('rj_no'),             'lab',  'lab.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjrads')->select('rj_no', DB::raw('NVL(SUM(rad_price),0) as v'))->groupBy('rj_no'),             'rad',  'rad.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjothers')->select('rj_no', DB::raw('NVL(SUM(other_price),0) as v'))->groupBy('rj_no'),         'oth',  'oth.rj_no', '=', 'h.rj_no')
             ->where('h.rj_status', 'L')
             ->whereBetween('h.rj_date', [$start, $end])
             ->selectRaw("{$periodeExpr} as periode,
@@ -105,8 +105,8 @@ trait PendapatanKlinikTrait
 
         $omzetExpr = "NVL(SUM(NVL(d.qty,0) * NVL(d.sales_price,0) - NVL(d.dtl_diskon,0)),0)";
 
-        return DB::table('tktxn_slshdrs as h')
-            ->join('tktxn_slsdtls as d', 'd.sls_no', '=', 'h.sls_no')
+        return DB::table('sktxn_slshdrs as h')
+            ->join('sktxn_slsdtls as d', 'd.sls_no', '=', 'h.sls_no')
             ->where(function ($q) {
                 $q->where('h.sls_status', '!=', 'C')->orWhereNull('h.sls_status');
             })
@@ -162,18 +162,18 @@ trait PendapatanKlinikTrait
                       + NVL(obt.v,0)  + NVL(rac.v,0)  + NVL(lab.v,0)
                       + NVL(rad.v,0)  + NVL(oth.v,0)";
 
-        $rows = DB::table('rstxn_rjhdrs as h')
-            ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
-            ->leftJoin('rsmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
-            ->leftJoin('rsmst_polis as p', 'p.poli_id', '=', 'h.poli_id')
-            ->leftJoinSub(DB::table('rstxn_rjactemps')->select('rj_no', DB::raw('NVL(SUM(acte_price),0) as v'))->groupBy('rj_no'),         'acte', 'acte.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjactparams')->select('rj_no', DB::raw('NVL(SUM(pact_price),0) as v'))->groupBy('rj_no'),       'actp', 'actp.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjaccdocs')->select('rj_no', DB::raw('NVL(SUM(accdoc_price),0) as v'))->groupBy('rj_no'),       'actd', 'actd.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjobats')->select('rj_no', DB::raw('NVL(SUM(qty * price),0) as v'))->groupBy('rj_no'),          'obt',  'obt.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjobatracikans')->select('rj_no', DB::raw('NVL(SUM(NVL(qty,0) * NVL(price,0)),0) as v'))->groupBy('rj_no'), 'rac', 'rac.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjlabs')->select('rj_no', DB::raw('NVL(SUM(lab_price),0) as v'))->groupBy('rj_no'),             'lab',  'lab.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjrads')->select('rj_no', DB::raw('NVL(SUM(rad_price),0) as v'))->groupBy('rj_no'),             'rad',  'rad.rj_no', '=', 'h.rj_no')
-            ->leftJoinSub(DB::table('rstxn_rjothers')->select('rj_no', DB::raw('NVL(SUM(other_price),0) as v'))->groupBy('rj_no'),         'oth',  'oth.rj_no', '=', 'h.rj_no')
+        $rows = DB::table('sktxn_rjhdrs as h')
+            ->leftJoin('skmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
+            ->leftJoin('skmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
+            ->leftJoin('skmst_polis as p', 'p.poli_id', '=', 'h.poli_id')
+            ->leftJoinSub(DB::table('sktxn_rjactemps')->select('rj_no', DB::raw('NVL(SUM(acte_price),0) as v'))->groupBy('rj_no'),         'acte', 'acte.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjactparams')->select('rj_no', DB::raw('NVL(SUM(pact_price),0) as v'))->groupBy('rj_no'),       'actp', 'actp.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjaccdocs')->select('rj_no', DB::raw('NVL(SUM(accdoc_price),0) as v'))->groupBy('rj_no'),       'actd', 'actd.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjobats')->select('rj_no', DB::raw('NVL(SUM(qty * price),0) as v'))->groupBy('rj_no'),          'obt',  'obt.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjobatracikans')->select('rj_no', DB::raw('NVL(SUM(NVL(qty,0) * NVL(price,0)),0) as v'))->groupBy('rj_no'), 'rac', 'rac.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjlabs')->select('rj_no', DB::raw('NVL(SUM(lab_price),0) as v'))->groupBy('rj_no'),             'lab',  'lab.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjrads')->select('rj_no', DB::raw('NVL(SUM(rad_price),0) as v'))->groupBy('rj_no'),             'rad',  'rad.rj_no', '=', 'h.rj_no')
+            ->leftJoinSub(DB::table('sktxn_rjothers')->select('rj_no', DB::raw('NVL(SUM(other_price),0) as v'))->groupBy('rj_no'),         'oth',  'oth.rj_no', '=', 'h.rj_no')
             ->where('h.rj_status', 'L')
             ->whereBetween('h.rj_date', [$start, $end])
             ->selectRaw("h.dr_id as dr_id,

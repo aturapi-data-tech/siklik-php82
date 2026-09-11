@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.agama.openEdit')]
     public function openEdit(int $relId): void
     {
-        $row = DB::table('rsmst_religions')->where('rel_id', $relId)->first();
+        $row = DB::table('skmst_religions')->where('rel_id', $relId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -61,7 +61,7 @@ new class extends Component {
     public function deleteAgama(int $relId): void
     {
         try {
-            $deleted = DB::table('rsmst_religions')->where('rel_id', $relId)->delete();
+            $deleted = DB::table('skmst_religions')->where('rel_id', $relId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data agama tidak ditemukan.');
                 return;
@@ -83,7 +83,7 @@ new class extends Component {
     {
         $rules = [
             'form.rel_id'   => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:99|unique:rsmst_religions,rel_id'
+                ? 'required|integer|min:1|max:99|unique:skmst_religions,rel_id'
                 : 'required|integer',
             'form.rel_desc' => 'required|string|max:15',
         ];
@@ -108,9 +108,9 @@ new class extends Component {
         $payload = ['rel_desc' => mb_strtoupper($this->form['rel_desc'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_religions')->insert(['rel_id' => (int) $this->form['rel_id'], ...$payload]);
+            DB::table('skmst_religions')->insert(['rel_id' => (int) $this->form['rel_id'], ...$payload]);
         } else {
-            DB::table('rsmst_religions')->where('rel_id', $this->originalId)->update($payload);
+            DB::table('skmst_religions')->where('rel_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data agama berhasil disimpan.');

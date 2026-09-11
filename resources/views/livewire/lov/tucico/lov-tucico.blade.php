@@ -1,7 +1,7 @@
 <?php
 
 /**
- * LOV TUCICO — sumber: tkacc_tucicos where active_status='1'.
+ * LOV TUCICO — sumber: skacc_tucicos where active_status='1'.
  *
  * tucico_status = 'CI' (cash in / penerimaan) atau 'CO' (cash out / pengeluaran).
  *
@@ -48,8 +48,8 @@ new class extends Component {
 
     protected function loadSelected(string $id): void
     {
-        $row = DB::table('tkacc_tucicos as t')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
+        $row = DB::table('skacc_tucicos as t')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
             ->select('t.tucico_id', 't.tucico_desc', 't.tucico_status', 't.acc_id', 'a.acc_desc as acc_name')
             ->where('t.tucico_id', $id)->first();
         if ($row) $this->selected = $this->buildPayload($row);
@@ -84,8 +84,8 @@ new class extends Component {
 
     protected function baseQuery(): \Illuminate\Database\Query\Builder
     {
-        $q = DB::table('tkacc_tucicos as t')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
+        $q = DB::table('skacc_tucicos as t')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
             ->select('t.tucico_id', 't.tucico_desc', 't.tucico_status', 't.acc_id', 'a.acc_desc as acc_name')
             ->where('t.active_status', '1');
 

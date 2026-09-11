@@ -70,7 +70,7 @@ new class extends Component {
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('rsmst_others')->select('other_id', 'other_desc', 'other_price', 'active_status')->orderBy('other_desc', 'asc');
+        $queryBuilder = DB::table('skmst_others')->select('other_id', 'other_desc', 'other_price', 'active_status')->orderBy('other_desc', 'asc');
 
         if ($searchKeyword !== '') {
             $uppercaseKeyword = mb_strtoupper($searchKeyword);

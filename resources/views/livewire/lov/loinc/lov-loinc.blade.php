@@ -10,7 +10,7 @@ use App\Http\Traits\SATUSEHAT\LoincTrait;
  *
  * Alur pencarian:
  *   1. User ketik keyword (min 2 karakter)
- *   2. Cari di tabel lokal rsmst_loinc_codes (display + display_id)
+ *   2. Cari di tabel lokal skmst_loinc_codes (display + display_id)
  *   3. Kalau hasil lokal < 5, panggil FHIR server (tx.fhir.org) via LoincTrait
  *   4. Hasil dari FHIR server disimpan ke tabel lokal (cache)
  *   5. Gabungkan hasil lokal + server, tampilkan di dropdown
@@ -54,7 +54,7 @@ new class extends Component {
     {
         if (empty($this->initialLoincCode)) return;
 
-        $row = DB::table('rsmst_loinc_codes')->where('loinc_code', $this->initialLoincCode)->first();
+        $row = DB::table('skmst_loinc_codes')->where('loinc_code', $this->initialLoincCode)->first();
         if ($row) {
             $this->setSelectedFromRow($row);
         }
@@ -67,7 +67,7 @@ new class extends Component {
 
         if (empty($value)) return;
 
-        $row = DB::table('rsmst_loinc_codes')->where('loinc_code', $value)->first();
+        $row = DB::table('skmst_loinc_codes')->where('loinc_code', $value)->first();
         if ($row) {
             $this->setSelectedFromRow($row);
         }
@@ -94,7 +94,7 @@ new class extends Component {
 
         // ═══ Step 1: Cari di tabel lokal ═══
         $upper = mb_strtoupper($keyword);
-        $localRows = DB::table('rsmst_loinc_codes')
+        $localRows = DB::table('skmst_loinc_codes')
             ->where(function ($q) use ($upper) {
                 $q->whereRaw('UPPER(display) LIKE ?', ["%{$upper}%"])
                   ->orWhereRaw('UPPER(display_id) LIKE ?', ["%{$upper}%"])
@@ -140,7 +140,7 @@ new class extends Component {
                 if (empty($code) || !str_contains($system, 'loinc.org') || in_array($code, $existingCodes)) continue;
 
                 // Cache ke DB lokal
-                DB::table('rsmst_loinc_codes')->updateOrInsert(
+                DB::table('skmst_loinc_codes')->updateOrInsert(
                     ['loinc_code' => $code],
                     [
                         'display'    => $display,

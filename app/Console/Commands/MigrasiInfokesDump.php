@@ -56,7 +56,7 @@ class MigrasiInfokesDump extends Command
 
     private function klinik(): array
     {
-        $row = DB::table('dimst_identitases')->select('int_name', 'int_city', 'int_address', 'int_phone1')->first();
+        $row = DB::table('skmst_identitases')->select('int_name', 'int_city', 'int_address', 'int_phone1')->first();
 
         return [
             'nama'   => trim((string) ($row->int_name ?? '')),
@@ -72,14 +72,14 @@ class MigrasiInfokesDump extends Command
      */
     private function pasien(): array
     {
-        return DB::table('rsmst_pasiens as p')
-            ->leftJoin('rsmst_desas as d', 'd.des_id', '=', 'p.des_id')
-            ->leftJoin('rsmst_kecamatans as k', 'k.kec_id', '=', 'p.kec_id')
-            ->leftJoin('rsmst_kabupatens as kb', 'kb.kab_id', '=', 'p.kab_id')
-            ->leftJoin('rsmst_propinsis as pr', 'pr.prop_id', '=', 'p.prop_id')
-            ->leftJoin('rsmst_jobs as j', 'j.job_id', '=', 'p.job_id')
-            ->leftJoin('rsmst_religions as r', 'r.rel_id', '=', 'p.rel_id')
-            ->leftJoin('rsmst_educations as e', 'e.edu_id', '=', 'p.edu_id')
+        return DB::table('skmst_pasiens as p')
+            ->leftJoin('skmst_desas as d', 'd.des_id', '=', 'p.des_id')
+            ->leftJoin('skmst_kecamatans as k', 'k.kec_id', '=', 'p.kec_id')
+            ->leftJoin('skmst_kabupatens as kb', 'kb.kab_id', '=', 'p.kab_id')
+            ->leftJoin('skmst_propinsis as pr', 'pr.prop_id', '=', 'p.prop_id')
+            ->leftJoin('skmst_jobs as j', 'j.job_id', '=', 'p.job_id')
+            ->leftJoin('skmst_religions as r', 'r.rel_id', '=', 'p.rel_id')
+            ->leftJoin('skmst_educations as e', 'e.edu_id', '=', 'p.edu_id')
             ->select([
                 'p.reg_no', 'p.reg_name', 'p.no_kk', 'p.nik_bpjs', 'p.nokartu_bpjs', 'p.sex',
                 'p.birth_place',
@@ -102,10 +102,10 @@ class MigrasiInfokesDump extends Command
     private function tindakan(): array
     {
         $sources = [
-            ['table' => 'rsmst_actparamedics', 'id' => 'pact_id',   'desc' => 'pact_desc',   'price' => 'pact_price',   'kelompok' => 'Tindakan Paramedis'],
-            ['table' => 'rsmst_accdocs',       'id' => 'accdoc_id', 'desc' => 'accdoc_desc', 'price' => 'accdoc_price', 'kelompok' => 'Tindakan Dokter'],
-            ['table' => 'rsmst_actemps',       'id' => 'acte_id',   'desc' => 'acte_desc',   'price' => 'acte_price',   'kelompok' => 'Jasa Karyawan'],
-            ['table' => 'rsmst_others',        'id' => 'other_id',  'desc' => 'other_desc',  'price' => 'other_price',  'kelompok' => 'Administrasi / Lain-lain'],
+            ['table' => 'skmst_actparamedics', 'id' => 'pact_id',   'desc' => 'pact_desc',   'price' => 'pact_price',   'kelompok' => 'Tindakan Paramedis'],
+            ['table' => 'skmst_accdocs',       'id' => 'accdoc_id', 'desc' => 'accdoc_desc', 'price' => 'accdoc_price', 'kelompok' => 'Tindakan Dokter'],
+            ['table' => 'skmst_actemps',       'id' => 'acte_id',   'desc' => 'acte_desc',   'price' => 'acte_price',   'kelompok' => 'Jasa Karyawan'],
+            ['table' => 'skmst_others',        'id' => 'other_id',  'desc' => 'other_desc',  'price' => 'other_price',  'kelompok' => 'Administrasi / Lain-lain'],
         ];
 
         $rows = [];
@@ -140,9 +140,9 @@ class MigrasiInfokesDump extends Command
 
     private function obat(): array
     {
-        $q = DB::table('tkmst_products as p')
-            ->leftJoin('tkmst_categories as c', 'c.cat_id', '=', 'p.cat_id')
-            ->leftJoin('tkmst_uoms as u', 'u.uom_id', '=', 'p.uom_id')
+        $q = DB::table('skmst_products as p')
+            ->leftJoin('skmst_categories as c', 'c.cat_id', '=', 'p.cat_id')
+            ->leftJoin('skmst_uoms as u', 'u.uom_id', '=', 'p.uom_id')
             ->select([
                 'p.product_id', 'p.product_name', 'p.product_type',
                 'p.uom_id', 'u.uom_desc', 'p.cat_id', 'c.cat_desc',

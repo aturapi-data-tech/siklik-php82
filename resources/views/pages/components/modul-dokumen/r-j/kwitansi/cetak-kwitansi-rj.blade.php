@@ -33,8 +33,8 @@ new class extends Component {
                 a.dr_id,
                 a.vno_sep,
                 a.poli_id
-            FROM  rstxn_rjhdrs  a
-            JOIN  rsmst_pasiens b ON b.reg_no = a.reg_no
+            FROM  sktxn_rjhdrs  a
+            JOIN  skmst_pasiens b ON b.reg_no = a.reg_no
             WHERE a.rj_no = :rjno
             ",
             ['rjno' => $rjNo],
@@ -49,7 +49,7 @@ new class extends Component {
         $rincian = DB::select(
             "
             SELECT txn_id, txn_desc, txn_nominal, txn_no
-            FROM   rsview_rjstrs
+            FROM   skview_rjstrs
             WHERE  rj_no       = :rjno
               AND  txn_nominal > 0
             ORDER  BY txn_no
@@ -63,22 +63,22 @@ new class extends Component {
         $grandTotal = max(0, $subtotal - $diskon);
 
         // ── Bayar dari riwayat kasir ──
-        $sudahBayar = (int) DB::table('rstxn_rjcashins')->where('rj_no', $rjNo)->sum('rjc_nominal');
+        $sudahBayar = (int) DB::table('sktxn_rjcashins')->where('rj_no', $rjNo)->sum('rjc_nominal');
 
         // ── Sisa tagihan ──
         $sisa = max(0, $grandTotal - $sudahBayar);
 
-        // ── Nama Kasir dari TKMST_KASIRS via kasir_id di header (siklik) ──
+        // ── Nama Kasir dari SKMST_KASIRS via kasir_id di header (siklik) ──
         $kasirName = null;
         if (!empty($hdr->kasir_id)) {
-            $kasirName = DB::table('tkmst_kasirs')->where('kasir_id', $hdr->kasir_id)->value('kasir_name');
+            $kasirName = DB::table('skmst_kasirs')->where('kasir_id', $hdr->kasir_id)->value('kasir_name');
         }
 
         // ── Data JSON RJ ──
         $dataRJ = $this->findDataRJ($rjNo) ?? [];
 
         // ── Klaim ──
-        $klaimRow = DB::table('rsmst_klaimtypes')
+        $klaimRow = DB::table('skmst_klaimtypes')
             ->where('klaim_id', $hdr->klaim_id ?? '')
             ->select('klaim_desc')
             ->first();
@@ -90,14 +90,14 @@ new class extends Component {
 
         // ── Poli ──
         $poliDesc =
-            DB::table('rsmst_polis')
+            DB::table('skmst_polis')
                 ->where('poli_id', $hdr->poli_id ?? '')
                 ->value('poli_desc') ??
             ($dataRJ['poliName'] ?? '-');
 
         // ── Dokter ──
         $drName =
-            DB::table('rsmst_doctors')
+            DB::table('skmst_doctors')
                 ->where('dr_id', $hdr->dr_id ?? '')
                 ->value('dr_name') ??
             ($hdr->dr_id ?? '-');
@@ -154,7 +154,7 @@ new class extends Component {
             'sisa' => $sisa,
 
             // ── Kasir / cetak ──
-            'kasirName' => $kasirName, // ✅ dari tkmst_kasirs
+            'kasirName' => $kasirName, // ✅ dari skmst_kasirs
             'kasirLog' => $dataRJ['AdministrasiRj'] ?? null,
             'tglCetak' => Carbon::now(env('APP_TIMEZONE'))->translatedFormat('d/m/Y'),
             'jamCetak' => Carbon::now(env('APP_TIMEZONE'))->format('H:i'),

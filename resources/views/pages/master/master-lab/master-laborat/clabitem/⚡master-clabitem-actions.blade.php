@@ -69,7 +69,7 @@ new class extends Component {
     #[On('master.laborat.openEditClabitem')]
     public function openEditClabitem(string $clabitemId, string $clabId, string $productId): void
     {
-        $row = DB::table('lbmst_clabitems')
+        $row = DB::table('skmst_clabitems')
             ->where('clabitem_id', $clabitemId)
             ->where('clab_id', $clabId)
             ->where('product_id', $productId)
@@ -122,7 +122,7 @@ new class extends Component {
     public function deleteClabitem(string $clabitemId, string $clabId, string $productId): void
     {
         try {
-            $deleted = DB::table('lbmst_clabitems')
+            $deleted = DB::table('skmst_clabitems')
                 ->where('clabitem_id', $clabitemId)
                 ->where('clab_id', $clabId)
                 ->where('product_id', $productId)
@@ -211,14 +211,14 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('lbmst_clabitems')->insert([
+            DB::table('skmst_clabitems')->insert([
                 'clabitem_id' => $this->formClabitem['clabitem_id'],
                 'clab_id'     => $this->formClabitem['clab_id'],
                 'product_id'  => $this->formClabitem['product_id'],
                 ...$payload,
             ]);
         } else {
-            DB::table('lbmst_clabitems')
+            DB::table('skmst_clabitems')
                 ->where('clabitem_id', $this->oldClabitemId)
                 ->where('clab_id', $this->oldClabId)
                 ->where('product_id', $this->oldProductId)

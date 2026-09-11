@@ -39,7 +39,7 @@ new class extends Component {
     #[On('master.klaim.openEdit')]
     public function openEdit(string $klaimId): void
     {
-        $row = DB::table('rsmst_klaimtypes')->where('klaim_id', $klaimId)->first();
+        $row = DB::table('skmst_klaimtypes')->where('klaim_id', $klaimId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -60,13 +60,13 @@ new class extends Component {
     public function deleteKlaim(string $klaimId): void
     {
         try {
-            $isUsed = DB::table('rstxn_rjhdrs')->where('klaim_id', $klaimId)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('klaim_id', $klaimId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Tipe klaim tidak bisa dihapus karena masih dipakai pada transaksi rawat jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_klaimtypes')->where('klaim_id', $klaimId)->delete();
+            $deleted = DB::table('skmst_klaimtypes')->where('klaim_id', $klaimId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data tipe klaim tidak ditemukan.');
                 return;
@@ -87,7 +87,7 @@ new class extends Component {
     {
         $rules = [
             'form.klaim_id'     => $this->formMode === 'create'
-                ? 'required|string|max:5|regex:/^[A-Z0-9]+$/|unique:rsmst_klaimtypes,klaim_id'
+                ? 'required|string|max:5|regex:/^[A-Z0-9]+$/|unique:skmst_klaimtypes,klaim_id'
                 : 'required|string',
             'form.klaim_desc'   => 'required|string|max:50',
             'form.klaim_status' => 'required|string|max:15',
@@ -117,12 +117,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_klaimtypes')->insert([
+            DB::table('skmst_klaimtypes')->insert([
                 'klaim_id' => mb_strtoupper($this->form['klaim_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_klaimtypes')->where('klaim_id', $this->originalId)->update($payload);
+            DB::table('skmst_klaimtypes')->where('klaim_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data tipe klaim berhasil disimpan.');

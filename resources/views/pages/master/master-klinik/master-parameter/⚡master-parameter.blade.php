@@ -46,7 +46,7 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('rsmst_parameters')
+        $q = DB::table('skmst_parameters')
             ->select('par_id', 'par_desc', 'par_value')
             ->orderBy('par_id');
 

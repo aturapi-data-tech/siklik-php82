@@ -12,11 +12,11 @@
  *   - List nota non-medis dengan rcv_status='H' (hutang)
  *   - Centang nota mana yg akan dilunasi via toggle (check_boxstatus='1')
  *   - Klik "Proses Pembayaran" → modal:
- *       * 1x INSERT TKTXN_CASHOUTHDRNONS (master cashout)
+ *       * 1x INSERT SKTXN_CASHOUTHDRNONS (master cashout)
  *       * Per rcv yg dicentang (urut vcount):
- *           - INSERT TKTXN_RCVPAYMENTNONS
- *           - INSERT TKTXN_CASHOUTDTLNONS
- *           - UPDATE TKTXN_RCVHDRNONS rcv_status='L' (kalau lunas penuh)
+ *           - INSERT SKTXN_RCVPAYMENTNONS
+ *           - INSERT SKTXN_CASHOUTDTLNONS
+ *           - UPDATE SKTXN_RCVHDRNONS rcv_status='L' (kalau lunas penuh)
  */
 
 use Livewire\Component;
@@ -56,7 +56,7 @@ new class extends Component {
     {
         if (!$this->suppId) return collect();
 
-        $headers = DB::table('tktxn_rcvhdrnons')
+        $headers = DB::table('sktxn_rcvhdrnons')
             ->select([
                 'rcv_no',
                 'supp_id',
@@ -85,7 +85,7 @@ new class extends Component {
         $rcvNos = $headers->pluck('rcv_no')->all();
 
         // Total per rcv (sum detail dgn diskon kaskade)
-        $totalDetailMap = DB::table('tktxn_rcvdtlnons')
+        $totalDetailMap = DB::table('sktxn_rcvdtlnons')
             ->select('rcv_no', DB::raw("
                 NVL(SUM(
                     (NVL(qty,0)*NVL(cost_price,0))
@@ -102,7 +102,7 @@ new class extends Component {
             ->pluck('total_detail', 'rcv_no');
 
         // Total titipan (rcvpaymentnons) per rcv
-        $titipanMap = DB::table('tktxn_rcvpaymentnons')
+        $titipanMap = DB::table('sktxn_rcvpaymentnons')
             ->select('rcv_no', DB::raw('NVL(SUM(rcvp_value),0) as titipan'))
             ->whereIn('rcv_no', $rcvNos)
             ->groupBy('rcv_no')
@@ -141,7 +141,7 @@ new class extends Component {
 
         // Auto-finalize: nota dgn sisa ≤ 0 di-promote ke 'L' & dikeluarkan dari list
         if (!empty($autoFinalize)) {
-            DB::table('tktxn_rcvhdrnons')
+            DB::table('sktxn_rcvhdrnons')
                 ->whereIn('rcv_no', $autoFinalize)
                 ->update([
                     'rcv_status'      => 'L',
@@ -161,7 +161,7 @@ new class extends Component {
      */
     public function toggleCheckBox(int $rcvNo): void
     {
-        $row = DB::table('tktxn_rcvhdrnons')
+        $row = DB::table('sktxn_rcvhdrnons')
             ->where('rcv_no', $rcvNo)
             ->where('supp_id', $this->suppId)
             ->where('rcv_status', 'H')
@@ -176,18 +176,18 @@ new class extends Component {
 
         if (!$isCurrentlyChecked) {
             // ON → vcount = max(vcount)+1 di antara yg dichecklist utk supplier ini
-            $nextVcount = (int) DB::table('tktxn_rcvhdrnons')
+            $nextVcount = (int) DB::table('sktxn_rcvhdrnons')
                 ->where('supp_id', $this->suppId)
                 ->where('check_boxstatus', '1')
                 ->max('vcount');
             $nextVcount = $nextVcount + 1;
 
-            DB::table('tktxn_rcvhdrnons')
+            DB::table('sktxn_rcvhdrnons')
                 ->where('rcv_no', $rcvNo)
                 ->update(['check_boxstatus' => '1', 'vcount' => $nextVcount]);
         } else {
             // OFF → reset
-            DB::table('tktxn_rcvhdrnons')
+            DB::table('sktxn_rcvhdrnons')
                 ->where('rcv_no', $rcvNo)
                 ->update(['check_boxstatus' => '0', 'vcount' => null]);
         }
@@ -208,13 +208,13 @@ new class extends Component {
 
         if ($allChecked) {
             // Reset semua
-            DB::table('tktxn_rcvhdrnons')
+            DB::table('sktxn_rcvhdrnons')
                 ->where('supp_id', $this->suppId)
                 ->where('rcv_status', 'H')
                 ->update(['check_boxstatus' => '0', 'vcount' => null]);
         } else {
             // Set semua, vcount sesuai urut tanggal beli
-            $rcvs = DB::table('tktxn_rcvhdrnons')
+            $rcvs = DB::table('sktxn_rcvhdrnons')
                 ->select('rcv_no')
                 ->where('supp_id', $this->suppId)
                 ->where('rcv_status', 'H')
@@ -225,7 +225,7 @@ new class extends Component {
             DB::transaction(function () use ($rcvs) {
                 $i = 1;
                 foreach ($rcvs as $rcvNo) {
-                    DB::table('tktxn_rcvhdrnons')
+                    DB::table('sktxn_rcvhdrnons')
                         ->where('rcv_no', $rcvNo)
                         ->update(['check_boxstatus' => '1', 'vcount' => $i++]);
                 }

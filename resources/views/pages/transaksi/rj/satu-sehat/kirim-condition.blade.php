@@ -103,7 +103,7 @@ new class extends Component {
     private function getPatientIHS(string $regNo): string
     {
         if (empty($regNo)) return '';
-        return (string) (DB::table('rsmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '');
+        return (string) (DB::table('skmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '');
     }
 
     private function saveResult(string $rjNo, array $ss): void

@@ -23,7 +23,7 @@ class ImmstContentSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('immst_contents')->updateOrInsert(['cont_id' => $row['cont_id']], $row);
+            DB::table('skmst_contents')->updateOrInsert(['cont_id' => $row['cont_id']], $row);
         }
     }
 }

@@ -428,7 +428,7 @@ new class extends Component {
 
                                             {{-- "Kelola Kas" per-user dihapus untuk siklik:
                                                  mapping kas dilakukan di master Cara Bayar
-                                                 (TKACC_CARABAYARS) — bukan per user. --}}
+                                                 (SKACC_CARABAYARS) — bukan per user. --}}
 
                                             {{-- ✅ Hapus: x-confirm-button variant="danger" (sama seperti master-poli) --}}
                                             <x-confirm-button variant="danger" :action="'requestDelete(' . $row->id . ')'" title="Hapus User"

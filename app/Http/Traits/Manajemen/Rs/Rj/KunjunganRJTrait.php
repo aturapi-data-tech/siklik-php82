@@ -25,8 +25,8 @@ trait KunjunganRJTrait
      */
     protected function buildKunjunganRJAggregate($start, $end, string $groupSql)
     {
-        return DB::table('rstxn_rjhdrs as h')
-            ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
+        return DB::table('sktxn_rjhdrs as h')
+            ->leftJoin('skmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
             ->select([
                 DB::raw("{$groupSql} as periode"),
                 DB::raw("COUNT(DISTINCT h.rj_no) as total"),
@@ -52,7 +52,7 @@ trait KunjunganRJTrait
      */
     protected function pasienUnikGlobalRJ($start, $end): int
     {
-        return DB::table('rstxn_rjhdrs')
+        return DB::table('sktxn_rjhdrs')
             ->whereBetween('rj_date', [$start, $end])
             ->distinct()
             ->count('reg_no');
@@ -63,8 +63,8 @@ trait KunjunganRJTrait
      */
     protected function poliBreakdownRJ($start, $end)
     {
-        return DB::table('rstxn_rjhdrs as h')
-            ->leftJoin('rsmst_polis as p', 'p.poli_id', '=', 'h.poli_id')
+        return DB::table('sktxn_rjhdrs as h')
+            ->leftJoin('skmst_polis as p', 'p.poli_id', '=', 'h.poli_id')
             ->select([
                 'h.poli_id',
                 DB::raw('MAX(p.poli_desc) as poli_desc'),

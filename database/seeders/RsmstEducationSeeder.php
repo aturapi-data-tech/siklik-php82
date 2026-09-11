@@ -21,7 +21,7 @@ class RsmstEducationSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_educations')->updateOrInsert(
+            DB::table('skmst_educations')->updateOrInsert(
                 ['edu_id' => $row['edu_id']],
                 ['edu_desc' => $row['edu_desc']]
             );

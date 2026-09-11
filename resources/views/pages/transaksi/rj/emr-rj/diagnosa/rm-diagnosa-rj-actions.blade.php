@@ -174,17 +174,17 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Get next detail number
-                $lastInserted = DB::table('rstxn_rjdtls')->select(DB::raw('nvl(max(rjdtl_dtl)+1,1) as rjdtl_dtl_max'))->first();
+                $lastInserted = DB::table('sktxn_rjdtls')->select(DB::raw('nvl(max(rjdtl_dtl)+1,1) as rjdtl_dtl_max'))->first();
 
                 // 3. Insert ke tabel transaksi
-                DB::table('rstxn_rjdtls')->insert([
+                DB::table('sktxn_rjdtls')->insert([
                     'rjdtl_dtl' => $lastInserted->rjdtl_dtl_max,
                     'rj_no' => $this->rjNo,
                     'diag_id' => $diagnosaId,
                 ]);
 
                 // 4. Update status diagnosa di header
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update(['rj_diagnosa' => 'D']);
 
@@ -237,7 +237,7 @@ new class extends Component {
                 $removedLabel = $removed ? trim(($removed['icdX'] ?? '') . ' ' . ($removed['diagDesc'] ?? '')) : ('#' . $rjDtlDtl);
 
                 // 2. Hapus dari tabel transaksi
-                DB::table('rstxn_rjdtls')->where('rjdtl_dtl', $rjDtlDtl)->delete();
+                DB::table('sktxn_rjdtls')->where('rjdtl_dtl', $rjDtlDtl)->delete();
 
                 // 3. Hapus dari array lokal
                 $this->dataDaftarPoliRJ['diagnosis'] = collect($this->dataDaftarPoliRJ['diagnosis'] ?? [])

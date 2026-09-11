@@ -65,11 +65,11 @@ new class extends Component {
      =============================== */
     private function findData(int $rjNo): void
     {
-        $this->rjObat = DB::table('rstxn_rjobats')
-            ->join('tkmst_products', 'tkmst_products.product_id', 'rstxn_rjobats.product_id')
-            ->select('rstxn_rjobats.rjobat_dtl', 'rstxn_rjobats.product_id', 'tkmst_products.product_name', 'rstxn_rjobats.qty', 'rstxn_rjobats.price', 'rstxn_rjobats.rj_carapakai', 'rstxn_rjobats.rj_kapsul', 'rstxn_rjobats.rj_takar', 'rstxn_rjobats.rj_ket', 'rstxn_rjobats.exp_date', 'rstxn_rjobats.catatan_khusus', 'rstxn_rjobats.etiket_status')
+        $this->rjObat = DB::table('sktxn_rjobats')
+            ->join('skmst_products', 'skmst_products.product_id', 'sktxn_rjobats.product_id')
+            ->select('sktxn_rjobats.rjobat_dtl', 'sktxn_rjobats.product_id', 'skmst_products.product_name', 'sktxn_rjobats.qty', 'sktxn_rjobats.price', 'sktxn_rjobats.rj_carapakai', 'sktxn_rjobats.rj_kapsul', 'sktxn_rjobats.rj_takar', 'sktxn_rjobats.rj_ket', 'sktxn_rjobats.exp_date', 'sktxn_rjobats.catatan_khusus', 'sktxn_rjobats.etiket_status')
             ->where('rj_no', $rjNo)
-            ->orderBy('rstxn_rjobats.rjobat_dtl')
+            ->orderBy('sktxn_rjobats.rjobat_dtl')
             ->get()
             ->map(
                 fn($r) => [
@@ -120,7 +120,7 @@ new class extends Component {
             return;
         }
 
-        $rjDate = DB::table('rstxn_rjhdrs')->where('rj_no', $this->rjNo)->value('rj_date');
+        $rjDate = DB::table('sktxn_rjhdrs')->where('rj_no', $this->rjNo)->value('rj_date');
 
         $this->formEntryObat['productId'] = $payload['product_id'];
         $this->formEntryObat['productName'] = $payload['product_name'];
@@ -142,7 +142,7 @@ new class extends Component {
 
         $this->validate(
             [
-                'formEntryObat.productId' => 'bail|required|exists:tkmst_products,product_id',
+                'formEntryObat.productId' => 'bail|required|exists:skmst_products,product_id',
                 'formEntryObat.price' => 'bail|required|numeric|min:0',
                 'formEntryObat.qty' => 'bail|required|numeric|min:1',
                 'formEntryObat.carapakai' => 'bail|required|numeric|min:1',
@@ -172,11 +172,11 @@ new class extends Component {
                 // Lock row RJ — cegah race condition sequence rjobat_dtl
                 $this->lockRJRow($this->rjNo);
 
-                $last = DB::table('rstxn_rjobats')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
+                $last = DB::table('sktxn_rjobats')->select(DB::raw('nvl(max(rjobat_dtl)+1,1) as rjobat_dtl_max'))->first();
 
                 $expDateFormatted = Carbon::parse($this->formEntryObat['expDate'])->format('Y-m-d H:i:s');
 
-                DB::table('rstxn_rjobats')->insert([
+                DB::table('sktxn_rjobats')->insert([
                     'rjobat_dtl' => $last->rjobat_dtl_max,
                     'rj_no' => $this->rjNo,
                     'product_id' => $this->formEntryObat['productId'],
@@ -276,7 +276,7 @@ new class extends Component {
 
                 $expDateFormatted = Carbon::parse($this->editRow['expDate'])->format('Y-m-d H:i:s');
 
-                DB::table('rstxn_rjobats')
+                DB::table('sktxn_rjobats')
                     ->where('rjobat_dtl', $this->editingDtl)
                     ->update([
                         'qty' => $this->editRow['qty'],
@@ -335,7 +335,7 @@ new class extends Component {
                 // Lock row RJ dulu
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjobats')->where('rjobat_dtl', $rjobatDtl)->delete();
+                DB::table('sktxn_rjobats')->where('rjobat_dtl', $rjobatDtl)->delete();
 
                 $this->rjObat = collect($this->rjObat)->where('rjobatDtl', '!=', $rjobatDtl)->values()->toArray();
 

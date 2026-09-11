@@ -39,7 +39,7 @@ new class extends Component {
     #[On('master.uom.openEdit')]
     public function openEdit(string $uomId): void
     {
-        $row = DB::table('tkmst_uoms')->where('uom_id', $uomId)->first();
+        $row = DB::table('skmst_uoms')->where('uom_id', $uomId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -59,9 +59,9 @@ new class extends Component {
     #[On('master.uom.toggleActive')]
     public function toggleActive(string $uomId): void
     {
-        $cur = (string) DB::table('tkmst_uoms')->where('uom_id', $uomId)->value('active_status');
+        $cur = (string) DB::table('skmst_uoms')->where('uom_id', $uomId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_uoms')->where('uom_id', $uomId)->update(['active_status' => $next]);
+        DB::table('skmst_uoms')->where('uom_id', $uomId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status UoM → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.uom.saved');
@@ -71,13 +71,13 @@ new class extends Component {
     public function deleteUom(string $uomId): void
     {
         try {
-            $isUsed = DB::table('tkmst_products')->where('uom_id', $uomId)->exists();
+            $isUsed = DB::table('skmst_products')->where('uom_id', $uomId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Satuan tidak bisa dihapus karena masih dipakai pada data produk.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_uoms')->where('uom_id', $uomId)->delete();
+            $deleted = DB::table('skmst_uoms')->where('uom_id', $uomId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data satuan tidak ditemukan.');
                 return;
@@ -98,7 +98,7 @@ new class extends Component {
     {
         $rules = [
             'form.uom_id'        => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkmst_uoms,uom_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skmst_uoms,uom_id'
                 : 'required|string',
             'form.uom_desc'      => 'required|string|max:100',
             'form.active_status' => 'required|in:0,1',
@@ -128,12 +128,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_uoms')->insert([
+            DB::table('skmst_uoms')->insert([
                 'uom_id' => mb_strtoupper($this->form['uom_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_uoms')->where('uom_id', $this->originalId)->update($payload);
+            DB::table('skmst_uoms')->where('uom_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data uom berhasil disimpan.');

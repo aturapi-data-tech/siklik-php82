@@ -16,7 +16,7 @@ new class extends Component {
     // ── Header ──
     public ?int $rcvNo = null;
     public ?string $rcvDate = null;
-    public ?string $dueDate = null; // jatuh tempo (TKTXN_RCVHDRNONS.due_date)
+    public ?string $dueDate = null; // jatuh tempo (SKTXN_RCVHDRNONS.due_date)
     public ?string $suppId = null;
     public ?string $suppName = null;
     public ?string $rcvDesc = null;
@@ -82,7 +82,7 @@ new class extends Component {
         $this->resetFormFields();
         $this->formMode = 'edit';
 
-        $hdr = DB::table('tktxn_rcvhdrnons')->where('rcv_no', $rcvNo)->first();
+        $hdr = DB::table('sktxn_rcvhdrnons')->where('rcv_no', $rcvNo)->first();
         if (!$hdr) {
             $this->dispatch('toast', type: 'error', message: 'Data tidak ditemukan.');
             return;
@@ -223,7 +223,7 @@ new class extends Component {
     }
 
     /* ══════════════════════════════
-     | CEK HARGA BELI vs MASTER (tkmst_productnons)
+     | CEK HARGA BELI vs MASTER (skmst_productnons)
      ══════════════════════════════ */
     public function cekHargaBeliEntry(): void
     {
@@ -237,7 +237,7 @@ new class extends Component {
 
     private function cekHargaBeli(string $productId, string $productName, int $newPrice): void
     {
-        $masterPrice = (int) (DB::table('tkmst_productnons')->where('product_id', $productId)->value('cost_price') ?? 0);
+        $masterPrice = (int) (DB::table('skmst_productnons')->where('product_id', $productId)->value('cost_price') ?? 0);
 
         if ($newPrice === $masterPrice) {
             return;
@@ -253,11 +253,11 @@ new class extends Component {
         }
 
         // Cek setting auto update
-        $autoUpdate = DB::table('dimst_identitases')->value('rcvupdate_cost_price') ?? '0';
+        $autoUpdate = DB::table('skmst_identitases')->value('rcvupdate_cost_price') ?? '0';
 
         if ($autoUpdate === '1') {
             // Auto update harga di master non-medis
-            DB::table('tkmst_productnons')
+            DB::table('skmst_productnons')
                 ->where('product_id', $productId)
                 ->update(['cost_price' => $newPrice]);
             $this->dispatch('toast', type: 'success', message: "Harga master {$productName} otomatis diupdate.");
@@ -278,7 +278,7 @@ new class extends Component {
             return;
         }
 
-        DB::table('tkmst_productnons')
+        DB::table('skmst_productnons')
             ->where('product_id', $this->pendingPriceUpdate['product_id'])
             ->update(['cost_price' => $this->pendingPriceUpdate['new_price']]);
 
@@ -302,8 +302,8 @@ new class extends Component {
      ══════════════════════════════ */
     private function loadDetailsFromDb(): void
     {
-        $rows = DB::table('tktxn_rcvdtlnons as a')
-            ->leftJoin('tkmst_productnons as b', 'a.product_id', '=', 'b.product_id')
+        $rows = DB::table('sktxn_rcvdtlnons as a')
+            ->leftJoin('skmst_productnons as b', 'a.product_id', '=', 'b.product_id')
             ->where('a.rcv_no', $this->rcvNo)
             ->select(['a.rcv_dtl', 'a.product_id', 'b.product_name', 'a.qty', 'a.cost_price', 'a.dtl_persen', 'a.dtl_diskon', 'a.dtl_persen1', 'a.dtl_diskon1'])
             ->orderBy('a.rcv_dtl')
@@ -426,7 +426,7 @@ new class extends Component {
 
     /* ══════════════════════════════
      | SIMPAN (INSERT HEADER + DETAILS)
-     | STOK NON-MEDIS: tabel tkmst_productnons TIDAK punya trigger legacy
+     | STOK NON-MEDIS: tabel skmst_productnons TIDAK punya trigger legacy
      | (beda dari tabel medis). Maka aplikasi WAJIB meng-update qty_box
      | (single location, tanpa lokasi/transfer) di dalam DB::transaction yang sama:
      |   - create  : increment qty_box per item
@@ -436,7 +436,7 @@ new class extends Component {
     {
         // Guard edit mode: status selain 'A' (Daftar Tunggu) sudah final.
         if ($this->formMode === 'edit' && $this->rcvNo) {
-            $currentStatus = (string) (DB::table('tktxn_rcvhdrnons')->where('rcv_no', $this->rcvNo)->value('rcv_status') ?? '');
+            $currentStatus = (string) (DB::table('sktxn_rcvhdrnons')->where('rcv_no', $this->rcvNo)->value('rcv_status') ?? '');
             if ($currentStatus !== 'A') {
                 $this->dispatch('toast', type: 'error', message: "Status '{$currentStatus}' — transaksi sudah final, tidak bisa diubah. Batalkan dulu untuk mengembalikan ke Daftar Tunggu.");
                 return;
@@ -486,7 +486,7 @@ new class extends Component {
         }
 
         // Supplier name untuk keterangan cashout
-        $suppName = DB::table('tkmst_suppliers')->where('supp_id', $this->suppId)->value('supp_name') ?? ($this->suppName ?? '');
+        $suppName = DB::table('skmst_suppliers')->where('supp_id', $this->suppId)->value('supp_name') ?? ($this->suppName ?? '');
 
         try {
             DB::transaction(function () use ($empId, $bayar, $grandTotal, $rcvStatus, $payDate, $cashoutValue, $suppName) {
@@ -497,10 +497,10 @@ new class extends Component {
 
                 if ($this->formMode === 'create') {
                     // Generate rcv_no = MAX+1 dari tabel header non-medis
-                    $rcvNo = (int) DB::selectOne('SELECT NVL(MAX(rcv_no),0)+1 AS val FROM tktxn_rcvhdrnons')->val;
+                    $rcvNo = (int) DB::selectOne('SELECT NVL(MAX(rcv_no),0)+1 AS val FROM sktxn_rcvhdrnons')->val;
                     $this->rcvNo = $rcvNo;
 
-                    DB::table('tktxn_rcvhdrnons')->insert([
+                    DB::table('sktxn_rcvhdrnons')->insert([
                         'rcv_no' => $rcvNo,
                         'rcv_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
                         'supp_id' => $this->suppId,
@@ -519,7 +519,7 @@ new class extends Component {
 
                     // Insert all details + STOK: increment qty_box per item (no legacy trigger)
                     foreach ($this->details as $dtl) {
-                        DB::table('tktxn_rcvdtlnons')->insert([
+                        DB::table('sktxn_rcvdtlnons')->insert([
                             'rcv_no' => $rcvNo,
                             'rcv_dtl' => DB::raw('rcvdtlnon_seq.nextval'),
                             'product_id' => $dtl['product_id'],
@@ -531,22 +531,22 @@ new class extends Component {
                             'dtl_diskon1' => $dtl['dtl_diskon1'] ?? 0,
                         ]);
 
-                        DB::table('tkmst_productnons')
+                        DB::table('skmst_productnons')
                             ->where('product_id', $dtl['product_id'])
                             ->increment('qty_box', (int) ($dtl['qty'] ?? 0));
                     }
                 } else {
                     // STOK: kembalikan dulu qty lama dari dtl yang akan dihapus (decrement),
                     // sebelum insert dtl baru + increment qty baru (no legacy trigger).
-                    $oldDtls = DB::table('tktxn_rcvdtlnons')->where('rcv_no', $this->rcvNo)->get(['product_id', 'qty']);
+                    $oldDtls = DB::table('sktxn_rcvdtlnons')->where('rcv_no', $this->rcvNo)->get(['product_id', 'qty']);
                     foreach ($oldDtls as $old) {
-                        DB::table('tkmst_productnons')
+                        DB::table('skmst_productnons')
                             ->where('product_id', $old->product_id)
                             ->decrement('qty_box', (int) ($old->qty ?? 0));
                     }
 
                     // Update header
-                    DB::table('tktxn_rcvhdrnons')
+                    DB::table('sktxn_rcvhdrnons')
                         ->where('rcv_no', $this->rcvNo)
                         ->update([
                             'rcv_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
@@ -565,10 +565,10 @@ new class extends Component {
                         ]);
 
                     // Delete old details & re-insert + STOK increment qty baru
-                    DB::table('tktxn_rcvdtlnons')->where('rcv_no', $this->rcvNo)->delete();
+                    DB::table('sktxn_rcvdtlnons')->where('rcv_no', $this->rcvNo)->delete();
 
                     foreach ($this->details as $dtl) {
-                        DB::table('tktxn_rcvdtlnons')->insert([
+                        DB::table('sktxn_rcvdtlnons')->insert([
                             'rcv_no' => $this->rcvNo,
                             'rcv_dtl' => DB::raw('rcvdtlnon_seq.nextval'),
                             'product_id' => $dtl['product_id'],
@@ -580,17 +580,17 @@ new class extends Component {
                             'dtl_diskon1' => $dtl['dtl_diskon1'] ?? 0,
                         ]);
 
-                        DB::table('tkmst_productnons')
+                        DB::table('skmst_productnons')
                             ->where('product_id', $dtl['product_id'])
                             ->increment('qty_box', (int) ($dtl['qty'] ?? 0));
                     }
 
                     // Hapus pembayaran lama (edit mode) supaya tidak double insert
-                    DB::table('tktxn_rcvpaymentnons')->where('rcv_no', $this->rcvNo)->delete();
-                    $oldCashoutNos = DB::table('tktxn_cashoutdtlnons')->where('rcv_no', $this->rcvNo)->pluck('cashout_no')->all();
-                    DB::table('tktxn_cashoutdtlnons')->where('rcv_no', $this->rcvNo)->delete();
+                    DB::table('sktxn_rcvpaymentnons')->where('rcv_no', $this->rcvNo)->delete();
+                    $oldCashoutNos = DB::table('sktxn_cashoutdtlnons')->where('rcv_no', $this->rcvNo)->pluck('cashout_no')->all();
+                    DB::table('sktxn_cashoutdtlnons')->where('rcv_no', $this->rcvNo)->delete();
                     if (!empty($oldCashoutNos)) {
-                        DB::table('tktxn_cashouthdrnons')->whereIn('cashout_no', $oldCashoutNos)->delete();
+                        DB::table('sktxn_cashouthdrnons')->whereIn('cashout_no', $oldCashoutNos)->delete();
                     }
                 }
 
@@ -599,7 +599,7 @@ new class extends Component {
                     $cashoutNo = (int) DB::selectOne('SELECT cashoutnon_seq.nextval AS val FROM dual')->val;
                     $desc = 'Angsuran Awal, Atas Nama :"' . $suppName . '" Nota No "' . $this->rcvNo . '".';
 
-                    DB::table('tktxn_cashouthdrnons')->insert([
+                    DB::table('sktxn_cashouthdrnons')->insert([
                         'cb_id' => $this->cbId,
                         'cashout_no' => $cashoutNo,
                         'cashout_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
@@ -609,13 +609,13 @@ new class extends Component {
                         'supp_id' => $this->suppId,
                     ]);
 
-                    DB::table('tktxn_cashoutdtlnons')->insert([
+                    DB::table('sktxn_cashoutdtlnons')->insert([
                         'cashout_no' => $cashoutNo,
                         'rcv_no' => $this->rcvNo,
                         'cashout_dtl' => DB::raw('codtlnon_seq.nextval'),
                     ]);
 
-                    DB::table('tktxn_rcvpaymentnons')->insert([
+                    DB::table('sktxn_rcvpaymentnons')->insert([
                         'rcvp_no' => DB::raw('rcvpnon_seq.nextval'),
                         'rcv_no' => $this->rcvNo,
                         'rcvp_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
@@ -653,15 +653,15 @@ new class extends Component {
         try {
             DB::transaction(function () use ($rcvNo) {
                 // STOK: kembalikan qty_box sebelum hapus detail.
-                $dtls = DB::table('tktxn_rcvdtlnons')->where('rcv_no', $rcvNo)->get(['product_id', 'qty']);
+                $dtls = DB::table('sktxn_rcvdtlnons')->where('rcv_no', $rcvNo)->get(['product_id', 'qty']);
                 foreach ($dtls as $d) {
-                    DB::table('tkmst_productnons')
+                    DB::table('skmst_productnons')
                         ->where('product_id', $d->product_id)
                         ->decrement('qty_box', (int) ($d->qty ?? 0));
                 }
 
-                DB::table('tktxn_rcvdtlnons')->where('rcv_no', $rcvNo)->delete();
-                DB::table('tktxn_rcvhdrnons')->where('rcv_no', $rcvNo)->delete();
+                DB::table('sktxn_rcvdtlnons')->where('rcv_no', $rcvNo)->delete();
+                DB::table('sktxn_rcvhdrnons')->where('rcv_no', $rcvNo)->delete();
             });
 
             $this->dispatch('toast', type: 'success', message: 'Data penerimaan berhasil dihapus.');
@@ -701,7 +701,7 @@ new class extends Component {
         }
 
         try {
-            $hdr = DB::table('tktxn_rcvhdrnons')->where('rcv_no', $rcvNo)->first();
+            $hdr = DB::table('sktxn_rcvhdrnons')->where('rcv_no', $rcvNo)->first();
             if (!$hdr) {
                 $this->dispatch('toast', type: 'error', message: 'Data transaksi tidak ditemukan.');
                 return;
@@ -717,14 +717,14 @@ new class extends Component {
             if ($status === 'A') {
                 DB::transaction(function () use ($rcvNo) {
                     // STOK: barang dianulir → decrement balik qty_box per item.
-                    $dtls = DB::table('tktxn_rcvdtlnons')->where('rcv_no', $rcvNo)->get(['product_id', 'qty']);
+                    $dtls = DB::table('sktxn_rcvdtlnons')->where('rcv_no', $rcvNo)->get(['product_id', 'qty']);
                     foreach ($dtls as $d) {
-                        DB::table('tkmst_productnons')
+                        DB::table('skmst_productnons')
                             ->where('product_id', $d->product_id)
                             ->decrement('qty_box', (int) ($d->qty ?? 0));
                     }
 
-                    DB::table('tktxn_rcvhdrnons')
+                    DB::table('sktxn_rcvhdrnons')
                         ->where('rcv_no', $rcvNo)
                         ->update(['rcv_status' => 'F']);
                 });
@@ -735,7 +735,7 @@ new class extends Component {
 
             if (in_array($status, ['H', 'L'], true)) {
                 // Cek juga: cashout master dishare dengan rcv lain? Kalau iya, jangan delete cashouthdrnons.
-                $sharedCashout = DB::table('tktxn_cashoutdtlnons as a')->join('tktxn_cashoutdtlnons as b', 'a.cashout_no', '=', 'b.cashout_no')->where('a.rcv_no', $rcvNo)->where('b.rcv_no', '!=', $rcvNo)->exists();
+                $sharedCashout = DB::table('sktxn_cashoutdtlnons as a')->join('sktxn_cashoutdtlnons as b', 'a.cashout_no', '=', 'b.cashout_no')->where('a.rcv_no', $rcvNo)->where('b.rcv_no', '!=', $rcvNo)->exists();
                 if ($sharedCashout) {
                     $this->dispatch('toast', type: 'error', message: 'Cashout pembayaran nota ini dishare dgn nota lain. Hapus dari sisi Pembayaran Hutang dulu.');
                     return;
@@ -743,15 +743,15 @@ new class extends Component {
 
                 // Barang tetap diterima — qty_box TIDAK diubah di sini, hanya pembayaran dirollback.
                 DB::transaction(function () use ($rcvNo) {
-                    DB::table('tktxn_rcvpaymentnons')->where('rcv_no', $rcvNo)->delete();
+                    DB::table('sktxn_rcvpaymentnons')->where('rcv_no', $rcvNo)->delete();
 
-                    $cashoutNos = DB::table('tktxn_cashoutdtlnons')->where('rcv_no', $rcvNo)->pluck('cashout_no')->all();
-                    DB::table('tktxn_cashoutdtlnons')->where('rcv_no', $rcvNo)->delete();
+                    $cashoutNos = DB::table('sktxn_cashoutdtlnons')->where('rcv_no', $rcvNo)->pluck('cashout_no')->all();
+                    DB::table('sktxn_cashoutdtlnons')->where('rcv_no', $rcvNo)->delete();
                     if (!empty($cashoutNos)) {
-                        DB::table('tktxn_cashouthdrnons')->whereIn('cashout_no', $cashoutNos)->delete();
+                        DB::table('sktxn_cashouthdrnons')->whereIn('cashout_no', $cashoutNos)->delete();
                     }
 
-                    DB::table('tktxn_rcvhdrnons')
+                    DB::table('sktxn_rcvhdrnons')
                         ->where('rcv_no', $rcvNo)
                         ->update([
                             'rcv_status' => 'A',
@@ -784,9 +784,9 @@ new class extends Component {
         $this->reset(['rcvDiskon', 'rcvPpn', 'rcvMaterai', 'bayar', 'cbId', 'cbDesc']);
         $this->resetErrorBag('cbId');
 
-        // Auto-fill PPN dari DIMST_IDENTITASES:
+        // Auto-fill PPN dari SKMST_IDENTITASES:
         //   AUTO_PPN_STATUS = '0' → PPN 0%, selain itu → ambil PPN_VALUE master.
-        $idn = DB::table('dimst_identitases')->select('auto_ppn_status', 'ppn_value')->first();
+        $idn = DB::table('skmst_identitases')->select('auto_ppn_status', 'ppn_value')->first();
         if ($idn) {
             $this->rcvPpnStatus = (string) ($idn->auto_ppn_status ?? '1');
             $this->rcvPpn = $this->rcvPpnStatus === '0' ? 0 : (float) ($idn->ppn_value ?? 0);

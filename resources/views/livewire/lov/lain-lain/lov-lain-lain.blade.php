@@ -43,7 +43,7 @@ new class extends Component {
 
     protected function loadSelected(string $otherId): void
     {
-        $row = DB::table('rsmst_others')->select('other_id', 'other_desc', 'other_price')->where('other_id', $otherId)->where('active_status', '1')->first();
+        $row = DB::table('skmst_others')->select('other_id', 'other_desc', 'other_price')->where('other_id', $otherId)->where('active_status', '1')->first();
 
         if ($row) {
             $this->selected = [
@@ -69,7 +69,7 @@ new class extends Component {
 
         // ── Exact match by other_id ──
         if (ctype_alnum($keyword)) {
-            $exact = DB::table('rsmst_others')->select('other_id', 'other_desc', 'other_price')->where('other_id', $keyword)->where('active_status', '1')->first();
+            $exact = DB::table('skmst_others')->select('other_id', 'other_desc', 'other_price')->where('other_id', $keyword)->where('active_status', '1')->first();
 
             if ($exact) {
                 $this->dispatchSelected([
@@ -84,7 +84,7 @@ new class extends Component {
         // ── Partial search ──
         $upper = mb_strtoupper($keyword);
 
-        $rows = DB::table('rsmst_others')
+        $rows = DB::table('skmst_others')
             ->select('other_id', 'other_desc', 'other_price')
             ->where('active_status', '1')
             ->where(function ($q) use ($upper) {

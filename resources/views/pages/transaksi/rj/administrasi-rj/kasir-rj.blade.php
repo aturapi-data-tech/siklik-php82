@@ -24,8 +24,8 @@ new class extends Component {
     public int $sudahBayar = 0;
     public int $rjSisa = 0;
 
-    // ── Input Kasir (siklik: cara bayar dari TKACC_CARABAYARS) ──
-    public ?string $cbId = null;     // cb_id (FK ke tkacc_carabayars)
+    // ── Input Kasir (siklik: cara bayar dari SKACC_CARABAYARS) ──
+    public ?string $cbId = null;     // cb_id (FK ke skacc_carabayars)
     public ?string $cbDesc = null;   // display deskripsi cara bayar
     public ?int $bayar = null;
     public int $kembalian = 0;
@@ -74,7 +74,7 @@ new class extends Component {
             return;
         }
 
-        $hdr = DB::table('rstxn_rjhdrs')->select('rj_status', 'txn_status', 'rj_diskon', 'cb_id')->where('rj_no', $rjNo)->first();
+        $hdr = DB::table('sktxn_rjhdrs')->select('rj_status', 'txn_status', 'rj_diskon', 'cb_id')->where('rj_no', $rjNo)->first();
 
         if (!$hdr) {
             $this->dispatch('toast', type: 'error', message: 'Data transaksi tidak ditemukan.');
@@ -90,7 +90,7 @@ new class extends Component {
 
         if ($hdr->cb_id) {
             $this->cbId = $hdr->cb_id;
-            $this->cbDesc = DB::table('tkacc_carabayars')->where('cb_id', $hdr->cb_id)->value('cb_desc') ?? $hdr->cb_id;
+            $this->cbDesc = DB::table('skacc_carabayars')->where('cb_id', $hdr->cb_id)->value('cb_desc') ?? $hdr->cb_id;
         }
 
         $this->hitungTotal();
@@ -120,7 +120,7 @@ new class extends Component {
     private function recalcSisa(): void
     {
         $this->dspTotalAll = max(0, $this->rjTotal - $this->rjDiskon);
-        $this->sudahBayar = (int) DB::table('rstxn_rjcashins')->where('rj_no', $this->rjNo)->sum('rjc_nominal');
+        $this->sudahBayar = (int) DB::table('sktxn_rjcashins')->where('rj_no', $this->rjNo)->sum('rjc_nominal');
         $this->rjSisa = max(0, $this->dspTotalAll - $this->sudahBayar);
         $this->hitungKembalian();
     }
@@ -151,7 +151,7 @@ new class extends Component {
     protected function rules(): array
     {
         return [
-            'cbId' => ['required', 'string', 'exists:tkacc_carabayars,cb_id'],
+            'cbId' => ['required', 'string', 'exists:skacc_carabayars,cb_id'],
             // bayar boleh 0 untuk skenario "hutang penuh" (Dr Piutang Cr Pendapatan).
             // Selisih (rjSisa - bayar) tetap diproses sbg cicilan/hutang oleh logic post.
             'bayar' => ['required', 'integer', 'min:0'],
@@ -211,7 +211,7 @@ new class extends Component {
         $kasirId = auth()->user()->kasir_id ?? null;
         if ($kasirId) {
             // Verify masih aktif di master
-            $valid = DB::table('tkmst_kasirs')
+            $valid = DB::table('skmst_kasirs')
                 ->where('kasir_id', $kasirId)
                 ->where('active_status', '1')
                 ->exists();
@@ -238,19 +238,19 @@ new class extends Component {
                     throw new \RuntimeException('Data sudah diproses oleh user lain.');
                 }
 
-                $rjHdr = DB::table('rstxn_rjhdrs')->where('rj_no', $this->rjNo)->first();
+                $rjHdr = DB::table('sktxn_rjhdrs')->where('rj_no', $this->rjNo)->first();
 
                 // Shift & rjc_date diambil dari WAKTU BAYAR (bukan rj_date).
                 // Use case: pasien pagi periksa, sore bayar — shift ngikut jam bayar.
                 $now = \Carbon\Carbon::now();
-                $shift = DB::table('rstxn_shiftctls')
+                $shift = DB::table('sktxn_shiftctls')
                     ->select('shift')
                     ->whereNotNull('shift_start')
                     ->whereNotNull('shift_end')
                     ->whereRaw('? BETWEEN shift_start AND shift_end', [$now->format('H:i:s')])
                     ->value('shift') ?? ($rjHdr->shift ?? 'A');
 
-                // RSTXN_RJCASHINS schema: rjc_dtl, rj_no, rjc_date, rjc_nominal, rjc_desc,
+                // SKTXN_RJCASHINS schema: rjc_dtl, rj_no, rjc_date, rjc_nominal, rjc_desc,
                 //                          cb_id, kasir_id, shift, g_status.
                 $cashRow = [
                     'rjc_dtl'  => DB::raw('rjcdtl_seq.nextval'),
@@ -265,9 +265,9 @@ new class extends Component {
                 if ($bayar < $dspTotalAll) {
                     // CICILAN / HUTANG PENUH (bayar=0 → cashin tidak di-insert)
                     if ($bayar > 0) {
-                        DB::table('rstxn_rjcashins')->insert(array_merge($cashRow, ['rjc_nominal' => $bayar]));
+                        DB::table('sktxn_rjcashins')->insert(array_merge($cashRow, ['rjc_nominal' => $bayar]));
                     }
-                    DB::table('rstxn_rjhdrs')
+                    DB::table('sktxn_rjhdrs')
                         ->where('rj_no', $this->rjNo)
                         ->update([
                             'txn_status' => 'H',
@@ -282,9 +282,9 @@ new class extends Component {
                 } else {
                     // LUNAS
                     if ($this->rjTotal > 0) {
-                        DB::table('rstxn_rjcashins')->insert(array_merge($cashRow, ['rjc_nominal' => $dspTotalAll]));
+                        DB::table('sktxn_rjcashins')->insert(array_merge($cashRow, ['rjc_nominal' => $dspTotalAll]));
                     }
-                    DB::table('rstxn_rjhdrs')
+                    DB::table('sktxn_rjhdrs')
                         ->where('rj_no', $this->rjNo)
                         ->update([
                             'txn_status' => 'L',
@@ -296,7 +296,7 @@ new class extends Component {
                         ]);
                     $newTxnStatus = 'L';
 
-                    DB::table('rsmst_pasiens')
+                    DB::table('skmst_pasiens')
                         ->where('reg_no', $rjHdr->reg_no)
                         ->update(['lockstatus' => null]);
 
@@ -352,15 +352,15 @@ new class extends Component {
             DB::transaction(function () {
                 $this->lockRJRow($this->rjNo);
 
-                $hdr = DB::table('rstxn_rjhdrs')->select('rj_status', 'txn_status', 'reg_no')->where('rj_no', $this->rjNo)->first();
+                $hdr = DB::table('sktxn_rjhdrs')->select('rj_status', 'txn_status', 'reg_no')->where('rj_no', $this->rjNo)->first();
 
                 if (!$hdr) {
                     throw new \RuntimeException('Data transaksi tidak ditemukan.');
                 }
 
-                DB::table('rstxn_rjcashins')->where('rj_no', $this->rjNo)->delete();
+                DB::table('sktxn_rjcashins')->where('rj_no', $this->rjNo)->delete();
 
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'txn_status' => 'A',
@@ -372,7 +372,7 @@ new class extends Component {
                     ]);
 
                 if ($hdr->reg_no) {
-                    DB::table('rsmst_pasiens')
+                    DB::table('skmst_pasiens')
                         ->where('reg_no', $hdr->reg_no)
                         ->update(['lockstatus' => null]);
                 }
@@ -429,7 +429,7 @@ new class extends Component {
         }
 
         // Cek sudah pernah transfer
-        $sudahTransfer = DB::table('rstxn_ugdbiayaselamadirjs')
+        $sudahTransfer = DB::table('sktxn_ugdbiayaselamadirjs')
             ->where('rj_no', $this->rjNo)
             ->exists();
 
@@ -448,13 +448,13 @@ new class extends Component {
                     throw new \RuntimeException('Data sudah diproses oleh user lain.');
                 }
 
-                $rjHdr = DB::table('rstxn_rjhdrs')->where('rj_no', $this->rjNo)->first();
+                $rjHdr = DB::table('sktxn_rjhdrs')->where('rj_no', $this->rjNo)->first();
                 if (!$rjHdr) {
                     throw new \RuntimeException('Data RJ tidak ditemukan.');
                 }
 
                 // Cek lockstatus pasien
-                $pasien = DB::table('rsmst_pasiens')
+                $pasien = DB::table('skmst_pasiens')
                     ->where('reg_no', $rjHdr->reg_no)
                     ->lockForUpdate()
                     ->first();
@@ -468,10 +468,10 @@ new class extends Component {
                 $totalBiayaRJ = array_sum($costs);
 
                 // Generate UGD rj_no
-                $ugdRjNo = (int) DB::table('rstxn_ugdhdrs')->max('rj_no') + 1;
+                $ugdRjNo = (int) DB::table('sktxn_ugdhdrs')->max('rj_no') + 1;
 
                 // Insert UGD header (minimal — bisa diedit oleh admin UGD)
-                DB::table('rstxn_ugdhdrs')->insert([
+                DB::table('sktxn_ugdhdrs')->insert([
                     'rj_no'       => $ugdRjNo,
                     'rj_date'     => $rjHdr->rj_date,
                     'reg_no'      => $rjHdr->reg_no,
@@ -486,10 +486,10 @@ new class extends Component {
                 ]);
 
                 // Generate tempadm_no
-                $tempadmNo = (int) DB::table('rstxn_ugdtempadmins')->max('tempadm_no') + 1;
+                $tempadmNo = (int) DB::table('sktxn_ugdtempadmins')->max('tempadm_no') + 1;
 
                 // Insert temp admin biaya RJ
-                DB::table('rstxn_ugdtempadmins')->insert([
+                DB::table('sktxn_ugdtempadmins')->insert([
                     'tempadm_no'   => $tempadmNo,
                     'tempadm_date' => $rjHdr->rj_date,
                     'tempadm_flag' => 'RJ',
@@ -508,7 +508,7 @@ new class extends Component {
                 ]);
 
                 // Insert biaya selama di RJ
-                DB::table('rstxn_ugdbiayaselamadirjs')->insert([
+                DB::table('sktxn_ugdbiayaselamadirjs')->insert([
                     'rj_no'              => $this->rjNo,
                     'rj_no_rsugd'        => $ugdRjNo,
                     'tanggal_rj'         => $rjHdr->rj_date,
@@ -517,7 +517,7 @@ new class extends Component {
                 ]);
 
                 // Update RJ status → 'I' (Inap/Rujuk)
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'rj_status'  => 'I',
@@ -525,7 +525,7 @@ new class extends Component {
                     ]);
 
                 // Update lockstatus pasien → UGD
-                DB::table('rsmst_pasiens')
+                DB::table('skmst_pasiens')
                     ->where('reg_no', $rjHdr->reg_no)
                     ->update(['lockstatus' => 'UGD']);
             });
@@ -560,7 +560,7 @@ new class extends Component {
         }
 
         // Cari data transfer
-        $transfer = DB::table('rstxn_ugdbiayaselamadirjs')
+        $transfer = DB::table('sktxn_ugdbiayaselamadirjs')
             ->where('rj_no', $this->rjNo)
             ->first();
 
@@ -572,7 +572,7 @@ new class extends Component {
         $ugdRjNo = $transfer->rj_no_rsugd;
 
         // Cek status UGD masih aktif
-        $ugdHdr = DB::table('rstxn_ugdhdrs')->where('rj_no', $ugdRjNo)->first();
+        $ugdHdr = DB::table('sktxn_ugdhdrs')->where('rj_no', $ugdRjNo)->first();
         if ($ugdHdr && $ugdHdr->rj_status !== 'A') {
             $this->dispatch('toast', type: 'error', message: 'UGD #' . $ugdRjNo . ' sudah diproses (status: ' . $ugdHdr->rj_status . '). Tidak bisa dibatalkan.');
             return;
@@ -580,14 +580,14 @@ new class extends Component {
 
         // Cek UGD belum ada transaksi (semua komponen biaya + pembayaran)
         $ugdAdaTransaksi =
-            DB::table('rstxn_ugdobats')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdlabs')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdrads')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdactemps')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdaccdocs')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdactparams')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdothers')->where('rj_no', $ugdRjNo)->exists()
-            || DB::table('rstxn_ugdcashins')->where('rj_no', $ugdRjNo)->exists();
+            DB::table('sktxn_ugdobats')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdlabs')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdrads')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdactemps')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdaccdocs')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdactparams')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdothers')->where('rj_no', $ugdRjNo)->exists()
+            || DB::table('sktxn_ugdcashins')->where('rj_no', $ugdRjNo)->exists();
 
         if ($ugdAdaTransaksi) {
             $this->dispatch('toast', type: 'error', message: 'UGD #' . $ugdRjNo . ' sudah ada transaksi (obat/lab/tindakan/lain-lain/pembayaran). Tidak bisa dibatalkan.');
@@ -604,20 +604,20 @@ new class extends Component {
             DB::transaction(function () use ($ugdRjNo) {
                 $this->lockRJRow($this->rjNo);
 
-                $rjHdr = DB::table('rstxn_rjhdrs')->where('rj_no', $this->rjNo)->first();
+                $rjHdr = DB::table('sktxn_rjhdrs')->where('rj_no', $this->rjNo)->first();
                 if (!$rjHdr || $rjHdr->rj_status !== 'I') {
                     throw new \RuntimeException('Status RJ bukan Inap/Rujuk, tidak bisa dibatalkan.');
                 }
 
                 // Hapus data transfer
-                DB::table('rstxn_ugdbiayaselamadirjs')->where('rj_no', $this->rjNo)->delete();
-                DB::table('rstxn_ugdtempadmins')->where('tempadm_flag', 'RJ')->where('tempadm_ref', $this->rjNo)->delete();
+                DB::table('sktxn_ugdbiayaselamadirjs')->where('rj_no', $this->rjNo)->delete();
+                DB::table('sktxn_ugdtempadmins')->where('tempadm_flag', 'RJ')->where('tempadm_ref', $this->rjNo)->delete();
 
                 // Hapus UGD header yang dibuat saat transfer
-                DB::table('rstxn_ugdhdrs')->where('rj_no', $ugdRjNo)->delete();
+                DB::table('sktxn_ugdhdrs')->where('rj_no', $ugdRjNo)->delete();
 
                 // Kembalikan status RJ → 'A'
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'rj_status'  => 'A',
@@ -625,7 +625,7 @@ new class extends Component {
                     ]);
 
                 // Kembalikan lockstatus pasien → 'RJ'
-                DB::table('rsmst_pasiens')
+                DB::table('skmst_pasiens')
                     ->where('reg_no', $rjHdr->reg_no)
                     ->update(['lockstatus' => 'RJ']);
             });
@@ -930,7 +930,7 @@ new class extends Component {
 
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Riwayat Pembayaran</h3>
-            @php $cashins = DB::table('rstxn_rjcashins')->where('rj_no', $rjNo)->orderBy('rjc_date')->get(); @endphp
+            @php $cashins = DB::table('sktxn_rjcashins')->where('rj_no', $rjNo)->orderBy('rjc_date')->get(); @endphp
             <x-badge variant="gray">{{ $cashins->count() }} transaksi</x-badge>
         </div>
 

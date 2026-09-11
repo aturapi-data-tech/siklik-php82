@@ -30,7 +30,7 @@ new class extends Component {
     #[Computed]
     public function parents()
     {
-        return DB::table('rsmst_kecamatans')
+        return DB::table('skmst_kecamatans')
             ->select('kec_id', 'kec_name')
             ->orderBy('kec_name')
             ->get();
@@ -50,7 +50,7 @@ new class extends Component {
     #[On('master.desa.openEdit')]
     public function openEdit(int $desId): void
     {
-        $row = DB::table('rsmst_desas')->where('des_id', $desId)->first();
+        $row = DB::table('skmst_desas')->where('des_id', $desId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -71,13 +71,13 @@ new class extends Component {
     public function deleteDesa(int $desId): void
     {
         try {
-            $isUsed = DB::table('rsmst_kecamatans')->where('des_id', $desId)->exists();
+            $isUsed = DB::table('skmst_kecamatans')->where('des_id', $desId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Desa tidak bisa dihapus karena masih punya kecamatan turunannya.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_desas')->where('des_id', $desId)->delete();
+            $deleted = DB::table('skmst_desas')->where('des_id', $desId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data desa tidak ditemukan.');
                 return;
@@ -98,10 +98,10 @@ new class extends Component {
     {
         $rules = [
             'form.des_id'   => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:9999999999|unique:rsmst_desas,des_id'
+                ? 'required|integer|min:1|max:9999999999|unique:skmst_desas,des_id'
                 : 'required|integer',
             'form.des_name' => 'required|string|max:50',
-            'form.kec_id'  => 'required|integer|exists:rsmst_kecamatans,kec_id',
+            'form.kec_id'  => 'required|integer|exists:skmst_kecamatans,kec_id',
         ];
 
         $messages = [
@@ -126,9 +126,9 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_desas')->insert(['des_id' => (int) $this->form['des_id'], ...$payload]);
+            DB::table('skmst_desas')->insert(['des_id' => (int) $this->form['des_id'], ...$payload]);
         } else {
-            DB::table('rsmst_desas')->where('des_id', $this->originalId)->update($payload);
+            DB::table('skmst_desas')->where('des_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data desa berhasil disimpan.');

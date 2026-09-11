@@ -18,7 +18,7 @@ class RsmstAccdocSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_accdocs')->updateOrInsert(['accdoc_id' => $row['accdoc_id']], $row);
+            DB::table('skmst_accdocs')->updateOrInsert(['accdoc_id' => $row['accdoc_id']], $row);
         }
     }
 }

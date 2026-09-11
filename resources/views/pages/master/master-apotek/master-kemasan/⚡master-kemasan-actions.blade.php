@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.kemasan.openEdit')]
     public function openEdit(string $contId): void
     {
-        $row = DB::table('immst_contents')->where('cont_id', $contId)->first();
+        $row = DB::table('skmst_contents')->where('cont_id', $contId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -58,7 +58,7 @@ new class extends Component {
     public function deleteKemasan(string $contId): void
     {
         try {
-            $deleted = DB::table('immst_contents')->where('cont_id', $contId)->delete();
+            $deleted = DB::table('skmst_contents')->where('cont_id', $contId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data kemasan tidak ditemukan.');
                 return;
@@ -79,7 +79,7 @@ new class extends Component {
     {
         $rules = [
             'form.cont_id'   => $this->formMode === 'create'
-                ? 'required|string|max:5|regex:/^[A-Z0-9]+$/|unique:immst_contents,cont_id'
+                ? 'required|string|max:5|regex:/^[A-Z0-9]+$/|unique:skmst_contents,cont_id'
                 : 'required|string',
             'form.cont_desc' => 'required|string|max:50',
         ];
@@ -103,12 +103,12 @@ new class extends Component {
         $payload = ['cont_desc' => mb_strtoupper($this->form['cont_desc'])];
 
         if ($this->formMode === 'create') {
-            DB::table('immst_contents')->insert([
+            DB::table('skmst_contents')->insert([
                 'cont_id' => mb_strtoupper($this->form['cont_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('immst_contents')->where('cont_id', $this->originalId)->update($payload);
+            DB::table('skmst_contents')->where('cont_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data kemasan berhasil disimpan.');

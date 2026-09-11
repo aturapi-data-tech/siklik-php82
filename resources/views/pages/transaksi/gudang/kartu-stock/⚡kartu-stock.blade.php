@@ -3,16 +3,16 @@
 /**
  * Kartu Stock Obat (Read-only).
  *
- * Equivalent dgn form Oracle Forms TKVIEW_SALDOAWALSTOCKS + tab IOSTOCKWHS:
+ * Equivalent dgn form Oracle Forms SKVIEW_SALDOAWALSTOCKS + tab IOSTOCKWHS:
  *   - Pilih tahun & produk
- *   - Tampilkan saldo awal (TKTXN_SALDOAWALSTOCKS.sa_stockwh) +
- *     mutasi tahun berjalan (TKVIEW_IOSTOCKWHS qty_d - qty_k) = saldo akhir
+ *   - Tampilkan saldo awal (SKTXN_SALDOAWALSTOCKS.sa_stockwh) +
+ *     mutasi tahun berjalan (SKVIEW_IOSTOCKWHS qty_d - qty_k) = saldo akhir
  *   - List history mutasi: txn_status SLS=OBAT BEBAS, RCV=BELI PBF, RJ=RAWAT JALAN
  *
  * Sumber tabel:
- *   - TKMST_PRODUCTS              (master barang)
- *   - TKTXN_SALDOAWALSTOCKS       (saldo awal per tahun: SA_YEAR+PRODUCT_ID)
- *   - TKVIEW_IOSTOCKWHS           (view mutasi in/out: qty_d / qty_k per txn)
+ *   - SKMST_PRODUCTS              (master barang)
+ *   - SKTXN_SALDOAWALSTOCKS       (saldo awal per tahun: SA_YEAR+PRODUCT_ID)
+ *   - SKVIEW_IOSTOCKWHS           (view mutasi in/out: qty_d / qty_k per txn)
  */
 
 use Livewire\Component;
@@ -74,16 +74,16 @@ new class extends Component {
     #[Computed]
     public function productList()
     {
-        $sub = DB::table('tkview_iostockwhs')
+        $sub = DB::table('skview_iostockwhs')
             ->select('product_id',
                 DB::raw('NVL(SUM(qty_d),0) as masuk'),
                 DB::raw('NVL(SUM(qty_k),0) as keluar'))
             ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [$this->year])
             ->groupBy('product_id');
 
-        $query = DB::table('tkmst_products as p')
+        $query = DB::table('skmst_products as p')
             ->leftJoinSub($sub, 'io', fn ($j) => $j->on('io.product_id', '=', 'p.product_id'))
-            ->leftJoin('tktxn_saldoawalstocks as s', function ($j) {
+            ->leftJoin('sktxn_saldoawalstocks as s', function ($j) {
                 $j->on('s.product_id', '=', 'p.product_id')
                   ->where('s.sa_year', '=', $this->year);
             })
@@ -113,7 +113,7 @@ new class extends Component {
     }
 
     /* ── Stock Opname (port Oracle Forms NEW logic) ──
-     * Tidak adjust saldo awal — INSERT mutasi opname ke TKTXN_SOWHS:
+     * Tidak adjust saldo awal — INSERT mutasi opname ke SKTXN_SOWHS:
      *   updatestock := mutasi + saldo_awal - stock_fisik   (= saldo_akhir_db - stock_fisik)
      *   updatestock > 0 → stock fisik kurang → INSERT (so_d=0, so_k=updatestock)   [keluar]
      *   updatestock < 0 → stock fisik lebih → INSERT (so_d=|updatestock|, so_k=0)  [masuk]
@@ -170,7 +170,7 @@ new class extends Component {
         try {
             DB::transaction(function () use ($selisih, $kasirId) {
                 // Generate so_no = NVL(MAX(so_no),0)+1
-                $soNo = (int) (DB::table('tktxn_sowhs')->max('so_no') ?? 0) + 1;
+                $soNo = (int) (DB::table('sktxn_sowhs')->max('so_no') ?? 0) + 1;
 
                 $payload = [
                     'product_id' => $this->productId,
@@ -190,7 +190,7 @@ new class extends Component {
                     $payload['so_k'] = 0;
                 }
 
-                DB::table('tktxn_sowhs')->insert($payload);
+                DB::table('sktxn_sowhs')->insert($payload);
             });
 
             $arah = $selisih > 0 ? 'kurang ' . number_format($selisih) : 'lebih ' . number_format(abs($selisih));
@@ -209,8 +209,8 @@ new class extends Component {
     {
         if (!$this->productId) return;
 
-        $row = DB::table('tkmst_products as p')
-            ->leftJoin('tkmst_uoms as u', 'p.uom_id', '=', 'u.uom_id')
+        $row = DB::table('skmst_products as p')
+            ->leftJoin('skmst_uoms as u', 'p.uom_id', '=', 'u.uom_id')
             ->select([
                 'p.product_id', 'p.product_name', 'p.product_type', 'p.product_rak',
                 'p.sales_price', 'p.cost_price', 'p.qty_box', 'p.limit_stock',
@@ -230,12 +230,12 @@ new class extends Component {
             return ['awal' => 0, 'masuk' => 0, 'keluar' => 0, 'akhir' => 0];
         }
 
-        $awal = (int) (DB::table('tktxn_saldoawalstocks')
+        $awal = (int) (DB::table('sktxn_saldoawalstocks')
             ->where('product_id', $this->productId)
             ->where('sa_year', $this->year)
             ->sum('sa_stockwh') ?? 0);
 
-        $mut = DB::table('tkview_iostockwhs')
+        $mut = DB::table('skview_iostockwhs')
             ->where('product_id', $this->productId)
             ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [$this->year])
             ->selectRaw('NVL(SUM(qty_d),0) as masuk, NVL(SUM(qty_k),0) as keluar')
@@ -261,7 +261,7 @@ new class extends Component {
     {
         if (!$this->productId) return collect();
 
-        return DB::table('tkview_iostockwhs')
+        return DB::table('skview_iostockwhs')
             ->select([
                 DB::raw("TO_CHAR(txn_date,'dd/mm/yyyy hh24:mi:ss') as txn_date_display"),
                 'txn_date',

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * LOV Cara Bayar — sumber tabel: tkacc_carabayars where active_status='1'.
+ * LOV Cara Bayar — sumber tabel: skacc_carabayars where active_status='1'.
  *
  * Payload dispatch ke parent:
  *   ['cb_id' => '...', 'cb_desc' => '...', 'acc_id' => '...', 'acc_name' => '...']
@@ -61,9 +61,9 @@ new class extends Component {
 
     protected function loadSelected(string $cbId): void
     {
-        // tkacc_accountses pakai acc_desc (bukan acc_name) untuk display nama akun.
-        $row = DB::table('tkacc_carabayars as cb')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
+        // skacc_accountses pakai acc_desc (bukan acc_name) untuk display nama akun.
+        $row = DB::table('skacc_carabayars as cb')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.active_status', 'cb.acc_id', 'a.acc_desc as acc_name')
             ->where('cb.cb_id', $cbId)
             ->first();
@@ -122,8 +122,8 @@ new class extends Component {
 
     protected function baseQuery(): \Illuminate\Database\Query\Builder
     {
-        return DB::table('tkacc_carabayars as cb')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
+        return DB::table('skacc_carabayars as cb')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.active_status', 'cb.acc_id', 'a.acc_desc as acc_name')
             ->where('cb.active_status', '1');
     }

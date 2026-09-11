@@ -54,9 +54,9 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkmst_customers AS c')
-            ->leftJoin('tkmst_kotas AS kt', 'kt.kota_id', '=', 'c.kota_id')
-            ->leftJoin('tkmst_provs AS pv', 'pv.prov_id', '=', 'c.prov_id')
+        $q = DB::table('skmst_customers AS c')
+            ->leftJoin('skmst_kotas AS kt', 'kt.kota_id', '=', 'c.kota_id')
+            ->leftJoin('skmst_provs AS pv', 'pv.prov_id', '=', 'c.prov_id')
             ->select('c.cm_id', 'c.cm_name', 'c.cm_phone1', 'c.cm_email', 'c.active_status',
                      'kt.kota_name', 'pv.prov_name')
             ->orderBy('c.cm_name');

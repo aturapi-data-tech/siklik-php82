@@ -22,7 +22,7 @@ class RsmstMstprocedureSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_mstprocedures')->updateOrInsert(['proc_id' => $row['proc_id']], $row);
+            DB::table('skmst_mstprocedures')->updateOrInsert(['proc_id' => $row['proc_id']], $row);
         }
     }
 }

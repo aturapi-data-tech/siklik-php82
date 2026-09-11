@@ -10,12 +10,12 @@ class DiagKeperawatanSeeder extends Seeder
     public function run(): void
     {
         // Hapus semua data lama
-        DB::table('rsmst_diagkeperawatans')->truncate();
+        DB::table('skmst_diagkeperawatans')->truncate();
 
         $data = $this->getData();
 
         foreach ($data as $row) {
-            DB::table('rsmst_diagkeperawatans')->insert([
+            DB::table('skmst_diagkeperawatans')->insert([
                 'diagkep_id'   => $row['diagkep_id'],
                 'diagkep_desc' => $row['diagkep_desc'],
                 'diagkep_json' => json_encode($row['diagkep_json'], JSON_UNESCAPED_UNICODE),

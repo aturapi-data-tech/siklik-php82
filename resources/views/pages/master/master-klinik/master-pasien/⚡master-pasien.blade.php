@@ -73,7 +73,7 @@ new class extends Component {
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('rsmst_pasiens')
+        $queryBuilder = DB::table('skmst_pasiens')
             ->select(['reg_no', 'reg_name', 'sex', 'birth_date', 'address', 'phone', 'blood', 'marital_status', 'nik_bpjs', 'nokartu_bpjs', 'patient_uuid', 'no_jkn', 'reg_date'])
             ->orderBy('reg_name', 'asc');
 

@@ -25,7 +25,7 @@ class TkmstUomSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('tkmst_uoms')->updateOrInsert(['uom_id' => $row['uom_id']], $row);
+            DB::table('skmst_uoms')->updateOrInsert(['uom_id' => $row['uom_id']], $row);
         }
     }
 }

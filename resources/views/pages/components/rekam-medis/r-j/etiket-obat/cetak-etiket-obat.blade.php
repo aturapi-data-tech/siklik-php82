@@ -35,10 +35,10 @@ new class extends Component {
                 b.rj_kapsul,
                 b.rj_ket,
                 TO_CHAR(b.exp_date, 'DD/MM/YYYY')   AS exp_date
-            FROM  rstxn_rjhdrs  a
-            JOIN  rstxn_rjobats b ON b.rj_no      = a.rj_no
-            JOIN  tkmst_products c ON c.product_id = b.product_id
-            JOIN  rsmst_pasiens  d ON d.reg_no     = a.reg_no
+            FROM  sktxn_rjhdrs  a
+            JOIN  sktxn_rjobats b ON b.rj_no      = a.rj_no
+            JOIN  skmst_products c ON c.product_id = b.product_id
+            JOIN  skmst_pasiens  d ON d.reg_no     = a.reg_no
             WHERE b.rjobat_dtl = :rjobatno
             ",
             ['rjobatno' => $rjObatNo],

@@ -41,12 +41,12 @@ new class extends Component {
             }
         }
 
-        $klaim = DB::table('rsmst_klaimtypes')
+        $klaim = DB::table('skmst_klaimtypes')
             ->where('klaim_id', $dataRJ['klaimId'] ?? '')
             ->select('klaim_status', 'klaim_desc')
             ->first();
 
-        $dokter = DB::table('rsmst_doctors')
+        $dokter = DB::table('skmst_doctors')
             ->where('dr_id', $dataRJ['drId'] ?? '')
             ->select('dr_name')
             ->first();

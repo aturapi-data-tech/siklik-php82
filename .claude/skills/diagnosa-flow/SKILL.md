@@ -1,6 +1,6 @@
 ---
 name: diagnosa-flow
-description: Arsitektur & jebakan diagnosa ICD-10 (RSMST_MSTDIAGS, LOV diagnosa, EMR, PCare). Baca sebelum mengubah/menambah apa pun yang memilih atau menyimpan diagnosa — master ICD-10 bisa punya icdx kembar yang bikin lookup flag naive (value/first) salah baris, plus aturan icdx vs diag_id per konsumen.
+description: Arsitektur & jebakan diagnosa ICD-10 (SKMST_MSTDIAGS, LOV diagnosa, EMR, PCare). Baca sebelum mengubah/menambah apa pun yang memilih atau menyimpan diagnosa — master ICD-10 bisa punya icdx kembar yang bikin lookup flag naive (value/first) salah baris, plus aturan icdx vs diag_id per konsumen.
 ---
 
 # Diagnosa Flow (siklik-php82)
@@ -11,7 +11,7 @@ Siklik = klinik pratama: konsumen eksternal diagnosa adalah **PCare BPJS** (buka
 
 | Lapisan | Lokasi |
 |---|---|
-| Master ICD-10 | `RSMST_MSTDIAGS` (`diag_id` PK, `icdx`, `diag_desc`), UI master-diagnosa di `pages/master/master-klinik/master-diagnosa/` |
+| Master ICD-10 | `SKMST_MSTDIAGS` (`diag_id` PK, `icdx`, `diag_desc`), UI master-diagnosa di `pages/master/master-klinik/master-diagnosa/` |
 | Picker standar (SATU-satunya) | `livewire/lov/diagnosa/lov-diagnosa.blade.php` — semua pemilihan diagnosa lewat sini, jangan bikin picker baru |
 | PCare / sistem eksternal BPJS | kirim **icdx** (kode ICD-10), bukan diag_id |
 

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SnomedCode extends Model
 {
-    protected $table = 'rsmst_snomed_codes';
+    protected $table = 'skmst_snomed_codes';
 
     protected $primaryKey = 'snomed_code';
 

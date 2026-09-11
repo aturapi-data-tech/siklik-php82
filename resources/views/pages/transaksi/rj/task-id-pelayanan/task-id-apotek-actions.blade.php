@@ -111,7 +111,7 @@ new class extends Component {
                     $jenisResep = $eresepRacikanCount > 0 ? 'racikan' : 'non racikan';
 
                     $refDate = Carbon::now(config('app.timezone'))->format('d/m/Y');
-                    $noAntrian = DB::table('rstxn_rjhdrs')
+                    $noAntrian = DB::table('sktxn_rjhdrs')
                             ->select('datadaftarpolirj_json')
                             ->where('rj_status', '!=', 'F')
                             ->where(DB::raw("to_char(rj_date,'dd/mm/yyyy')"), '=', $refDate)
@@ -130,7 +130,7 @@ new class extends Component {
                 $existingData['taskIdPelayanan'] = $data['taskIdPelayanan'];
 
                 // Update waktu_masuk_apt di header — atomik dengan JSON update
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'waktu_masuk_apt' => DB::raw("to_date('" . $waktuSekarang . "','dd/mm/yyyy hh24:mi:ss')"),
@@ -207,7 +207,7 @@ new class extends Component {
                 }
 
                 // Update waktu_selesai_pelayanan di header — atomik dengan JSON update
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'waktu_selesai_pelayanan' => DB::raw("to_date('" . $waktuSekarang . "','dd/mm/yyyy hh24:mi:ss')"),

@@ -8,7 +8,7 @@
  *
  * Equivalent dgn Oracle Forms procedure post_transaksi_angsuran:
  *   1. Validasi: bayar <= total sisa hutang nota terpilih
- *   2. INSERT 1x TKTXN_CASHOUTHDRNONS (master cashout)
+ *   2. INSERT 1x SKTXN_CASHOUTHDRNONS (master cashout)
  *   3. Loop nota terpilih (check_boxstatus='1') urut VCOUNT (urutan klik user):
  *        - Kalau bayar >= sisa nota: bayar full → INSERT cashoutdtlnons + rcvpaymentnons,
  *          UPDATE rcvhdrnons.rcv_status='L', kurangi bayar
@@ -75,7 +75,7 @@ new class extends Component {
             [
                 'suppId'   => 'required|string',
                 'tanggal'  => 'required|date_format:d/m/Y H:i:s',
-                'cbId'     => 'required|string|exists:tkacc_carabayars,cb_id',
+                'cbId'     => 'required|string|exists:skacc_carabayars,cb_id',
                 'bayar'    => 'required|integer|min:1',
             ],
             [
@@ -101,7 +101,7 @@ new class extends Component {
         // Resolve kasir_id dari USERS.kasir_id
         $kasirId = auth()->user()->kasir_id ?? null;
         if ($kasirId) {
-            $valid = DB::table('tkmst_kasirs')
+            $valid = DB::table('skmst_kasirs')
                 ->where('kasir_id', $kasirId)
                 ->where('active_status', '1')
                 ->exists();
@@ -122,7 +122,7 @@ new class extends Component {
         try {
             DB::transaction(function () use ($kasirId, $tanggalDb, &$totalDibayarkan, &$notaLunas, &$notaCicilan, $bayar) {
                 // Re-fetch nota terpilih dgn lock, urut VCOUNT (urutan klik user)
-                $headers = DB::table('tktxn_rcvhdrnons')
+                $headers = DB::table('sktxn_rcvhdrnons')
                     ->where('supp_id', $this->suppId)
                     ->where('rcv_status', 'H')
                     ->where('check_boxstatus', '1')
@@ -140,7 +140,7 @@ new class extends Component {
                 $desc = 'Angsuran Atas Nama "' . $this->suppName . '"'
                     . (!empty($this->keterangan) ? ' - ' . $this->keterangan : '');
 
-                DB::table('tktxn_cashouthdrnons')->insert([
+                DB::table('sktxn_cashouthdrnons')->insert([
                     'cb_id'         => $this->cbId,
                     'cashout_no'    => $cashoutNo,
                     'cashout_date'  => DB::raw($tanggalDb),
@@ -158,7 +158,7 @@ new class extends Component {
                     $rcvNo = $hdr->rcv_no;
 
                     // Hitung sisa nota ini (re-compute)
-                    $totalDetail = (float) DB::table('tktxn_rcvdtlnons')
+                    $totalDetail = (float) DB::table('sktxn_rcvdtlnons')
                         ->where('rcv_no', $rcvNo)
                         ->select(DB::raw("
                             NVL(SUM(
@@ -181,7 +181,7 @@ new class extends Component {
                     // PPN/diskon nggak signifikan & bikin status nyangkut di 'H'.
                     $grandTotal = (int) round($setelahDiskon + $ppn + (float) ($hdr->rcv_materai ?? 0));
 
-                    $titipan = (int) round((float) DB::table('tktxn_rcvpaymentnons')
+                    $titipan = (int) round((float) DB::table('sktxn_rcvpaymentnons')
                         ->where('rcv_no', $rcvNo)
                         ->sum('rcvp_value'));
 
@@ -202,14 +202,14 @@ new class extends Component {
                         $notaCicilan++;
                     }
 
-                    DB::table('tktxn_rcvpaymentnons')->insert([
+                    DB::table('sktxn_rcvpaymentnons')->insert([
                         'rcvp_no'    => DB::raw('rcvpnon_seq.nextval'),
                         'rcv_no'     => $rcvNo,
                         'rcvp_date'  => DB::raw($tanggalDb),
                         'rcvp_value' => $nominalBayar,
                     ]);
 
-                    DB::table('tktxn_cashoutdtlnons')->insert([
+                    DB::table('sktxn_cashoutdtlnons')->insert([
                         'cashout_no'  => $cashoutNo,
                         'rcv_no'      => $rcvNo,
                         'cashout_dtl' => DB::raw('codtlnon_seq.nextval'),
@@ -220,7 +220,7 @@ new class extends Component {
                         $updateData['pay_date'] = $payDateRaw;
                     }
 
-                    DB::table('tktxn_rcvhdrnons')
+                    DB::table('sktxn_rcvhdrnons')
                         ->where('rcv_no', $rcvNo)
                         ->update($updateData);
 
@@ -229,7 +229,7 @@ new class extends Component {
                 }
 
                 // Reset check_boxstatus & vcount untuk supplier (ekuivalen "menetralkan transaksi")
-                DB::table('tktxn_rcvhdrnons')
+                DB::table('sktxn_rcvhdrnons')
                     ->where('supp_id', $this->suppId)
                     ->update([
                         'check_boxstatus' => '0',

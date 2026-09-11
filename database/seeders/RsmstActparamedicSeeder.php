@@ -19,7 +19,7 @@ class RsmstActparamedicSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_actparamedics')->updateOrInsert(['pact_id' => $row['pact_id']], $row);
+            DB::table('skmst_actparamedics')->updateOrInsert(['pact_id' => $row['pact_id']], $row);
         }
     }
 }

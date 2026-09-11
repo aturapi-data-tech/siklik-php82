@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.jasa-dokter.openEdit')]
     public function openEdit(string $accdocId): void
     {
-        $row = DB::table('rsmst_accdocs')->where('accdoc_id', $accdocId)->first();
+        $row = DB::table('skmst_accdocs')->where('accdoc_id', $accdocId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -61,9 +61,9 @@ new class extends Component {
     #[On('master.jasa-dokter.toggleActive')]
     public function toggleActive(string $accdocId): void
     {
-        $cur = (string) DB::table('rsmst_accdocs')->where('accdoc_id', $accdocId)->value('active_status');
+        $cur = (string) DB::table('skmst_accdocs')->where('accdoc_id', $accdocId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('rsmst_accdocs')->where('accdoc_id', $accdocId)->update(['active_status' => $next]);
+        DB::table('skmst_accdocs')->where('accdoc_id', $accdocId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status jasa dokter → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.jasa-dokter.saved');
@@ -73,13 +73,13 @@ new class extends Component {
     public function deleteJasaDokter(string $accdocId): void
     {
         try {
-            $isUsed = DB::table('rstxn_rjaccdocs')->where('accdoc_id', $accdocId)->exists();
+            $isUsed = DB::table('sktxn_rjaccdocs')->where('accdoc_id', $accdocId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Jasa dokter tidak bisa dihapus karena masih dipakai pada transaksi rawat jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_accdocs')->where('accdoc_id', $accdocId)->delete();
+            $deleted = DB::table('skmst_accdocs')->where('accdoc_id', $accdocId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data jasa dokter tidak ditemukan.');
                 return;
@@ -100,7 +100,7 @@ new class extends Component {
     {
         $rules = [
             'form.accdoc_id'     => $this->formMode === 'create'
-                ? 'required|string|max:10|regex:/^[A-Z0-9_-]+$/|unique:rsmst_accdocs,accdoc_id'
+                ? 'required|string|max:10|regex:/^[A-Z0-9_-]+$/|unique:skmst_accdocs,accdoc_id'
                 : 'required|string',
             'form.accdoc_desc'   => 'required|string|max:50',
             'form.accdoc_price'  => 'required|numeric|min:0|max:999999999',
@@ -137,12 +137,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_accdocs')->insert([
+            DB::table('skmst_accdocs')->insert([
                 'accdoc_id' => mb_strtoupper($this->form['accdoc_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_accdocs')->where('accdoc_id', $this->originalId)->update($payload);
+            DB::table('skmst_accdocs')->where('accdoc_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data jasa dokter berhasil disimpan.');

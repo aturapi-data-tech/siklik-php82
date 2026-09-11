@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.pendidikan.openEdit')]
     public function openEdit(int $eduId): void
     {
-        $row = DB::table('rsmst_educations')->where('edu_id', $eduId)->first();
+        $row = DB::table('skmst_educations')->where('edu_id', $eduId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -61,13 +61,13 @@ new class extends Component {
     public function deletePendidikan(int $eduId): void
     {
         try {
-            $isUsed = DB::table('rsmst_pasiens')->where('edu_id', $eduId)->exists();
+            $isUsed = DB::table('skmst_pasiens')->where('edu_id', $eduId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Pendidikan tidak bisa dihapus karena masih dipakai pada data pasien.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_educations')->where('edu_id', $eduId)->delete();
+            $deleted = DB::table('skmst_educations')->where('edu_id', $eduId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data pendidikan tidak ditemukan.');
                 return;
@@ -89,7 +89,7 @@ new class extends Component {
     {
         $rules = [
             'form.edu_id'   => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:99|unique:rsmst_educations,edu_id'
+                ? 'required|integer|min:1|max:99|unique:skmst_educations,edu_id'
                 : 'required|integer',
             'form.edu_desc' => 'required|string|max:25',
         ];
@@ -114,9 +114,9 @@ new class extends Component {
         $payload = ['edu_desc' => mb_strtoupper($this->form['edu_desc'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_educations')->insert(['edu_id' => (int) $this->form['edu_id'], ...$payload]);
+            DB::table('skmst_educations')->insert(['edu_id' => (int) $this->form['edu_id'], ...$payload]);
         } else {
-            DB::table('rsmst_educations')->where('edu_id', $this->originalId)->update($payload);
+            DB::table('skmst_educations')->where('edu_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data pendidikan berhasil disimpan.');

@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.prov-toko.openEdit')]
     public function openEdit(string $provId): void
     {
-        $row = DB::table('tkmst_provs')->where('prov_id', $provId)->first();
+        $row = DB::table('skmst_provs')->where('prov_id', $provId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -58,7 +58,7 @@ new class extends Component {
     public function deleteProvToko(string $provId): void
     {
         try {
-            $deleted = DB::table('tkmst_provs')->where('prov_id', $provId)->delete();
+            $deleted = DB::table('skmst_provs')->where('prov_id', $provId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data provinsi toko tidak ditemukan.');
                 return;
@@ -79,7 +79,7 @@ new class extends Component {
     {
         $rules = [
             'form.prov_id'   => $this->formMode === 'create'
-                ? 'required|string|max:15|regex:/^[A-Z0-9]+$/|unique:tkmst_provs,prov_id'
+                ? 'required|string|max:15|regex:/^[A-Z0-9]+$/|unique:skmst_provs,prov_id'
                 : 'required|string',
             'form.prov_name' => 'required|string|max:100',
         ];
@@ -103,12 +103,12 @@ new class extends Component {
         $payload = ['prov_name' => mb_strtoupper($this->form['prov_name'])];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_provs')->insert([
+            DB::table('skmst_provs')->insert([
                 'prov_id' => mb_strtoupper($this->form['prov_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_provs')->where('prov_id', $this->originalId)->update($payload);
+            DB::table('skmst_provs')->where('prov_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data provinsi toko berhasil disimpan.');

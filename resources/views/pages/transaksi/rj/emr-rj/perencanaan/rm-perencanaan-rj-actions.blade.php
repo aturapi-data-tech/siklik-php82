@@ -326,7 +326,7 @@ new class extends Component {
 
                 // 3. Update erm_status di header — dalam satu transaksi dengan JSON update
                 $this->dataDaftarPoliRJ['ermStatus'] = 'L';
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update(['erm_status' => 'L']);
 

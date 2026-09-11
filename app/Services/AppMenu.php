@@ -79,7 +79,7 @@ class AppMenu
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 10, 'route' => 'master.pekerjaan',       'title' => 'Master Pekerjaan',     'desc' => 'Referensi pekerjaan pasien',                       'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 11, 'route' => 'master.klaim',           'title' => 'Master Tipe Klaim',    'desc' => 'BPJS, Umum, Asuransi, dll',                        'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 12, 'route' => 'master.cara-masuk',      'title' => 'Master Cara Masuk',    'desc' => 'Datang sendiri, rujukan, emergency',               'roles' => ['admin'], 'badge' => 'Klinik']),
-            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 13, 'route' => 'master.cara-bayar',      'title' => 'Master Cara Bayar',    'desc' => 'Tunai, Transfer, BPJS, dll (tkacc_carabayars)',    'roles' => ['admin'], 'badge' => 'Klinik']),
+            $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 13, 'route' => 'master.cara-bayar',      'title' => 'Master Cara Bayar',    'desc' => 'Tunai, Transfer, BPJS, dll (skacc_carabayars)',    'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 14, 'route' => 'master.cara-keluar',     'title' => 'Master Cara Keluar',   'desc' => 'Sembuh, rujuk, pulang paksa, dll',                 'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 15, 'route' => 'master.parameter',       'title' => 'Master Parameter',     'desc' => 'Parameter sistem & konfigurasi',                   'roles' => ['admin'], 'badge' => 'Klinik']),
             $entry(['group' => 'Master Klinik', 'groupOrder' => 1, 'order' => 16, 'route' => 'master.medik',           'title' => 'Master Alat Medis',    'desc' => 'Tracking alat medis (kondisi, sertifikat, izin)',  'roles' => ['admin'], 'badge' => 'Klinik']),
@@ -109,9 +109,9 @@ class AppMenu
 
             // ── Master Akuntansi ──────────────────────────────────────
             $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 1, 'route' => 'master.group-akun',      'title' => 'Master Group Akun',     'desc' => 'Pengelompokan akun (Aktiva/Pasiva/Modal/Pendapatan/Biaya)',    'roles' => ['admin'], 'badge' => 'Akuntansi']),
-            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 2, 'route' => 'master.akun',            'title' => 'Master Akun',           'desc' => 'Chart of accounts (tkacc_accountses)',                         'roles' => ['admin'], 'badge' => 'Akuntansi']),
+            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 2, 'route' => 'master.akun',            'title' => 'Master Akun',           'desc' => 'Chart of accounts (skacc_accountses)',                         'roles' => ['admin'], 'badge' => 'Akuntansi']),
             $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 3, 'route' => 'master.tucico',          'title' => 'Master TUCICO',         'desc' => 'Pos kas transit non-transaksi (setoran/ambil kas)',            'roles' => ['admin'], 'badge' => 'Akuntansi']),
-            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 4, 'route' => 'master.konf-akun-trans', 'title' => 'Master Konf. Akun Trx', 'desc' => 'Mapping akun-default per jenis transaksi (tkacc_confacctxns)', 'roles' => ['admin'], 'badge' => 'Akuntansi']),
+            $entry(['group' => 'Master Akuntansi', 'groupOrder' => 5, 'order' => 4, 'route' => 'master.konf-akun-trans', 'title' => 'Master Konf. Akun Trx', 'desc' => 'Mapping akun-default per jenis transaksi (skacc_confacctxns)', 'roles' => ['admin'], 'badge' => 'Akuntansi']),
 
             // ── Master Wilayah (Pasien) ───────────────────────────────
             $entry(['group' => 'Master Wilayah', 'groupOrder' => 6, 'order' => 1, 'route' => 'master.provinsi',  'title' => 'Master Provinsi',  'desc' => 'Provinsi (BPS 2-digit) — wilayah pasien', 'roles' => ['admin'], 'badge' => 'Wilayah']),
@@ -160,6 +160,7 @@ class AppMenu
             $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 4, 'route' => 'database-monitor.role-control',             'title' => 'Role Control',           'desc' => 'Kelola role & permission sistem',                'roles' => ['admin'], 'badge' => 'ROL']),
             $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 5, 'route' => 'database-monitor.user-online',              'title' => 'User Online',            'desc' => 'Daftar user yang sedang aktif login (last_seen_at < threshold menit)', 'roles' => ['admin'], 'badge' => 'ONL']),
             $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 6, 'route' => 'database-monitor.log-bpjs',                 'title' => 'Log BPJS API',           'desc' => 'Riwayat pemanggilan PCare, Antrean FKTP & i-Care',                     'roles' => ['admin'], 'badge' => 'LOG']),
+            $entry(['group' => 'Sistem', 'groupOrder' => 13, 'order' => 7, 'route' => 'panduan-dev.struktur-tabel',              'title' => 'Struktur Tabel',         'desc' => 'Panduan dev: peta rename prefix SK, modul, relasi antar tabel & kolom (langsung dari Oracle)', 'roles' => ['admin'], 'badge' => 'DOC']),
         ];
     }
 }

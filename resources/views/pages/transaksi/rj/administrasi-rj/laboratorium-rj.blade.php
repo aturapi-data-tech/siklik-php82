@@ -49,7 +49,7 @@ new class extends Component {
      =============================== */
     private function findData(int $rjNo): void
     {
-        $this->rjLab = DB::table('rstxn_rjlabs')
+        $this->rjLab = DB::table('sktxn_rjlabs')
             ->select('lab_dtl', 'lab_desc', 'lab_price')
             ->where('rj_no', $rjNo)
             ->orderBy('lab_dtl')
@@ -102,9 +102,9 @@ new class extends Component {
                 // Lock row RJ — cegah race condition sequence lab_dtl
                 $this->lockRJRow($this->rjNo);
 
-                $last = DB::table('rstxn_rjlabs')->select(DB::raw('nvl(max(lab_dtl)+1,1) as lab_dtl_max'))->first();
+                $last = DB::table('sktxn_rjlabs')->select(DB::raw('nvl(max(lab_dtl)+1,1) as lab_dtl_max'))->first();
 
-                DB::table('rstxn_rjlabs')->insert([
+                DB::table('sktxn_rjlabs')->insert([
                     'lab_dtl' => $last->lab_dtl_max,
                     'rj_no' => $this->rjNo,
                     'lab_desc' => $this->formEntryLab['labDesc'],
@@ -186,7 +186,7 @@ new class extends Component {
                 // Lock row RJ — update + read array lokal harus atomik
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjlabs')
+                DB::table('sktxn_rjlabs')
                     ->where('lab_dtl', $this->editingDtl)
                     ->update([
                         'lab_desc' => $this->editRow['labDesc'],
@@ -234,7 +234,7 @@ new class extends Component {
                 // Lock row RJ dulu
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjlabs')->where('lab_dtl', $labDtl)->delete();
+                DB::table('sktxn_rjlabs')->where('lab_dtl', $labDtl)->delete();
 
                 $this->rjLab = collect($this->rjLab)->where('labDtl', '!=', $labDtl)->values()->toArray();
 

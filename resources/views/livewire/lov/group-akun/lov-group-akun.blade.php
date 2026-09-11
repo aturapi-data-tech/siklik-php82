@@ -1,7 +1,7 @@
 <?php
 
 /**
- * LOV Group Akun — sumber: tkacc_gr_accountses (5 group fixed: AKTIVA/HUTANG/EKUITAS/PENDAPATAN/BEBAN).
+ * LOV Group Akun — sumber: skacc_gr_accountses (5 group fixed: AKTIVA/HUTANG/EKUITAS/PENDAPATAN/BEBAN).
  * Catatan: kolom gra_status di tabel ini = 'N' (Neraca) / 'L' (Laba-Rugi), bukan flag aktif.
  *
  * Payload: ['gra_id', 'gra_desc', 'dk_status', 'gra_status']
@@ -41,7 +41,7 @@ new class extends Component {
 
     protected function loadSelected(string $graId): void
     {
-        $row = DB::table('tkacc_gr_accountses')
+        $row = DB::table('skacc_gr_accountses')
             ->select('gra_id', 'gra_desc', 'gra_status', 'dk_status')
             ->where('gra_id', $graId)->first();
         if ($row) $this->selected = $this->buildPayload($row);
@@ -76,7 +76,7 @@ new class extends Component {
 
     protected function baseQuery(): \Illuminate\Database\Query\Builder
     {
-        return DB::table('tkacc_gr_accountses')
+        return DB::table('skacc_gr_accountses')
             ->select('gra_id', 'gra_desc', 'gra_status', 'dk_status');
     }
 

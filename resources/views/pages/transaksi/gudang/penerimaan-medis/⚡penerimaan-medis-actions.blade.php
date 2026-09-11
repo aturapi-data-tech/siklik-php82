@@ -16,7 +16,7 @@ new class extends Component {
     // ── Header ──
     public ?int $rcvNo = null;
     public ?string $rcvDate = null;
-    public ?string $dueDate = null; // jatuh tempo (TKTXN_RCVHDRS.due_date)
+    public ?string $dueDate = null; // jatuh tempo (SKTXN_RCVHDRS.due_date)
     public ?string $suppId = null;
     public ?string $suppName = null;
     public ?string $rcvDesc = null;
@@ -85,7 +85,7 @@ new class extends Component {
         $this->resetFormFields();
         $this->formMode = 'edit';
 
-        $hdr = DB::table('tktxn_rcvhdrs')->where('rcv_no', $rcvNo)->first();
+        $hdr = DB::table('sktxn_rcvhdrs')->where('rcv_no', $rcvNo)->first();
         if (!$hdr) {
             $this->dispatch('toast', type: 'error', message: 'Data tidak ditemukan.');
             return;
@@ -96,7 +96,7 @@ new class extends Component {
         $this->dueDate = isset($hdr->due_date) && $hdr->due_date ? Carbon::parse($hdr->due_date)->format('d/m/Y') : null;
         $this->suppId = $hdr->supp_id;
         $this->rcvDesc = $hdr->rcv_desc;
-        // sp_no = sirus-only, tidak ada di siklik tktxn_rcvhdrs
+        // sp_no = sirus-only, tidak ada di siklik sktxn_rcvhdrs
         $this->spNo = isset($hdr->sp_no) && $hdr->sp_no ? (int) $hdr->sp_no : null;
         $this->rcvDiskon = (int) ($hdr->rcv_diskon ?? 0);
         $this->rcvPpn = (float) ($hdr->rcv_ppn ?? 0);
@@ -248,7 +248,7 @@ new class extends Component {
 
     private function cekHargaBeli(string $productId, string $productName, int $newPrice): void
     {
-        $masterPrice = (int) (DB::table('tkmst_products')->where('product_id', $productId)->value('cost_price') ?? 0);
+        $masterPrice = (int) (DB::table('skmst_products')->where('product_id', $productId)->value('cost_price') ?? 0);
 
         if ($newPrice === $masterPrice) {
             return;
@@ -264,11 +264,11 @@ new class extends Component {
         }
 
         // Cek setting auto update
-        $autoUpdate = DB::table('dimst_identitases')->value('rcvupdate_cost_price') ?? '0';
+        $autoUpdate = DB::table('skmst_identitases')->value('rcvupdate_cost_price') ?? '0';
 
         if ($autoUpdate === '1') {
             // Auto update harga di master
-            DB::table('tkmst_products')
+            DB::table('skmst_products')
                 ->where('product_id', $productId)
                 ->update(['cost_price' => $newPrice]);
             $this->dispatch('toast', type: 'success', message: "Harga master {$productName} otomatis diupdate.");
@@ -289,7 +289,7 @@ new class extends Component {
             return;
         }
 
-        DB::table('tkmst_products')
+        DB::table('skmst_products')
             ->where('product_id', $this->pendingPriceUpdate['product_id'])
             ->update(['cost_price' => $this->pendingPriceUpdate['new_price']]);
 
@@ -313,8 +313,8 @@ new class extends Component {
      ══════════════════════════════ */
     private function loadDetailsFromDb(): void
     {
-        $rows = DB::table('tktxn_rcvdtls as a')
-            ->leftJoin('tkmst_products as b', 'a.product_id', '=', 'b.product_id')
+        $rows = DB::table('sktxn_rcvdtls as a')
+            ->leftJoin('skmst_products as b', 'a.product_id', '=', 'b.product_id')
             ->where('a.rcv_no', $this->rcvNo)
             ->select(['a.rcv_dtl', 'a.product_id', 'b.product_name', 'a.qty', 'a.cost_price', 'a.dtl_persen', 'a.dtl_diskon', 'a.dtl_persen1', 'a.dtl_diskon1'])
             ->orderBy('a.rcv_dtl')
@@ -444,7 +444,7 @@ new class extends Component {
     {
         // Guard edit mode: status selain 'A' (Daftar Tunggu) sudah final — tidak boleh disimpan ulang.
         if ($this->formMode === 'edit' && $this->rcvNo) {
-            $currentStatus = (string) (DB::table('tktxn_rcvhdrs')->where('rcv_no', $this->rcvNo)->value('rcv_status') ?? '');
+            $currentStatus = (string) (DB::table('sktxn_rcvhdrs')->where('rcv_no', $this->rcvNo)->value('rcv_status') ?? '');
             if ($currentStatus !== 'A') {
                 $this->dispatch('toast', type: 'error', message: "Status '{$currentStatus}' — transaksi sudah final, tidak bisa diubah. Batalkan dulu untuk mengembalikan ke Daftar Tunggu.");
                 return;
@@ -494,10 +494,10 @@ new class extends Component {
         }
 
         // Supplier name untuk keterangan cashout
-        $suppName = DB::table('tkmst_suppliers')->where('supp_id', $this->suppId)->value('supp_name') ?? ($this->suppName ?? '');
+        $suppName = DB::table('skmst_suppliers')->where('supp_id', $this->suppId)->value('supp_name') ?? ($this->suppName ?? '');
 
         $now = Carbon::now();
-        $findShift = DB::table('rstxn_shiftctls')
+        $findShift = DB::table('sktxn_shiftctls')
             ->select('shift')
             ->whereNotNull('shift_start')
             ->whereNotNull('shift_end')
@@ -514,10 +514,10 @@ new class extends Component {
 
                 if ($this->formMode === 'create') {
                     // Generate rcv_no
-                    $rcvNo = (int) DB::selectOne('SELECT NVL(MAX(rcv_no),0)+1 AS val FROM tktxn_rcvhdrs')->val;
+                    $rcvNo = (int) DB::selectOne('SELECT NVL(MAX(rcv_no),0)+1 AS val FROM sktxn_rcvhdrs')->val;
                     $this->rcvNo = $rcvNo;
 
-                    DB::table('tktxn_rcvhdrs')->insert([
+                    DB::table('sktxn_rcvhdrs')->insert([
                         'rcv_no' => $rcvNo,
                         'rcv_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
                         'supp_id' => $this->suppId,
@@ -536,7 +536,7 @@ new class extends Component {
 
                     // Insert all details
                     foreach ($this->details as $dtl) {
-                        DB::table('tktxn_rcvdtls')->insert([
+                        DB::table('sktxn_rcvdtls')->insert([
                             'rcv_no' => $rcvNo,
                             'rcv_dtl' => DB::raw('rcvdtl_seq.nextval'),
                             'product_id' => $dtl['product_id'],
@@ -550,7 +550,7 @@ new class extends Component {
                     }
                 } else {
                     // Update header
-                    DB::table('tktxn_rcvhdrs')
+                    DB::table('sktxn_rcvhdrs')
                         ->where('rcv_no', $this->rcvNo)
                         ->update([
                             'rcv_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
@@ -569,10 +569,10 @@ new class extends Component {
                         ]);
 
                     // Delete old details & re-insert
-                    DB::table('tktxn_rcvdtls')->where('rcv_no', $this->rcvNo)->delete();
+                    DB::table('sktxn_rcvdtls')->where('rcv_no', $this->rcvNo)->delete();
 
                     foreach ($this->details as $dtl) {
-                        DB::table('tktxn_rcvdtls')->insert([
+                        DB::table('sktxn_rcvdtls')->insert([
                             'rcv_no' => $this->rcvNo,
                             'rcv_dtl' => DB::raw('rcvdtl_seq.nextval'),
                             'product_id' => $dtl['product_id'],
@@ -586,11 +586,11 @@ new class extends Component {
                     }
 
                     // Hapus pembayaran lama (edit mode) supaya tidak double insert
-                    DB::table('tktxn_rcvpayments')->where('rcv_no', $this->rcvNo)->delete();
-                    $oldCashoutNos = DB::table('tktxn_cashoutdtls')->where('rcv_no', $this->rcvNo)->pluck('cashout_no')->all();
-                    DB::table('tktxn_cashoutdtls')->where('rcv_no', $this->rcvNo)->delete();
+                    DB::table('sktxn_rcvpayments')->where('rcv_no', $this->rcvNo)->delete();
+                    $oldCashoutNos = DB::table('sktxn_cashoutdtls')->where('rcv_no', $this->rcvNo)->pluck('cashout_no')->all();
+                    DB::table('sktxn_cashoutdtls')->where('rcv_no', $this->rcvNo)->delete();
                     if (!empty($oldCashoutNos)) {
-                        DB::table('tktxn_cashouthdrs')->whereIn('cashout_no', $oldCashoutNos)->delete();
+                        DB::table('sktxn_cashouthdrs')->whereIn('cashout_no', $oldCashoutNos)->delete();
                     }
                 }
 
@@ -599,7 +599,7 @@ new class extends Component {
                     $cashoutNo = (int) DB::selectOne('SELECT cashout_seq.nextval AS val FROM dual')->val;
                     $desc = 'Angsuran Awal, Atas Nama :"' . $suppName . '" Nota No "' . $this->rcvNo . '".';
 
-                    DB::table('tktxn_cashouthdrs')->insert([
+                    DB::table('sktxn_cashouthdrs')->insert([
                         'cb_id' => $this->cbId,
                         'cashout_no' => $cashoutNo,
                         'cashout_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
@@ -609,13 +609,13 @@ new class extends Component {
                         'supp_id' => $this->suppId,
                     ]);
 
-                    DB::table('tktxn_cashoutdtls')->insert([
+                    DB::table('sktxn_cashoutdtls')->insert([
                         'cashout_no' => $cashoutNo,
                         'rcv_no' => $this->rcvNo,
                         'cashout_dtl' => DB::raw('codtl_seq.nextval'),
                     ]);
 
-                    DB::table('tktxn_rcvpayments')->insert([
+                    DB::table('sktxn_rcvpayments')->insert([
                         'rcvp_no' => DB::raw('rcvp_seq.nextval'),
                         'rcv_no' => $this->rcvNo,
                         'rcvp_date' => DB::raw("to_date('{$this->rcvDate}','dd/mm/yyyy hh24:mi:ss')"),
@@ -651,8 +651,8 @@ new class extends Component {
 
         try {
             DB::transaction(function () use ($rcvNo) {
-                DB::table('tktxn_rcvdtls')->where('rcv_no', $rcvNo)->delete();
-                DB::table('tktxn_rcvhdrs')->where('rcv_no', $rcvNo)->delete();
+                DB::table('sktxn_rcvdtls')->where('rcv_no', $rcvNo)->delete();
+                DB::table('sktxn_rcvhdrs')->where('rcv_no', $rcvNo)->delete();
             });
 
             $this->dispatch('toast', type: 'success', message: 'Data penerimaan berhasil dihapus.');
@@ -692,7 +692,7 @@ new class extends Component {
         }
 
         try {
-            $hdr = DB::table('tktxn_rcvhdrs')->where('rcv_no', $rcvNo)->first();
+            $hdr = DB::table('sktxn_rcvhdrs')->where('rcv_no', $rcvNo)->first();
             if (!$hdr) {
                 $this->dispatch('toast', type: 'error', message: 'Data transaksi tidak ditemukan.');
                 return;
@@ -707,7 +707,7 @@ new class extends Component {
 
             if ($status === 'A') {
                 DB::transaction(function () use ($rcvNo) {
-                    DB::table('tktxn_rcvhdrs')
+                    DB::table('sktxn_rcvhdrs')
                         ->where('rcv_no', $rcvNo)
                         ->update(['rcv_status' => 'F']);
                 });
@@ -717,29 +717,29 @@ new class extends Component {
             }
 
             if (in_array($status, ['H', 'L'], true)) {
-                $cekPembayaran = (int) DB::table('tktxn_cashoutdtls')->where('rcv_no', $rcvNo)->count();
+                $cekPembayaran = (int) DB::table('sktxn_cashoutdtls')->where('rcv_no', $rcvNo)->count();
                 /*if ($cekPembayaran > 1) {
                     $this->dispatch('toast', type: 'error', message: "Nota ini punya {$cekPembayaran}x history pembayaran (DP + cicilan). " . 'Hapus pembayaran terakhir di Pembayaran Hutang PBF dulu, baru batalkan.');
                     return;
                 }*/
 
                 // Cek juga: cashout master dishare dengan rcv lain? Kalau iya, jangan delete cashouthdrs.
-                $sharedCashout = DB::table('tktxn_cashoutdtls as a')->join('tktxn_cashoutdtls as b', 'a.cashout_no', '=', 'b.cashout_no')->where('a.rcv_no', $rcvNo)->where('b.rcv_no', '!=', $rcvNo)->exists();
+                $sharedCashout = DB::table('sktxn_cashoutdtls as a')->join('sktxn_cashoutdtls as b', 'a.cashout_no', '=', 'b.cashout_no')->where('a.rcv_no', $rcvNo)->where('b.rcv_no', '!=', $rcvNo)->exists();
                 if ($sharedCashout) {
                     $this->dispatch('toast', type: 'error', message: 'Cashout pembayaran nota ini dishare dgn nota lain. Hapus dari sisi Pembayaran Hutang PBF dulu.');
                     return;
                 }
 
                 DB::transaction(function () use ($rcvNo) {
-                    DB::table('tktxn_rcvpayments')->where('rcv_no', $rcvNo)->delete();
+                    DB::table('sktxn_rcvpayments')->where('rcv_no', $rcvNo)->delete();
 
-                    $cashoutNos = DB::table('tktxn_cashoutdtls')->where('rcv_no', $rcvNo)->pluck('cashout_no')->all();
-                    DB::table('tktxn_cashoutdtls')->where('rcv_no', $rcvNo)->delete();
+                    $cashoutNos = DB::table('sktxn_cashoutdtls')->where('rcv_no', $rcvNo)->pluck('cashout_no')->all();
+                    DB::table('sktxn_cashoutdtls')->where('rcv_no', $rcvNo)->delete();
                     if (!empty($cashoutNos)) {
-                        DB::table('tktxn_cashouthdrs')->whereIn('cashout_no', $cashoutNos)->delete();
+                        DB::table('sktxn_cashouthdrs')->whereIn('cashout_no', $cashoutNos)->delete();
                     }
 
-                    DB::table('tktxn_rcvhdrs')
+                    DB::table('sktxn_rcvhdrs')
                         ->where('rcv_no', $rcvNo)
                         ->update([
                             'rcv_status' => 'A',
@@ -773,9 +773,9 @@ new class extends Component {
         $this->reset(['rcvDiskon', 'rcvPpn', 'rcvMaterai', 'bayar', 'cbId', 'cbDesc']);
         $this->resetErrorBag('cbId');
 
-        // Auto-fill PPN dari DIMST_IDENTITASES (port Oracle Forms):
+        // Auto-fill PPN dari SKMST_IDENTITASES (port Oracle Forms):
         //   AUTO_PPN_STATUS = '0' → PPN 0%, selain itu → ambil PPN_VALUE master.
-        $idn = DB::table('dimst_identitases')->select('auto_ppn_status', 'ppn_value')->first();
+        $idn = DB::table('skmst_identitases')->select('auto_ppn_status', 'ppn_value')->first();
         if ($idn) {
             $this->rcvPpnStatus = (string) ($idn->auto_ppn_status ?? '1');
             $this->rcvPpn = $this->rcvPpnStatus === '0' ? 0 : (float) ($idn->ppn_value ?? 0);

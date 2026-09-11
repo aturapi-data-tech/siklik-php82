@@ -3,20 +3,20 @@
 /**
  * Kartu Stock Non-Medis (Read-only + opname).
  *
- * Equivalent dgn form Oracle Forms TKVIEW_SALDOAWALSTOCKSNON + tab IOSTOCKWHSNON:
+ * Equivalent dgn form Oracle Forms SKVIEW_SALDOAWALSTOCKSNON + tab IOSTOCKWHSNON:
  *   - Pilih tahun & produk non-medis (ATK / RT — stok tunggal, no transfer)
- *   - Tampilkan saldo awal (TKTXN_SALDOAWALSTOCKSNON.sa_stockwh) +
- *     mutasi tahun berjalan (TKVIEW_IOSTOCKWHSNON qty_d - qty_k) = saldo akhir
+ *   - Tampilkan saldo awal (SKTXN_SALDOAWALSTOCKSNON.sa_stockwh) +
+ *     mutasi tahun berjalan (SKVIEW_IOSTOCKWHSNON qty_d - qty_k) = saldo akhir
  *   - List history mutasi: txn_status RCV=BELI SUPPLIER, SO=OPNAME
  *
  * Sumber tabel (klinik pratama, lokasi GUDANG NON-MEDIS):
- *   - TKMST_PRODUCTNONS           (master barang non-medis)
- *   - TKTXN_SALDOAWALSTOCKSNON    (saldo awal per tahun: SA_YEAR+PRODUCT_ID)
- *   - TKVIEW_IOSTOCKWHSNON        (view mutasi in/out: qty_d / qty_k per txn)
- *   - TKTXN_SOWHSNON              (insert mutasi stock opname non-medis, pakai kasir_id)
+ *   - SKMST_PRODUCTNONS           (master barang non-medis)
+ *   - SKTXN_SALDOAWALSTOCKSNON    (saldo awal per tahun: SA_YEAR+PRODUCT_ID)
+ *   - SKVIEW_IOSTOCKWHSNON        (view mutasi in/out: qty_d / qty_k per txn)
+ *   - SKTXN_SOWHSNON              (insert mutasi stock opname non-medis, pakai kasir_id)
  *
  * Catatan stok: tabel non-medis TIDAK punya trigger legacy (beda dari medis).
- * Maka saat insert SO, aplikasi WAJIB ikut menyesuaikan TKMST_PRODUCTNONS.qty_box
+ * Maka saat insert SO, aplikasi WAJIB ikut menyesuaikan SKMST_PRODUCTNONS.qty_box
  * dalam transaksi yang sama (lihat simpanOpname()).
  */
 
@@ -79,16 +79,16 @@ new class extends Component {
     #[Computed]
     public function productList()
     {
-        $sub = DB::table('tkview_iostockwhsnon')
+        $sub = DB::table('skview_iostockwhsnon')
             ->select('product_id',
                 DB::raw('NVL(SUM(qty_d),0) as masuk'),
                 DB::raw('NVL(SUM(qty_k),0) as keluar'))
             ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [$this->year])
             ->groupBy('product_id');
 
-        $query = DB::table('tkmst_productnons as p')
+        $query = DB::table('skmst_productnons as p')
             ->leftJoinSub($sub, 'io', fn ($j) => $j->on('io.product_id', '=', 'p.product_id'))
-            ->leftJoin('tktxn_saldoawalstocksnon as s', function ($j) {
+            ->leftJoin('sktxn_saldoawalstocksnon as s', function ($j) {
                 $j->on('s.product_id', '=', 'p.product_id')
                   ->where('s.sa_year', '=', $this->year);
             })
@@ -117,7 +117,7 @@ new class extends Component {
     }
 
     /* ── Stock Opname (port Oracle Forms NEW logic) ──
-     * Tidak adjust saldo awal — INSERT mutasi opname ke TKTXN_SOWHSNON:
+     * Tidak adjust saldo awal — INSERT mutasi opname ke SKTXN_SOWHSNON:
      *   updatestock := mutasi + saldo_awal - stock_fisik   (= saldo_akhir_db - stock_fisik)
      *   updatestock > 0 → stock fisik kurang → INSERT (so_d=0, so_k=updatestock)   [keluar]
      *   updatestock < 0 → stock fisik lebih → INSERT (so_d=|updatestock|, so_k=0)  [masuk]
@@ -125,7 +125,7 @@ new class extends Component {
      * Hanya boleh opname tahun berjalan.
      *
      * PENTING: tabel non-medis TIDAK punya trigger legacy → qty_box di master
-     * TKMST_PRODUCTNONS WAJIB ikut disesuaikan di transaksi yang sama.
+     * SKMST_PRODUCTNONS WAJIB ikut disesuaikan di transaksi yang sama.
      */
     public function simpanOpname(): void
     {
@@ -157,7 +157,7 @@ new class extends Component {
             return;
         }
 
-        // Resolve kasir_id (konvensi klinik — tktxn_sowhsnon pakai kasir_id, bukan emp_id)
+        // Resolve kasir_id (konvensi klinik — sktxn_sowhsnon pakai kasir_id, bukan emp_id)
         $kasirId = auth()->user()->kasir_id ?? null;
         if (!$kasirId) {
             $this->dispatch('toast', type: 'error',
@@ -177,7 +177,7 @@ new class extends Component {
         try {
             DB::transaction(function () use ($selisih, $kasirId) {
                 // Generate so_no = NVL(MAX(so_no),0)+1
-                $soNo = (int) (DB::table('tktxn_sowhsnon')->max('so_no') ?? 0) + 1;
+                $soNo = (int) (DB::table('sktxn_sowhsnon')->max('so_no') ?? 0) + 1;
 
                 $payload = [
                     'product_id' => $this->productId,
@@ -197,17 +197,17 @@ new class extends Component {
                     $payload['so_k'] = 0;
                 }
 
-                DB::table('tktxn_sowhsnon')->insert($payload);
+                DB::table('sktxn_sowhsnon')->insert($payload);
 
                 // ── SYNC qty_box master (no legacy trigger di non-medis) ──
                 // selisih > 0 → fisik KURANG → stok berkurang → decrement qty_box
                 // selisih < 0 → fisik LEBIH  → stok bertambah → increment qty_box
                 if ($selisih > 0) {
-                    DB::table('tkmst_productnons')
+                    DB::table('skmst_productnons')
                         ->where('product_id', $this->productId)
                         ->decrement('qty_box', $selisih);
                 } else {
-                    DB::table('tkmst_productnons')
+                    DB::table('skmst_productnons')
                         ->where('product_id', $this->productId)
                         ->increment('qty_box', abs($selisih));
                 }
@@ -230,8 +230,8 @@ new class extends Component {
     {
         if (!$this->productId) return;
 
-        $row = DB::table('tkmst_productnons as p')
-            ->leftJoin('tkmst_uoms as u', 'p.uom_id', '=', 'u.uom_id')
+        $row = DB::table('skmst_productnons as p')
+            ->leftJoin('skmst_uoms as u', 'p.uom_id', '=', 'u.uom_id')
             ->select([
                 'p.product_id', 'p.product_name',
                 'p.cost_price', 'p.qty_box', 'p.limit_stock',
@@ -251,12 +251,12 @@ new class extends Component {
             return ['awal' => 0, 'masuk' => 0, 'keluar' => 0, 'akhir' => 0];
         }
 
-        $awal = (int) (DB::table('tktxn_saldoawalstocksnon')
+        $awal = (int) (DB::table('sktxn_saldoawalstocksnon')
             ->where('product_id', $this->productId)
             ->where('sa_year', $this->year)
             ->sum('sa_stockwh') ?? 0);
 
-        $mut = DB::table('tkview_iostockwhsnon')
+        $mut = DB::table('skview_iostockwhsnon')
             ->where('product_id', $this->productId)
             ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [$this->year])
             ->selectRaw('NVL(SUM(qty_d),0) as masuk, NVL(SUM(qty_k),0) as keluar')
@@ -282,7 +282,7 @@ new class extends Component {
     {
         if (!$this->productId) return collect();
 
-        return DB::table('tkview_iostockwhsnon')
+        return DB::table('skview_iostockwhsnon')
             ->select([
                 DB::raw("TO_CHAR(txn_date,'dd/mm/yyyy hh24:mi:ss') as txn_date_display"),
                 'txn_date',

@@ -40,7 +40,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('rsmst_pasiens')
+        $row = DB::table('skmst_pasiens')
             ->select(['reg_no', 'reg_name', 'sex', DB::raw("TO_CHAR(birth_date, 'dd/mm/yyyy') as birth_date_formatted"), 'birth_place', 'address', 'rt', 'rw', 'phone', 'kk', 'no_kk', 'no_jkn', 'nokartu_bpjs', 'nik_bpjs', 'thn', 'bln', 'hari'])
             ->where('reg_no', $this->initialRegNo)
             ->first();
@@ -68,7 +68,7 @@ new class extends Component {
         try {
             // ===== 1) exact match by reg_no =====
             if (ctype_digit($keyword)) {
-                $exactRow = DB::table('rsmst_pasiens')
+                $exactRow = DB::table('skmst_pasiens')
                     ->select(['reg_no', 'reg_name', 'sex', DB::raw("TO_CHAR(birth_date, 'dd/mm/yyyy') as birth_date_formatted"), 'birth_place', 'address', 'rt', 'rw', 'phone', 'kk', 'no_kk', 'no_jkn', 'nokartu_bpjs', 'nik_bpjs', 'thn', 'bln', 'hari'])
                     ->where('reg_no', $keyword)
                     ->first();
@@ -82,7 +82,7 @@ new class extends Component {
             // ===== 2) search by name / NIK / No BPJS / No RM / Alamat =====
             $upperKeyword = mb_strtoupper($keyword);
 
-            $rows = DB::table('rsmst_pasiens')
+            $rows = DB::table('skmst_pasiens')
                 ->select(['reg_no', 'reg_name', 'sex', DB::raw("TO_CHAR(birth_date, 'dd/mm/yyyy') as birth_date_formatted"), 'birth_place', 'address', 'rt', 'rw', 'phone', 'kk', 'no_kk', 'no_jkn', 'nokartu_bpjs', 'nik_bpjs', 'thn', 'bln', 'hari'])
                 ->where(function ($q) use ($upperKeyword, $keyword) {
                     $q->where(DB::raw('UPPER(reg_name)'), 'LIKE', "%{$upperKeyword}%")
@@ -269,7 +269,7 @@ new class extends Component {
         }
 
         // ✅ PAKAI $value (parameter), BUKAN $this->initialRegNo
-        $row = DB::table('rsmst_pasiens')
+        $row = DB::table('skmst_pasiens')
             ->select(['reg_no', 'reg_name', 'sex', DB::raw("TO_CHAR(birth_date, 'dd/mm/yyyy') as birth_date_formatted"), 'birth_place', 'address', 'rt', 'rw', 'phone', 'kk', 'no_kk', 'no_jkn', 'nokartu_bpjs', 'nik_bpjs', 'thn', 'bln', 'hari'])
             ->where('reg_no', $value) // ✅ Pakai $value
             ->first();

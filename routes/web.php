@@ -293,6 +293,12 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('/database-monitor/log-bpjs', 'pages::database-monitor.log-bpjs.log-bpjs')
         ->name('database-monitor.log-bpjs');
 
+    // ===========================================
+    // PANDUAN DEV
+    // ===========================================
+    Route::livewire('/panduan-dev/struktur-tabel', 'pages::panduan-dev.struktur-tabel.struktur-tabel')
+        ->name('panduan-dev.struktur-tabel');
+
 });
 
 

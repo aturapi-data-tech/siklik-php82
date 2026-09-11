@@ -68,7 +68,7 @@ new class extends Component {
     {
         $search = trim($this->searchItem);
 
-        return DB::table('rsmst_radiologis')->select('rad_id', 'rad_desc', 'rad_price')->whereNotNull('rad_desc')->when($search, fn($q) => $q->whereRaw('UPPER(rad_desc) LIKE ?', ['%' . mb_strtoupper($search) . '%']))->orderBy('rad_desc', 'asc')->paginate(15);
+        return DB::table('skmst_radiologis')->select('rad_id', 'rad_desc', 'rad_price')->whereNotNull('rad_desc')->when($search, fn($q) => $q->whereRaw('UPPER(rad_desc) LIKE ?', ['%' . mb_strtoupper($search) . '%']))->orderBy('rad_desc', 'asc')->paginate(15);
     }
 
     /* ===============================
@@ -128,11 +128,11 @@ new class extends Component {
 
                 $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
 
-                // 5. Insert detail ke rstxn_rjrads (radiologi tidak punya header tersendiri)
+                // 5. Insert detail ke sktxn_rjrads (radiologi tidak punya header tersendiri)
                 foreach ($this->selectedItems as $item) {
-                    $radDtlNo = DB::scalar('SELECT NVL(MAX(TO_NUMBER(rad_dtl)) + 1, 1) FROM rstxn_rjrads');
+                    $radDtlNo = DB::scalar('SELECT NVL(MAX(TO_NUMBER(rad_dtl)) + 1, 1) FROM sktxn_rjrads');
 
-                    DB::table('rstxn_rjrads')->insert([
+                    DB::table('sktxn_rjrads')->insert([
                         'rad_dtl' => $radDtlNo,
                         'rad_id' => $item['rad_id'],
                         'rj_no' => $this->rjNo,
@@ -186,7 +186,7 @@ new class extends Component {
      */
     private function getRjData(): ?object
     {
-        return DB::table('rstxn_rjhdrs')->select('reg_no', 'dr_id')->where('rj_no', $this->rjNo)->first();
+        return DB::table('sktxn_rjhdrs')->select('reg_no', 'dr_id')->where('rj_no', $this->rjNo)->first();
     }
 };
 ?>

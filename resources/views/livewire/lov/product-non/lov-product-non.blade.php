@@ -36,7 +36,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('tkmst_productnons')
+        $row = DB::table('skmst_productnons')
             ->select(['product_id', 'product_name', 'cost_price', 'qty_box'])
             ->where('product_id', $this->initialProductId)
             ->where('active_status', '1')
@@ -67,7 +67,7 @@ new class extends Component {
 
         // ===== 1) exact match by product_id =====
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('tkmst_productnons')
+            $exactRow = DB::table('skmst_productnons')
                 ->select(['product_id', 'product_name', 'cost_price', 'qty_box'])
                 ->where('active_status', '1')
                 ->where('product_id', $keyword)
@@ -85,7 +85,7 @@ new class extends Component {
         }
 
         // ===== 2) search by name =====
-        $rows = DB::table('tkmst_productnons')
+        $rows = DB::table('skmst_productnons')
             ->select(['product_id', 'product_name', 'cost_price', 'qty_box'])
             ->where('active_status', '1')
             ->whereRaw('UPPER(product_name) LIKE ?', ['%' . strtoupper($keyword) . '%'])

@@ -3,10 +3,10 @@
 /**
  * Pembayaran Piutang RJ — Modal Pelunasan (Grouping).
  *
- * Equivalent dgn xtogle button + g_rj procedure di Oracle Forms RSVIEW_RJKASIR:
+ * Equivalent dgn xtogle button + g_rj procedure di Oracle Forms SKVIEW_RJKASIR:
  *  - Loop rj_no piutang yang ditandai user via toggle (rj_status='L', txn_status='H', cek_bayar='1')
  *  - Hitung total tagihan vs sudah dibayar (titipan)
- *  - Jika sisa>0: insert RSTXN_RJCASHINS (g_status='G'), UPDATE RSTXN_RJHDRS.txn_status='L'
+ *  - Jika sisa>0: insert SKTXN_RJCASHINS (g_status='G'), UPDATE SKTXN_RJHDRS.txn_status='L'
  */
 
 use Livewire\Component;
@@ -64,7 +64,7 @@ new class extends Component {
             [
                 'regNo' => 'required|string',
                 'tanggal' => 'required|date_format:d/m/Y H:i:s',
-                'cbId' => 'required|string|exists:tkacc_carabayars,cb_id',
+                'cbId' => 'required|string|exists:skacc_carabayars,cb_id',
             ],
             [
                 'regNo.required' => 'Pasien tidak terdeteksi.',
@@ -78,7 +78,7 @@ new class extends Component {
         // Resolve kasir_id dari USERS.kasir_id
         $kasirId = auth()->user()->kasir_id ?? null;
         if ($kasirId) {
-            $valid = DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->where('active_status', '1')->exists();
+            $valid = DB::table('skmst_kasirs')->where('kasir_id', $kasirId)->where('active_status', '1')->exists();
             if (!$valid) {
                 $kasirId = null;
             }
@@ -88,10 +88,10 @@ new class extends Component {
             return;
         }
 
-        // Resolve shift dari RSTXN_SHIFTCTLS by jam tanggal pembayaran
+        // Resolve shift dari SKTXN_SHIFTCTLS by jam tanggal pembayaran
         $jam = Carbon::createFromFormat('d/m/Y H:i:s', $this->tanggal)->format('H:i:s');
         $shift =
-            DB::table('rstxn_shiftctls')
+            DB::table('sktxn_shiftctls')
                 ->whereRaw('? BETWEEN shift_start AND shift_end', [$jam])
                 ->value('shift') ?? '1';
 
@@ -103,32 +103,32 @@ new class extends Component {
         try {
             DB::transaction(function () use ($kasirId, $shift, $tanggalDb, &$processedCount, &$totalNominal) {
                 // Re-fetch rj piutang dgn lock
-                $headers = DB::table('rstxn_rjhdrs')->where('reg_no', $this->regNo)->where('rj_status', 'L')->where('txn_status', 'H')->where('cek_bayar', '1')->lockForUpdate()->get();
+                $headers = DB::table('sktxn_rjhdrs')->where('reg_no', $this->regNo)->where('rj_status', 'L')->where('txn_status', 'H')->where('cek_bayar', '1')->lockForUpdate()->get();
 
                 if ($headers->isEmpty()) {
                     throw new \RuntimeException('Tidak ada transaksi yang ditandai untuk dilunasi (cek_bayar=1).');
                 }
 
-                $regName = DB::table('rsmst_pasiens')->where('reg_no', $this->regNo)->value('reg_name');
+                $regName = DB::table('skmst_pasiens')->where('reg_no', $this->regNo)->value('reg_name');
 
                 foreach ($headers as $hdr) {
                     $rjNo = $hdr->rj_no;
 
-                    $hn = (float) DB::table('rstxn_rjaccdocs')->where('rj_no', $rjNo)->sum('accdoc_price');
-                    $obat = (float) DB::table('rstxn_rjobats')->where('rj_no', $rjNo)->sum(DB::raw('qty*price'));
-                    $jk = (float) DB::table('rstxn_rjactemps')->where('rj_no', $rjNo)->sum('acte_price');
-                    $lab = (float) DB::table('rstxn_rjlabs')->where('rj_no', $rjNo)->sum('lab_price');
-                    $jm = (float) DB::table('rstxn_rjactparams')->where('rj_no', $rjNo)->sum('pact_price');
-                    $rad = (float) DB::table('rstxn_rjrads')->where('rj_no', $rjNo)->sum('rad_price');
-                    $other = (float) DB::table('rstxn_rjothers')->where('rj_no', $rjNo)->sum('other_price');
-                    $titip = (float) DB::table('rstxn_rjcashins')->where('rj_no', $rjNo)->sum('rjc_nominal');
+                    $hn = (float) DB::table('sktxn_rjaccdocs')->where('rj_no', $rjNo)->sum('accdoc_price');
+                    $obat = (float) DB::table('sktxn_rjobats')->where('rj_no', $rjNo)->sum(DB::raw('qty*price'));
+                    $jk = (float) DB::table('sktxn_rjactemps')->where('rj_no', $rjNo)->sum('acte_price');
+                    $lab = (float) DB::table('sktxn_rjlabs')->where('rj_no', $rjNo)->sum('lab_price');
+                    $jm = (float) DB::table('sktxn_rjactparams')->where('rj_no', $rjNo)->sum('pact_price');
+                    $rad = (float) DB::table('sktxn_rjrads')->where('rj_no', $rjNo)->sum('rad_price');
+                    $other = (float) DB::table('sktxn_rjothers')->where('rj_no', $rjNo)->sum('other_price');
+                    $titip = (float) DB::table('sktxn_rjcashins')->where('rj_no', $rjNo)->sum('rjc_nominal');
 
                     $total = $hn + $obat + $jk + $lab + $jm + $rad + $other + (float) ($hdr->rj_admin ?? 0) + (float) ($hdr->rs_admin ?? 0) + (float) ($hdr->poli_price ?? 0) - (float) ($hdr->rj_diskon ?? 0);
 
                     $sisa = $total - $titip;
 
                     if ($sisa > 0) {
-                        DB::table('rstxn_rjcashins')->insert([
+                        DB::table('sktxn_rjcashins')->insert([
                             'cb_id' => $this->cbId,
                             'rjc_dtl' => DB::raw('rjcdtl_seq.nextval'),
                             'rjc_date' => DB::raw($tanggalDb),
@@ -140,7 +140,7 @@ new class extends Component {
                             'g_status' => 'G',
                         ]);
 
-                        DB::table('rstxn_rjhdrs')
+                        DB::table('sktxn_rjhdrs')
                             ->where('rj_no', $rjNo)
                             ->update([
                                 'txn_status' => 'L',

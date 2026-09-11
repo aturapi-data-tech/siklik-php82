@@ -56,11 +56,11 @@ new class extends Component {
      =============================== */
     private function findData(int $rjNo): void
     {
-        $this->rjRad = DB::table('rstxn_rjrads')
-            ->join('rsmst_radiologis', 'rsmst_radiologis.rad_id', 'rstxn_rjrads.rad_id')
-            ->select('rstxn_rjrads.rad_dtl', 'rstxn_rjrads.rad_id', 'rsmst_radiologis.rad_desc', 'rstxn_rjrads.rad_price')
+        $this->rjRad = DB::table('sktxn_rjrads')
+            ->join('skmst_radiologis', 'skmst_radiologis.rad_id', 'sktxn_rjrads.rad_id')
+            ->select('sktxn_rjrads.rad_dtl', 'sktxn_rjrads.rad_id', 'skmst_radiologis.rad_desc', 'sktxn_rjrads.rad_price')
             ->where('rj_no', $rjNo)
-            ->orderBy('rstxn_rjrads.rad_dtl')
+            ->orderBy('sktxn_rjrads.rad_dtl')
             ->get()
             ->map(
                 fn($r) => [
@@ -121,7 +121,7 @@ new class extends Component {
 
         $this->validate(
             [
-                'formEntryRad.radId' => 'bail|required|exists:rsmst_radiologis,rad_id',
+                'formEntryRad.radId' => 'bail|required|exists:skmst_radiologis,rad_id',
                 'formEntryRad.radDesc' => 'bail|required',
                 'formEntryRad.radPrice' => 'bail|required|numeric|min:0',
             ],
@@ -139,9 +139,9 @@ new class extends Component {
                 // Lock row RJ — cegah race condition sequence rad_dtl
                 $this->lockRJRow($this->rjNo);
 
-                $last = DB::table('rstxn_rjrads')->select(DB::raw('nvl(max(rad_dtl)+1,1) as rad_dtl_max'))->first();
+                $last = DB::table('sktxn_rjrads')->select(DB::raw('nvl(max(rad_dtl)+1,1) as rad_dtl_max'))->first();
 
-                DB::table('rstxn_rjrads')->insert([
+                DB::table('sktxn_rjrads')->insert([
                     'rad_dtl' => $last->rad_dtl_max,
                     'rj_no' => $this->rjNo,
                     'rad_id' => $this->formEntryRad['radId'],
@@ -216,7 +216,7 @@ new class extends Component {
                 // Lock row RJ — update + array lokal harus atomik
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjrads')
+                DB::table('sktxn_rjrads')
                     ->where('rad_dtl', $this->editingDtl)
                     ->update(['rad_price' => $this->editRow['radPrice']]);
 
@@ -258,7 +258,7 @@ new class extends Component {
                 // Lock row RJ dulu
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjrads')->where('rad_dtl', $radDtl)->delete();
+                DB::table('sktxn_rjrads')->where('rad_dtl', $radDtl)->delete();
 
                 $this->rjRad = collect($this->rjRad)->where('radDtl', '!=', $radDtl)->values()->toArray();
 

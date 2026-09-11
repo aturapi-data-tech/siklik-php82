@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('rsmst_accdocs', function (Blueprint $table) {
+        Schema::create('skmst_accdocs', function (Blueprint $table) {
             $table->string('accdoc_id', 10);
             $table->primary('accdoc_id', 'pk_rsmst_accdocs');
             $table->string('accdoc_desc', 50)->nullable();
@@ -18,6 +18,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('rsmst_accdocs');
+        Schema::dropIfExists('skmst_accdocs');
     }
 };

@@ -36,7 +36,7 @@ new class extends Component {
     #[Computed]
     public function provinces()
     {
-        return DB::table('tkmst_provs')
+        return DB::table('skmst_provs')
             ->select('prov_id', 'prov_name')
             ->orderBy('prov_name')
             ->get();
@@ -46,7 +46,7 @@ new class extends Component {
     #[Computed]
     public function cities()
     {
-        $q = DB::table('tkmst_kotas')
+        $q = DB::table('skmst_kotas')
             ->select('kota_id', 'kota_name', 'prov_id')
             ->orderBy('kota_name');
 
@@ -77,7 +77,7 @@ new class extends Component {
     #[On('master.customer.openEdit')]
     public function openEdit(string $cmId): void
     {
-        $row = DB::table('tkmst_customers')->where('cm_id', $cmId)->first();
+        $row = DB::table('skmst_customers')->where('cm_id', $cmId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -103,9 +103,9 @@ new class extends Component {
     #[On('master.customer.toggleActive')]
     public function toggleActive(string $cmId): void
     {
-        $cur = (string) DB::table('tkmst_customers')->where('cm_id', $cmId)->value('active_status');
+        $cur = (string) DB::table('skmst_customers')->where('cm_id', $cmId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_customers')->where('cm_id', $cmId)->update(['active_status' => $next]);
+        DB::table('skmst_customers')->where('cm_id', $cmId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status customer → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.customer.saved');
@@ -115,13 +115,13 @@ new class extends Component {
     public function deleteCustomer(string $cmId): void
     {
         try {
-            $isUsedSls = DB::table('tktxn_slshdrs')->where('cm_id', $cmId)->exists();
+            $isUsedSls = DB::table('sktxn_slshdrs')->where('cm_id', $cmId)->exists();
             if ($isUsedSls) {
                 $this->dispatch('toast', type: 'error', message: 'Customer tidak bisa dihapus karena masih dipakai pada transaksi penjualan.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_customers')->where('cm_id', $cmId)->delete();
+            $deleted = DB::table('skmst_customers')->where('cm_id', $cmId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data customer tidak ditemukan.');
                 return;
@@ -142,15 +142,15 @@ new class extends Component {
     {
         $rules = [
             'form.cm_id'         => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkmst_customers,cm_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skmst_customers,cm_id'
                 : 'required|string',
             'form.cm_name'       => 'required|string|max:100',
             'form.cm_phone1'     => 'nullable|string|max:100',
             'form.cm_phone2'     => 'nullable|string|max:100',
             'form.cm_email'      => 'nullable|email|max:100',
             'form.cm_address'    => 'nullable|string|max:100',
-            'form.prov_id'       => 'required|string|exists:tkmst_provs,prov_id',
-            'form.kota_id'       => 'required|string|exists:tkmst_kotas,kota_id',
+            'form.prov_id'       => 'required|string|exists:skmst_provs,prov_id',
+            'form.kota_id'       => 'required|string|exists:skmst_kotas,kota_id',
             'form.active_status' => 'required|in:0,1',
         ];
 
@@ -189,12 +189,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_customers')->insert([
+            DB::table('skmst_customers')->insert([
                 'cm_id' => mb_strtoupper($this->form['cm_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_customers')->where('cm_id', $this->originalId)->update($payload);
+            DB::table('skmst_customers')->where('cm_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data customer berhasil disimpan.');

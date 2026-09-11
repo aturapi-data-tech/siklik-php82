@@ -109,19 +109,19 @@ new class extends Component {
         $rjNo = $this->rjNo;
 
         // Admin dari header
-        $hdr = DB::table('rstxn_rjhdrs')->select('rs_admin', 'rj_admin', 'poli_price')->where('rj_no', $rjNo)->first();
+        $hdr = DB::table('sktxn_rjhdrs')->select('rs_admin', 'rj_admin', 'poli_price')->where('rj_no', $rjNo)->first();
 
         $this->sumRsAdmin = (int) ($hdr->rs_admin ?? 0);
         $this->sumRjAdmin = (int) ($hdr->rj_admin ?? 0);
         $this->sumPoliPrice = (int) ($hdr->poli_price ?? 0);
 
-        $this->sumJasaKaryawan = (int) DB::table('rstxn_rjactemps')->where('rj_no', $rjNo)->sum('acte_price');
-        $this->sumJasaDokter = (int) DB::table('rstxn_rjaccdocs')->where('rj_no', $rjNo)->sum('accdoc_price');
-        $this->sumJasaMedis = (int) DB::table('rstxn_rjactparams')->where('rj_no', $rjNo)->sum('pact_price');
-        $this->sumObat = (int) DB::table('rstxn_rjobats')->where('rj_no', $rjNo)->selectRaw('nvl(sum(qty * price), 0) as total')->value('total');
-        $this->sumLaboratorium = (int) DB::table('rstxn_rjlabs')->where('rj_no', $rjNo)->sum('lab_price');
-        $this->sumRadiologi = (int) DB::table('rstxn_rjrads')->where('rj_no', $rjNo)->sum('rad_price');
-        $this->sumLainLain = (int) DB::table('rstxn_rjothers')->where('rj_no', $rjNo)->sum('other_price');
+        $this->sumJasaKaryawan = (int) DB::table('sktxn_rjactemps')->where('rj_no', $rjNo)->sum('acte_price');
+        $this->sumJasaDokter = (int) DB::table('sktxn_rjaccdocs')->where('rj_no', $rjNo)->sum('accdoc_price');
+        $this->sumJasaMedis = (int) DB::table('sktxn_rjactparams')->where('rj_no', $rjNo)->sum('pact_price');
+        $this->sumObat = (int) DB::table('sktxn_rjobats')->where('rj_no', $rjNo)->selectRaw('nvl(sum(qty * price), 0) as total')->value('total');
+        $this->sumLaboratorium = (int) DB::table('sktxn_rjlabs')->where('rj_no', $rjNo)->sum('lab_price');
+        $this->sumRadiologi = (int) DB::table('sktxn_rjrads')->where('rj_no', $rjNo)->sum('rad_price');
+        $this->sumLainLain = (int) DB::table('sktxn_rjothers')->where('rj_no', $rjNo)->sum('other_price');
 
         $this->sumTotalRJ = $this->sumRsAdmin + $this->sumRjAdmin + $this->sumPoliPrice + $this->sumJasaKaryawan + $this->sumJasaDokter + $this->sumJasaMedis + $this->sumObat + $this->sumLaboratorium + $this->sumRadiologi + $this->sumLainLain;
     }
@@ -129,20 +129,20 @@ new class extends Component {
     /* ===============================
      | FIND DATA — kalkulasi & set rs_admin, rj_admin, poli_price
      |
-     | ⚠️  Method ini melakukan DB update ke rstxn_rjhdrs.
+     | ⚠️  Method ini melakukan DB update ke sktxn_rjhdrs.
      |     Selalu panggil DI DALAM DB::transaction + setelah lockRJRow().
      =============================== */
     private function findData(int $rjNo): array
     {
         $data = $this->findDataRJ($rjNo) ?? [];
 
-        $hdr = DB::table('rstxn_rjhdrs')->select('rs_admin', 'rj_admin', 'poli_price', 'klaim_id', 'pass_status')->where('rj_no', $rjNo)->first();
+        $hdr = DB::table('sktxn_rjhdrs')->select('rs_admin', 'rj_admin', 'poli_price', 'klaim_id', 'pass_status')->where('rj_no', $rjNo)->first();
 
         // ── RJ Admin ──
         if ($hdr->pass_status === 'N') {
-            $data['rjAdmin'] = isset($data['rjAdmin']) ? (int) $hdr->rj_admin : (int) DB::table('rsmst_parameters')->where('par_id', 1)->value('par_value');
+            $data['rjAdmin'] = isset($data['rjAdmin']) ? (int) $hdr->rj_admin : (int) DB::table('skmst_parameters')->where('par_id', 1)->value('par_value');
 
-            DB::table('rstxn_rjhdrs')
+            DB::table('sktxn_rjhdrs')
                 ->where('rj_no', $rjNo)
                 ->update(['rj_admin' => $data['rjAdmin']]);
         } else {
@@ -151,7 +151,7 @@ new class extends Component {
 
         // ── RS Admin ──
         // Klinik pratama: 1 tarif (poli_price). Tdk ada poli_price_bpjs.
-        $dokter = DB::table('rsmst_doctors')
+        $dokter = DB::table('skmst_doctors')
             ->select('rs_admin', 'poli_price')
             ->where('dr_id', $data['drId'] ?? '')
             ->first();
@@ -159,7 +159,7 @@ new class extends Component {
         $data['rsAdmin'] = isset($data['rsAdmin']) ? (int) ($hdr->rs_admin ?? 0) : (int) ($dokter->rs_admin ?? 0);
 
         if (!isset($data['rsAdmin'])) {
-            DB::table('rstxn_rjhdrs')
+            DB::table('sktxn_rjhdrs')
                 ->where('rj_no', $rjNo)
                 ->update(['rs_admin' => $data['rsAdmin']]);
         }
@@ -170,7 +170,7 @@ new class extends Component {
         $data['poliPrice'] = isset($data['poliPrice']) ? (int) ($hdr->poli_price ?? 0) : (int) $dokterPoliPrice;
 
         if (!isset($data['poliPrice'])) {
-            DB::table('rstxn_rjhdrs')
+            DB::table('sktxn_rjhdrs')
                 ->where('rj_no', $rjNo)
                 ->update(['poli_price' => $data['poliPrice']]);
         }
@@ -191,7 +191,7 @@ new class extends Component {
     {
         try {
             DB::transaction(function () use ($rjNo) {
-                // 1. Lock row dulu — findData() akan update rstxn_rjhdrs di dalam transaksi ini
+                // 1. Lock row dulu — findData() akan update sktxn_rjhdrs di dalam transaksi ini
                 $this->lockRJRow($rjNo);
 
                 // 2. Kalkulasi & ambil data (update rs_admin, rj_admin, poli_price jika perlu)
@@ -252,7 +252,7 @@ new class extends Component {
 
         try {
             DB::transaction(function () use ($status, $keterangan) {
-                // 1. Lock row dulu — findData() akan update rstxn_rjhdrs di dalam transaksi ini
+                // 1. Lock row dulu — findData() akan update sktxn_rjhdrs di dalam transaksi ini
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Kalkulasi & ambil data
@@ -293,7 +293,7 @@ new class extends Component {
         try {
             DB::transaction(function () {
                 // 1. Baca nilai terkini dengan lock
-                $hdr = DB::table('rstxn_rjhdrs')->select('rs_admin', 'rj_admin', 'poli_price')->where('rj_no', $this->rjNo)->lockForUpdate()->first();
+                $hdr = DB::table('sktxn_rjhdrs')->select('rs_admin', 'rj_admin', 'poli_price')->where('rj_no', $this->rjNo)->lockForUpdate()->first();
 
                 // 2. Skip jika tidak ada perubahan
                 if ((int) $hdr->rs_admin === $this->editRsAdmin && (int) $hdr->rj_admin === $this->editRjAdmin && (int) $hdr->poli_price === $this->editPoliPrice) {
@@ -301,7 +301,7 @@ new class extends Component {
                 }
 
                 // 3. Update header
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'rs_admin' => $this->editRsAdmin,

@@ -38,7 +38,7 @@ Master legacy menyimpan `active_status` sebagai string `'1'` (aktif) / `'0'` (no
 ->where('active_status', '1')
 ```
 
-## 5. Tabel shift = `rstxn_shiftctls` (BUKAN rsmst_shifts)
+## 5. Tabel shift = `sktxn_shiftctls` (BUKAN skmst_shifts)
 Lookup shift berjalan berdasar jam sekarang:
 
 ```php
@@ -46,8 +46,8 @@ Lookup shift berjalan berdasar jam sekarang:
 ```
 
 ## 6. Akun: gra_status = N/L (BUKAN flag aktif), kas_status untuk akun kas
-- `tkacc_gr_accountses.gra_status` = `'N'` (Neraca) / `'L'` (Laba-Rugi) — **klasifikasi laporan**, BUKAN flag aktif. JANGAN filter `gra_status = '1'`.
-- Akun pusat siklik = `TKACC_ACCOUNTSES` (tidak ada `acmst_*`). Flag akun kas = kolom `kas_status` (tidak ada flag rj/ugd/ri/ci/co seperti di sirus).
+- `skacc_gr_accountses.gra_status` = `'N'` (Neraca) / `'L'` (Laba-Rugi) — **klasifikasi laporan**, BUKAN flag aktif. JANGAN filter `gra_status = '1'`.
+- Akun pusat siklik = `SKACC_ACCOUNTSES` (tidak ada `acmst_*`). Flag akun kas = kolom `kas_status` (tidak ada flag rj/ugd/ri/ci/co seperti di sirus).
 
 ## 7. Carbon 3 diffInSeconds sign terbalik
 Repo pakai Carbon 3.11.0. `diffInSeconds($other, false)` tandanya kebalik dari Carbon 2. Untuk durasi pakai timestamp mentah:
@@ -60,4 +60,13 @@ $durasi = $end->getTimestamp() - $start->getTimestamp();
 Entry yang dibuat lewat siklik-lite legacy bisa tidak mengikuti pola JSON/cache siklik-php82 → tak kelihatan di UI baru walau ada di DB. Saat data "hilang" di UI tapi ada di tabel, curigai jalur ini.
 
 ## 9. Cek nama kolom dulu — jangan menebak
-Banyak kolom siklik beda dari dugaan (mis. `users.myuser_code`, bukan `emp_id`; `dimst_identitases` untuk identitas, bukan `rsmst_identitases`). Selalu verifikasi kolom ke DB/dokumentasi skema sebelum SELECT/INSERT.
+Banyak kolom siklik beda dari dugaan (mis. `users.myuser_code`, bukan `emp_id`; `skmst_identitases` untuk identitas, bukan `skmst_identitases`). Selalu verifikasi kolom ke DB/dokumentasi skema sebelum SELECT/INSERT.
+
+## Prefix tabel `SK` (sejak 11 Sep 2026)
+
+- Nama tabel/view bisnis: `SKMST_ / SKTXN_ / SKACC_ / SKVIEW_`. Nama lama (`RSMST_`, `TKMST_`, dst.) masih ada
+  sebagai **synonym** untuk siklik-lite legacy — kode baru **wajib** nama SK, jangan campur.
+- Modul tidak lagi terbaca dari prefix; lihat `App\Support\Skema\ModulTabel` atau menu Sistem → Struktur Tabel
+  (`/panduan-dev/struktur-tabel`) untuk peta rename, relasi FK, dan relasi implisit (kolom = PK tabel lain tanpa FK,
+  mis. `SKTXN_RJHDRS.REG_NO → SKMST_PASIENS`).
+- Constraint/index sudah diseragamkan: `AKAR_PK`, `AKAR_KOLOM_FK`, `AKAR_KOLOM_UK`, `AKAR_KOLOM_IX`.

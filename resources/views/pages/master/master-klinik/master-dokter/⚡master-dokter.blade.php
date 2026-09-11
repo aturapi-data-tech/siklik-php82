@@ -76,7 +76,7 @@ new class extends Component {
                 return;
             }
 
-            $localDokters = DB::table('rsmst_doctors')->select('dr_id', 'dr_name', 'kd_dr_bpjs')->get();
+            $localDokters = DB::table('skmst_doctors')->select('dr_id', 'dr_name', 'kd_dr_bpjs')->get();
             $matched = 0;
             $skipped = 0;
 
@@ -94,7 +94,7 @@ new class extends Component {
                 if ($localMatches->count() === 1) {
                     $local = $localMatches->first();
                     if ($local->kd_dr_bpjs !== $bpjsKode) {
-                        DB::table('rsmst_doctors')
+                        DB::table('skmst_doctors')
                             ->where('dr_id', $local->dr_id)
                             ->update(['kd_dr_bpjs' => $bpjsKode]);
                         $matched++;
@@ -119,10 +119,10 @@ new class extends Component {
      =============================== */
     public function toggleActive(string $drId): void
     {
-        $current = (string) DB::table('rsmst_doctors')->where('dr_id', $drId)->value('active_status');
+        $current = (string) DB::table('skmst_doctors')->where('dr_id', $drId)->value('active_status');
         $newValue = $current === '1' ? '0' : '1';
 
-        DB::table('rsmst_doctors')
+        DB::table('skmst_doctors')
             ->where('dr_id', $drId)
             ->update(['active_status' => $newValue]);
 
@@ -156,8 +156,8 @@ new class extends Component {
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('rsmst_doctors as a')
-            ->join('rsmst_polis as b', 'a.poli_id', '=', 'b.poli_id')
+        $queryBuilder = DB::table('skmst_doctors as a')
+            ->join('skmst_polis as b', 'a.poli_id', '=', 'b.poli_id')
             ->select(
                 'a.dr_id', 'a.dr_name', 'a.dr_phone', 'a.dr_address',
                 'a.kd_dr_bpjs', 'a.dr_uuid', 'a.dr_nik',

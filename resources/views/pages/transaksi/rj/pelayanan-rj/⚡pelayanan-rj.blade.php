@@ -22,7 +22,7 @@ new class extends Component {
     public string $searchKeyword = '';
     public string $filterTanggal = '';
     public string $filterStatus = 'A'; // erm_status: A=Belum Dilayani, L=Selesai
-    public string $filterKlaim = ''; // '' | 'BPJS' | 'UMUM' — pakai klaim_status di rsmst_klaimtypes (JM dianggap BPJS)
+    public string $filterKlaim = ''; // '' | 'BPJS' | 'UMUM' — pakai klaim_status di skmst_klaimtypes (JM dianggap BPJS)
     public string $filterPoli = '';
     public string $filterDokter = '';
     public int $itemsPerPage = 10;
@@ -120,15 +120,15 @@ new class extends Component {
 
         $statusColumn = DB::raw("NVL(h.erm_status, 'A')");
 
-        $labSub = DB::table('lbtxn_checkuphdrs')->select('ref_no', DB::raw('COUNT(*) as lab_status'))->where('status_rjri', 'RJ')->where('checkup_status', '!=', 'B')->groupBy('ref_no');
+        $labSub = DB::table('sktxn_checkuphdrs')->select('ref_no', DB::raw('COUNT(*) as lab_status'))->where('status_rjri', 'RJ')->where('checkup_status', '!=', 'B')->groupBy('ref_no');
 
-        $radSub = DB::table('rstxn_rjrads')->select('rj_no', DB::raw('COUNT(*) as rad_status'))->groupBy('rj_no');
+        $radSub = DB::table('sktxn_rjrads')->select('rj_no', DB::raw('COUNT(*) as rad_status'))->groupBy('rj_no');
 
-        $query = DB::table('rstxn_rjhdrs as h')
-            ->join('rsmst_pasiens as p', 'p.reg_no', '=', 'h.reg_no')
-            ->leftJoin('rsmst_polis as po', 'po.poli_id', '=', 'h.poli_id')
-            ->leftJoin('rsmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
-            ->leftJoin('rsmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
+        $query = DB::table('sktxn_rjhdrs as h')
+            ->join('skmst_pasiens as p', 'p.reg_no', '=', 'h.reg_no')
+            ->leftJoin('skmst_polis as po', 'po.poli_id', '=', 'h.poli_id')
+            ->leftJoin('skmst_doctors as d', 'd.dr_id', '=', 'h.dr_id')
+            ->leftJoin('skmst_klaimtypes as k', 'k.klaim_id', '=', 'h.klaim_id')
             ->leftJoinSub($labSub, 'lab', fn($j) => $j->on('lab.ref_no', '=', 'h.rj_no'))
             ->leftJoinSub($radSub, 'rad', fn($j) => $j->on('rad.rj_no', '=', 'h.rj_no'))
             ->select(['h.rj_no', DB::raw("to_char(h.rj_date,'dd/mm/yyyy hh24:mi:ss') as rj_date_display"), 'h.reg_no', 'p.reg_name', 'p.sex', 'p.address', DB::raw("to_char(p.birth_date,'dd/mm/yyyy') as birth_date"), 'h.no_antrian', 'h.poli_id', 'po.poli_desc', 'h.dr_id', 'd.dr_name', 'h.klaim_id', 'h.shift', 'h.rj_status', 'h.erm_status', DB::raw('COALESCE(lab.lab_status, 0) as lab_status'), DB::raw('COALESCE(rad.rad_status, 0) as rad_status'), 'h.datadaftarpolirj_json', 'k.klaim_desc', 'k.klaim_status'])
@@ -142,7 +142,7 @@ new class extends Component {
         }
 
         // Filter Klaim BPJS / UMUM
-        // BPJS = klaim_status='BPJS' (di rsmst_klaimtypes) ATAU klaim_id='JM' (JKN Mobile)
+        // BPJS = klaim_status='BPJS' (di skmst_klaimtypes) ATAU klaim_id='JM' (JKN Mobile)
         // UMUM = bukan keduanya
         if ($this->filterKlaim === 'BPJS') {
             $query->where(function ($q) {
@@ -194,7 +194,7 @@ new class extends Component {
     public function rows()
     {
         // Pelayanan RJ: tidak include pending booking — dokter hanya lihat pasien
-        // yang sudah checkin (rstxn_rjhdrs). Pending booking ada di daftar-rj (pendaftaran).
+        // yang sudah checkin (sktxn_rjhdrs). Pending booking ada di daftar-rj (pendaftaran).
         // PERF: ambil header dulu (CLOB datadaftarpolirj_json = locator lazy, body BELUM
         // dibaca via OCI = murah), sort by kolom header, slice ke halaman aktif, BARU baca
         // CLOB + decode JSON hanya utk baris yg tampil. Hindari N× baca CLOB seluruh pasien
@@ -221,7 +221,7 @@ new class extends Component {
                 // ORA-01555/ORA-22924 saat locator basi setelah save EMR).
                 $jsonRaw = \App\Support\OracleLob::read(
                     $row->datadaftarpolirj_json ?? null,
-                    'rstxn_rjhdrs', 'rj_no', $row->rj_no, 'datadaftarpolirj_json'
+                    'sktxn_rjhdrs', 'rj_no', $row->rj_no, 'datadaftarpolirj_json'
                 );
                 $json = json_decode($jsonRaw ?: '{}', true) ?? [];
 
@@ -310,7 +310,7 @@ new class extends Component {
     #[Computed]
     public function poliList()
     {
-        return DB::table('rsmst_polis')->select('poli_id', 'poli_desc')->orderBy('poli_desc')->get();
+        return DB::table('skmst_polis')->select('poli_id', 'poli_desc')->orderBy('poli_desc')->get();
     }
 
     #[Computed]
@@ -321,18 +321,18 @@ new class extends Component {
         // sengaja TIDAK dipakai supaya opsi dropdown stabil: user bisa pindah-pindah
         // status/klaim tanpa kehilangan dokter yang sudah dipilih, meskipun query
         // utama jadi kosong.
-        return DB::table('rstxn_rjhdrs')
+        return DB::table('sktxn_rjhdrs')
             ->select(
-                'rstxn_rjhdrs.dr_id',
-                DB::raw('MAX(rsmst_doctors.dr_name) as dr_name'),
-                'rstxn_rjhdrs.poli_id',
-                DB::raw('MAX(rsmst_polis.poli_desc) as poli_desc'),
-                DB::raw('COUNT(DISTINCT rstxn_rjhdrs.rj_no) as total_pasien'),
+                'sktxn_rjhdrs.dr_id',
+                DB::raw('MAX(skmst_doctors.dr_name) as dr_name'),
+                'sktxn_rjhdrs.poli_id',
+                DB::raw('MAX(skmst_polis.poli_desc) as poli_desc'),
+                DB::raw('COUNT(DISTINCT sktxn_rjhdrs.rj_no) as total_pasien'),
             )
-            ->join('rsmst_doctors', 'rsmst_doctors.dr_id', '=', 'rstxn_rjhdrs.dr_id')
-            ->join('rsmst_polis', 'rsmst_polis.poli_id', '=', 'rstxn_rjhdrs.poli_id')
-            ->where(DB::raw("to_char(rstxn_rjhdrs.rj_date, 'dd/mm/yyyy')"), '=', $this->filterTanggal)
-            ->groupBy('rstxn_rjhdrs.dr_id', 'rstxn_rjhdrs.poli_id')
+            ->join('skmst_doctors', 'skmst_doctors.dr_id', '=', 'sktxn_rjhdrs.dr_id')
+            ->join('skmst_polis', 'skmst_polis.poli_id', '=', 'sktxn_rjhdrs.poli_id')
+            ->where(DB::raw("to_char(sktxn_rjhdrs.rj_date, 'dd/mm/yyyy')"), '=', $this->filterTanggal)
+            ->groupBy('sktxn_rjhdrs.dr_id', 'sktxn_rjhdrs.poli_id')
             ->orderBy('poli_desc')
             ->orderBy('dr_name')
             ->get();
@@ -341,7 +341,7 @@ new class extends Component {
     #[Computed]
     public function klaimList()
     {
-        return DB::table('rsmst_klaims')->select('klaim_id', 'klaim_name')->where('active_status', '1')->orderBy('klaim_name')->get();
+        return DB::table('skmst_klaims')->select('klaim_id', 'klaim_name')->where('active_status', '1')->orderBy('klaim_name')->get();
     }
 
     public function cetakEtiket(string $regNo): void

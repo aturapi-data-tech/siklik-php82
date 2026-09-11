@@ -46,7 +46,7 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('rsmst_outs')
+        $q = DB::table('skmst_outs')
             ->select('out_no', 'out_desc')
             ->orderBy('out_no');
 

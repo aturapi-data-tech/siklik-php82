@@ -65,8 +65,8 @@
 // │  TABEL DATABASE                                                     │
 // ├─────────────────────────────────────────────────────────────────────┤
 // │                                                                     │
-// │  lbmst_clabs     → Master kategori lab (clab_id, clab_desc)        │
-// │  lbmst_clabitems → Master item pemeriksaan, FK: clab_id            │
+// │  skmst_clabs     → Master kategori lab (clab_id, clab_desc)        │
+// │  skmst_clabitems → Master item pemeriksaan, FK: clab_id            │
 // │                                                                     │
 // └─────────────────────────────────────────────────────────────────────┘
 
@@ -142,7 +142,7 @@ new class extends Component {
     #[Computed]
     public function clabs()
     {
-        $q = DB::table(DB::raw('lbmst_clabs c'))
+        $q = DB::table(DB::raw('skmst_clabs c'))
             ->selectRaw(
                 "
                 c.clab_id,
@@ -151,7 +151,7 @@ new class extends Component {
                 COUNT(ci.clabitem_id) AS jumlah_item
             ",
             )
-            ->leftJoin(DB::raw('lbmst_clabitems ci'), 'c.clab_id', '=', 'ci.clab_id')
+            ->leftJoin(DB::raw('skmst_clabitems ci'), 'c.clab_id', '=', 'ci.clab_id')
             ->groupBy('c.clab_id', 'c.clab_desc', 'c.app_seq')
             ->orderBy('c.app_seq')
             ->orderBy('c.clab_desc');

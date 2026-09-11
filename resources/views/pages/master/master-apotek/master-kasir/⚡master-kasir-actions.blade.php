@@ -39,7 +39,7 @@ new class extends Component {
     #[On('master.kasir.openEdit')]
     public function openEdit(string $kasirId): void
     {
-        $row = DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->first();
+        $row = DB::table('skmst_kasirs')->where('kasir_id', $kasirId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -59,9 +59,9 @@ new class extends Component {
     #[On('master.kasir.toggleActive')]
     public function toggleActive(string $kasirId): void
     {
-        $cur = (string) DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->value('active_status');
+        $cur = (string) DB::table('skmst_kasirs')->where('kasir_id', $kasirId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->update(['active_status' => $next]);
+        DB::table('skmst_kasirs')->where('kasir_id', $kasirId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status kasir → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.kasir.saved');
@@ -71,13 +71,13 @@ new class extends Component {
     public function deleteKasir(string $kasirId): void
     {
         try {
-            $isUsed = DB::table('tktxn_slshdrs')->where('kasir_id', $kasirId)->exists();
+            $isUsed = DB::table('sktxn_slshdrs')->where('kasir_id', $kasirId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Kasir tidak bisa dihapus karena masih dipakai pada transaksi penjualan.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_kasirs')->where('kasir_id', $kasirId)->delete();
+            $deleted = DB::table('skmst_kasirs')->where('kasir_id', $kasirId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data kasir tidak ditemukan.');
                 return;
@@ -98,7 +98,7 @@ new class extends Component {
     {
         $rules = [
             'form.kasir_id'        => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkmst_kasirs,kasir_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skmst_kasirs,kasir_id'
                 : 'required|string',
             'form.kasir_name'      => 'required|string|max:100',
             'form.active_status' => 'required|in:0,1',
@@ -128,12 +128,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_kasirs')->insert([
+            DB::table('skmst_kasirs')->insert([
                 'kasir_id' => mb_strtoupper($this->form['kasir_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_kasirs')->where('kasir_id', $this->originalId)->update($payload);
+            DB::table('skmst_kasirs')->where('kasir_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data kasir berhasil disimpan.');

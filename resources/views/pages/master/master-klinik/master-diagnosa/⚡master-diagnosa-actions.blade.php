@@ -37,7 +37,7 @@ $this->incrementVersion('modal');
     #[On('master.diagnosa.openEdit')]
     public function openEdit(string $diagId): void
     {
-        $row = DB::table('rsmst_mstdiags')->where('diag_id', $diagId)->first();
+        $row = DB::table('skmst_mstdiags')->where('diag_id', $diagId)->first();
         if (!$row) {
             return;
         }
@@ -76,7 +76,7 @@ $this->incrementVersion('modal');
     protected function rules(): array
     {
         return [
-            'diagId' => ['required', 'numeric', $this->formMode === 'create' ? Rule::unique('rsmst_mstdiags', 'diag_id') : Rule::unique('rsmst_mstdiags', 'diag_id')->ignore($this->diagId, 'diag_id')],
+            'diagId' => ['required', 'numeric', $this->formMode === 'create' ? Rule::unique('skmst_mstdiags', 'diag_id') : Rule::unique('skmst_mstdiags', 'diag_id')->ignore($this->diagId, 'diag_id')],
             'diagDesc' => ['required', 'string', 'max:255'],
             'icdx' => ['required', 'string', 'max:20'],
         ];
@@ -116,12 +116,12 @@ $this->incrementVersion('modal');
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_mstdiags')->insert([
+            DB::table('skmst_mstdiags')->insert([
                 'diag_id' => $data['diagId'],
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_mstdiags')->where('diag_id', $data['diagId'])->update($payload);
+            DB::table('skmst_mstdiags')->where('diag_id', $data['diagId'])->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data diagnosa berhasil disimpan.');
@@ -135,14 +135,14 @@ $this->incrementVersion('modal');
     {
         try {
             // Cek apakah diagnosa sudah dipakai di tabel transaksi (Rekam Medis)
-            $isUsed = DB::table('rstxn_rjhdrs')->where('diag_id', $diagId)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('diag_id', $diagId)->exists();
 
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Data diagnosa sudah dipakai pada transaksi Rawat Jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_mstdiags')->where('diag_id', $diagId)->delete();
+            $deleted = DB::table('skmst_mstdiags')->where('diag_id', $diagId)->delete();
 
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data diagnosa tidak ditemukan.');

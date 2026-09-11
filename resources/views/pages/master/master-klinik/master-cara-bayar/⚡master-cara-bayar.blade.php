@@ -45,10 +45,10 @@ new class extends Component {
 
     public function toggleActive(string $cbId): void
     {
-        $current = (string) DB::table('tkacc_carabayars')->where('cb_id', $cbId)->value('active_status');
+        $current = (string) DB::table('skacc_carabayars')->where('cb_id', $cbId)->value('active_status');
         $next = $current === '1' ? '0' : '1';
 
-        DB::table('tkacc_carabayars')->where('cb_id', $cbId)->update(['active_status' => $next]);
+        DB::table('skacc_carabayars')->where('cb_id', $cbId)->update(['active_status' => $next]);
 
         $this->dispatch('toast', type: 'success',
             message: 'Status cara bayar diubah ke ' . ($next === '1' ? 'Aktif' : 'Non-aktif'));
@@ -58,9 +58,9 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        // tkacc_accountses (akun pusat) — pakai acc_desc bukan acc_name.
-        $q = DB::table('tkacc_carabayars as cb')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
+        // skacc_accountses (akun pusat) — pakai acc_desc bukan acc_name.
+        $q = DB::table('skacc_carabayars as cb')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.active_status', 'cb.acc_id', 'a.acc_desc as acc_name')
             ->orderByRaw("CASE WHEN cb.active_status = '1' THEN 0 ELSE 1 END")
             ->orderBy('cb.cb_desc');
@@ -83,7 +83,7 @@ new class extends Component {
 <div>
     <x-page-title
         title="Master Cara Bayar"
-        subtitle="Kelola metode pembayaran (Tunai, Transfer, BPJS, dll) — sumber tabel: tkacc_carabayars." />
+        subtitle="Kelola metode pembayaran (Tunai, Transfer, BPJS, dll) — sumber tabel: skacc_carabayars." />
 
     <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
         <div class="flex flex-col flex-1 min-h-0 px-6 pt-2 pb-6">

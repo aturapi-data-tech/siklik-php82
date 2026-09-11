@@ -36,7 +36,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('immst_uoms')
+        $row = DB::table('skmst_uoms')
             ->select(['uom_id', 'uom_desc'])
             ->where('uom_id', $this->initialUomId)
             // ->where('active_status', '1')
@@ -67,7 +67,7 @@ new class extends Component {
 
         // ===== 1) exact match by uom_id =====
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('immst_uoms')
+            $exactRow = DB::table('skmst_uoms')
                 ->select(['uom_id', 'uom_desc'])
                 // ->where('active_status', '1')
                 ->where('uom_id', $keyword)
@@ -85,7 +85,7 @@ new class extends Component {
         // ===== 2) search by uom_desc partial =====
         $upperKeyword = mb_strtoupper($keyword);
 
-        $rows = DB::table('immst_uoms')
+        $rows = DB::table('skmst_uoms')
             ->select(['uom_id', 'uom_desc'])
             // ->where('active_status', '1')
             ->where(function ($query) use ($upperKeyword) {

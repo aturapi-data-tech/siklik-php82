@@ -21,7 +21,7 @@ new class extends Component {
     public bool $isOpen = false;
     public int $selectedIndex = 0;
 
-    /** Sumber data: false = lokal (rsmst_mstdiags), true = BPJS PCare getDiagnosa */
+    /** Sumber data: false = lokal (skmst_mstdiags), true = BPJS PCare getDiagnosa */
     public bool $useBpjs = false;
 
     /** selected state (buat mode selected + edit) */
@@ -35,7 +35,7 @@ new class extends Component {
     public ?string $initialDiagnosaId = null;
 
     /**
-     * Fallback deskripsi (mis. icdX dari BPJS yang belum ada di rsmst_mstdiags).
+     * Fallback deskripsi (mis. icdX dari BPJS yang belum ada di skmst_mstdiags).
      * Dipakai kalau lookup lokal gagal supaya edit mode tetap nampilin label.
      */
     #[Reactive]
@@ -64,11 +64,11 @@ new class extends Component {
         }
 
         // Cek berdasarkan diag_id terlebih dahulu
-        $row = DB::table('rsmst_mstdiags')->where('diag_id', $this->initialDiagnosaId)->first();
+        $row = DB::table('skmst_mstdiags')->where('diag_id', $this->initialDiagnosaId)->first();
 
         // Jika tidak ditemukan, cek berdasarkan icdx
         if (!$row) {
-            $row = DB::table('rsmst_mstdiags')->where('icdx', $this->initialDiagnosaId)->first();
+            $row = DB::table('skmst_mstdiags')->where('icdx', $this->initialDiagnosaId)->first();
         }
         if ($row) {
             $this->setSelectedFromRow($row);
@@ -132,7 +132,7 @@ new class extends Component {
     protected function searchFromLocal(string $keyword): void
     {
         // ===== 1) exact match by diag_id atau icdx =====
-        $exactQuery = DB::table('rsmst_mstdiags')->where(function ($q) use ($keyword) {
+        $exactQuery = DB::table('skmst_mstdiags')->where(function ($q) use ($keyword) {
             $q->where('diag_id', $keyword . 'xxx')->orWhere('icdx', $keyword . 'xxxx');
         });
 
@@ -146,7 +146,7 @@ new class extends Component {
         // ===== 2) search by diag_id / icdx / diag_desc partial =====
         $upperKeyword = mb_strtoupper($keyword);
 
-        $query = DB::table('rsmst_mstdiags')
+        $query = DB::table('skmst_mstdiags')
             ->where(function ($q) use ($upperKeyword) {
                 $q->whereRaw('UPPER(diag_id) LIKE ?', ["%{$upperKeyword}%"])
                     ->orWhereRaw('UPPER(icdx) LIKE ?', ["%{$upperKeyword}%"])
@@ -355,8 +355,8 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('rsmst_mstdiags')->where('diag_id', $value)->first()
-            ?? DB::table('rsmst_mstdiags')->where('icdx', $value)->first();
+        $row = DB::table('skmst_mstdiags')->where('diag_id', $value)->first()
+            ?? DB::table('skmst_mstdiags')->where('icdx', $value)->first();
 
         if ($row) {
             $this->setSelectedFromRow($row);

@@ -34,8 +34,8 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('tkacc_carabayars as cb')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
+        $row = DB::table('skacc_carabayars as cb')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.acc_id', 'a.acc_desc', 'a.acc_dk_status')
             ->where('cb.cb_id', $cbId)
             ->first();
@@ -67,7 +67,7 @@ new class extends Component {
     {
         $tahun = (int) substr($tanggal, 0, 4);
 
-        $sa = DB::table('tktxn_saldoawalakuns')
+        $sa = DB::table('sktxn_saldoawalakuns')
             ->where('acc_id', $accId)->where('sa_year', (string) $tahun)->first();
 
         $saldoAwalTahun = $dkStatus === 'D'
@@ -75,14 +75,14 @@ new class extends Component {
             : (float) ($sa->sa_acc_k ?? 0);
 
         if ($dkStatus === 'D') {
-            $arus = (float) DB::table('tkview_accounts')
+            $arus = (float) DB::table('skview_accounts')
                 ->where('txn_acc_k', $accId)
                 ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                     sprintf('%04d-01-01', $tahun), $tanggal,
                 ])
                 ->sum(DB::raw('NVL(txn_k,0) - NVL(txn_d,0)'));
         } else {
-            $arus = (float) DB::table('tkview_accounts')
+            $arus = (float) DB::table('skview_accounts')
                 ->where('txn_acc', $accId)
                 ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                     sprintf('%04d-01-01', $tahun), $tanggal,
@@ -113,22 +113,22 @@ new class extends Component {
         // Mengikuti legacy: arus_year = sum total tahun ini (Jan–Des).
         // updatesaldo = target_saldo - arus_year → simpan ke saldo_awal_tahun.
         if ($this->accDkStatus === 'D') {
-            $arusYear = (float) DB::table('tkview_accounts')
+            $arusYear = (float) DB::table('skview_accounts')
                 ->where('txn_acc_k', $this->accId)
                 ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [(string) $tahun])
                 ->sum(DB::raw('NVL(txn_k,0) - NVL(txn_d,0)'));
 
             $updateSaldo = $target - $arusYear;
 
-            $exists = DB::table('tktxn_saldoawalakuns')
+            $exists = DB::table('sktxn_saldoawalakuns')
                 ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)->exists();
 
             if ($exists) {
-                DB::table('tktxn_saldoawalakuns')
+                DB::table('sktxn_saldoawalakuns')
                     ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)
                     ->update(['sa_acc_d' => $updateSaldo]);
             } else {
-                DB::table('tktxn_saldoawalakuns')->insert([
+                DB::table('sktxn_saldoawalakuns')->insert([
                     'acc_id'   => $this->accId,
                     'sa_year'  => (string) $tahun,
                     'sa_acc_d' => $updateSaldo,
@@ -136,22 +136,22 @@ new class extends Component {
                 ]);
             }
         } else {
-            $arusYear = (float) DB::table('tkview_accounts')
+            $arusYear = (float) DB::table('skview_accounts')
                 ->where('txn_acc', $this->accId)
                 ->whereRaw("TO_CHAR(txn_date,'YYYY') = ?", [(string) $tahun])
                 ->sum(DB::raw('NVL(txn_d,0) - NVL(txn_k,0)'));
 
             $updateSaldo = $target - $arusYear;
 
-            $exists = DB::table('tktxn_saldoawalakuns')
+            $exists = DB::table('sktxn_saldoawalakuns')
                 ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)->exists();
 
             if ($exists) {
-                DB::table('tktxn_saldoawalakuns')
+                DB::table('sktxn_saldoawalakuns')
                     ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)
                     ->update(['sa_acc_k' => $updateSaldo]);
             } else {
-                DB::table('tktxn_saldoawalakuns')->insert([
+                DB::table('sktxn_saldoawalakuns')->insert([
                     'acc_id'   => $this->accId,
                     'sa_year'  => (string) $tahun,
                     'sa_acc_d' => 0,

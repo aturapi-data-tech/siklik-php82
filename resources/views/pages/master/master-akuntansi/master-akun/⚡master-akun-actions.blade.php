@@ -41,7 +41,7 @@ new class extends Component {
     #[On('master.akun.openEdit')]
     public function openEdit(string $accId): void
     {
-        $row = DB::table('tkacc_accountses')->where('acc_id', $accId)->first();
+        $row = DB::table('skacc_accountses')->where('acc_id', $accId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -74,7 +74,7 @@ new class extends Component {
     public function deleteAkun(string $accId): void
     {
         try {
-            $deleted = DB::table('tkacc_accountses')->where('acc_id', $accId)->delete();
+            $deleted = DB::table('skacc_accountses')->where('acc_id', $accId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Akun tidak ditemukan.');
                 return;
@@ -95,12 +95,12 @@ new class extends Component {
     {
         $rules = [
             'form.acc_id'        => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_.-]+$/|unique:tkacc_accountses,acc_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_.-]+$/|unique:skacc_accountses,acc_id'
                 : 'required|string',
             'form.acc_desc'      => 'required|string|max:100',
             'form.active_status' => 'required|in:0,1',
             'form.kas_status'    => 'required|in:0,1',
-            'form.gra_id'        => 'required|string|max:25|exists:tkacc_gr_accountses,gra_id',
+            'form.gra_id'        => 'required|string|max:25|exists:skacc_gr_accountses,gra_id',
             'form.acc_dk_status' => 'required|in:D,K',
         ];
 
@@ -132,12 +132,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkacc_accountses')->insert([
+            DB::table('skacc_accountses')->insert([
                 'acc_id' => mb_strtoupper($this->form['acc_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkacc_accountses')->where('acc_id', $this->originalId)->update($payload);
+            DB::table('skacc_accountses')->where('acc_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Akun berhasil disimpan.');

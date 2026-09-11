@@ -78,7 +78,7 @@ new class extends Component {
                 return;
             }
 
-            $polisLocal = DB::table('rsmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs')->get();
+            $polisLocal = DB::table('skmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs')->get();
             $matched = 0;
             $skipped = 0;
 
@@ -97,7 +97,7 @@ new class extends Component {
                 if ($localMatches->count() === 1) {
                     $local = $localMatches->first();
                     if ($local->kd_poli_bpjs !== $bpjsKode) {
-                        DB::table('rsmst_polis')
+                        DB::table('skmst_polis')
                             ->where('poli_id', $local->poli_id)
                             ->update(['kd_poli_bpjs' => $bpjsKode]);
                         $matched++;
@@ -134,7 +134,7 @@ new class extends Component {
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('rsmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs', 'poli_uuid')->orderBy('poli_desc', 'asc');
+        $queryBuilder = DB::table('skmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs', 'poli_uuid')->orderBy('poli_desc', 'asc');
 
         if ($searchKeyword !== '') {
             $uppercaseKeyword = mb_strtoupper($searchKeyword);

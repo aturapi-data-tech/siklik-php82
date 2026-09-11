@@ -116,18 +116,18 @@ new class extends Component {
 
                 // ── RESEP BIASA ──────────────────────────────────────────────────
                 if (!empty($eresepFrom)) {
-                    DB::table('rstxn_rjobats')->where('rj_no', $this->rjNoRefCopyTo)->delete();
+                    DB::table('sktxn_rjobats')->where('rj_no', $this->rjNoRefCopyTo)->delete();
 
-                    $maxDtl = (int) DB::table('rstxn_rjobats')->selectRaw('nvl(max(rjobat_dtl), 0) as max_dtl')->value('max_dtl');
+                    $maxDtl = (int) DB::table('sktxn_rjobats')->selectRaw('nvl(max(rjobat_dtl), 0) as max_dtl')->value('max_dtl');
 
                     $to['eresep'] = $eresepFrom;
 
                     foreach ($to['eresep'] as $key => $item) {
                         $maxDtl++;
 
-                        $productPrice = DB::table('tkmst_products')->where('product_id', $item['productId'])->value('sales_price') ?? 0;
+                        $productPrice = DB::table('skmst_products')->where('product_id', $item['productId'])->value('sales_price') ?? 0;
 
-                        DB::table('rstxn_rjobats')->insert([
+                        DB::table('sktxn_rjobats')->insert([
                             'rjobat_dtl' => $maxDtl,
                             'rj_no' => $this->rjNoRefCopyTo,
                             'product_id' => $item['productId'],
@@ -150,9 +150,9 @@ new class extends Component {
 
                 // ── RESEP RACIKAN ────────────────────────────────────────────────
                 if (!empty($eresepRacikanFrom)) {
-                    DB::table('rstxn_rjobatracikans')->where('rj_no', $this->rjNoRefCopyTo)->delete();
+                    DB::table('sktxn_rjobatracikans')->where('rj_no', $this->rjNoRefCopyTo)->delete();
 
-                    $maxDtlRacikan = (int) DB::table('rstxn_rjobatracikans')->selectRaw('nvl(max(rjobat_dtl), 0) as max_dtl')->value('max_dtl');
+                    $maxDtlRacikan = (int) DB::table('sktxn_rjobatracikans')->selectRaw('nvl(max(rjobat_dtl), 0) as max_dtl')->value('max_dtl');
 
                     $to['eresepRacikan'] = $eresepRacikanFrom;
 
@@ -163,7 +163,7 @@ new class extends Component {
 
                         $maxDtlRacikan++;
 
-                        DB::table('rstxn_rjobatracikans')->insert([
+                        DB::table('sktxn_rjobatracikans')->insert([
                             'rjobat_dtl' => $maxDtlRacikan,
                             'rj_no' => $this->rjNoRefCopyTo,
                             'product_name' => $item['productName'],
@@ -223,7 +223,7 @@ new class extends Component {
             return collect();
         }
 
-        return DB::table('rsview_ermstatus')->select(DB::raw('DISTINCT EXTRACT(YEAR FROM txn_date) as tahun'))->where('reg_no', $this->regNo)->orderBy('tahun', 'desc')->pluck('tahun');
+        return DB::table('skview_ermstatus')->select(DB::raw('DISTINCT EXTRACT(YEAR FROM txn_date) as tahun'))->where('reg_no', $this->regNo)->orderBy('tahun', 'desc')->pluck('tahun');
     }
 
     /* =======================
@@ -238,9 +238,9 @@ new class extends Component {
 
         $searchKeyword = trim($this->searchKeyword);
 
-        // Klinik pratama: hanya RJ. Reference rsview_ugdkasir/rsview_rihdrs
+        // Klinik pratama: hanya RJ. Reference skview_ugdkasir/skview_rihdrs
         // di-drop supaya nggak invalidate karena synonym RS hilang.
-        $queryBuilder = DB::table('rsview_ermstatus')
+        $queryBuilder = DB::table('skview_ermstatus')
             ->select(
                 DB::raw("to_char(txn_date,'dd/mm/yyyy hh24:mi:ss') AS txn_date"),
                 DB::raw("to_char(txn_date,'yyyymmddhh24miss') AS txn_date1"),
@@ -255,7 +255,7 @@ new class extends Component {
                 DB::raw("(CASE
                     WHEN layanan_status='RJ' THEN (
                         SELECT datadaftarpolirj_json
-                        FROM rsview_rjkasir
+                        FROM skview_rjkasir
                         WHERE rj_no = txn_no
                     )
                     ELSE NULL
@@ -325,7 +325,7 @@ new class extends Component {
         }
 
         // Klinik pratama: hanya hitung RJ.
-        $stats = DB::table('rsview_ermstatus')
+        $stats = DB::table('skview_ermstatus')
             ->select(DB::raw('COUNT(*) as total'))
             ->where('reg_no', $this->regNo)
             ->where('layanan_status', 'RJ')

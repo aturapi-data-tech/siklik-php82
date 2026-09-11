@@ -233,7 +233,7 @@
         // dokter Poli LABORATORIUM (poli_id=22), aktif, urut alfabetik nama.
         // Kalau lebih dari satu dokter lab, ambil yang pertama; sesuaikan
         // logic ini saat ada mekanisme penunjukan PJ Lab yang lebih spesifik.
-        $drJawabLab = \DB::table('rsmst_doctors')
+        $drJawabLab = \DB::table('skmst_doctors')
             ->where('poli_id', 22)
             ->where('active_status', '1')
             ->orderBy('dr_name', 'asc')

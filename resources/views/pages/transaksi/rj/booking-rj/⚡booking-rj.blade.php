@@ -20,7 +20,7 @@ use App\Http\Traits\BPJS\AntrianTrait;
  * Flow:
  *   1. BPJS Mobile JKN push booking → table REFERENSI_MOBILEJKN_BPJS (status='Belum')
  *   2. Petugas loket buka /rawat-jalan/booking → lihat list, filter, search
- *   3. Saat pasien datang: klik Checkin → insert RSTXN_RJHDRS + update status='Checkin'
+ *   3. Saat pasien datang: klik Checkin → insert SKTXN_RJHDRS + update status='Checkin'
  *   4. Atau: klik Batal → update status='Batal' + keterangan
  */
 new class extends Component {
@@ -128,14 +128,14 @@ new class extends Component {
     }
 
     /* ===============================
-     | CHECKIN — insert RSTXN_RJHDRS + update status booking
+     | CHECKIN — insert SKTXN_RJHDRS + update status booking
      |
      | Flow:
      |   1. Validasi tanggal hari ini, status belum
      |   2. Validasi waktu checkin (1 jam sebelum mulai s/d selesai pelayanan)
-     |   3. Cek jadwal dokter di SCVIEW_SCPOLIS (quota check)
-     |   4. Cek pendaftar via RSVIEW_RJKASIR (sisa quota)
-     |   5. Idempotency: kalau RSTXN_RJHDRS already exists, skip
+     |   3. Cek jadwal dokter di SKVIEW_SCPOLIS (quota check)
+     |   4. Cek pendaftar via SKVIEW_RJKASIR (sisa quota)
+     |   5. Idempotency: kalau SKTXN_RJHDRS already exists, skip
      |   6. Atomic transaction: insert RJHDRS + update referensi
      =============================== */
     public function prosesCheckin(string $nobooking): void
@@ -180,7 +180,7 @@ new class extends Component {
             return;
         }
 
-        // Hari Indonesia untuk join SCVIEW_SCPOLIS
+        // Hari Indonesia untuk join SKVIEW_SCPOLIS
         $hariMap = [
             'Sunday' => 'MINGGU', 'Monday' => 'SENIN', 'Tuesday' => 'SELASA',
             'Wednesday' => 'RABU', 'Thursday' => 'KAMIS', 'Friday' => 'JUMAT', 'Saturday' => 'SABTU',
@@ -188,7 +188,7 @@ new class extends Component {
         $hari = $hariMap[Carbon::parse($row->tanggalperiksa)->dayName] ?? strtoupper(Carbon::parse($row->tanggalperiksa)->dayName);
 
         // Cek jadwal & quota
-        $cekQuota = DB::table('scview_scpolis')
+        $cekQuota = DB::table('skview_scpolis')
             ->select('kuota', 'mulai_praktek', 'selesai_praktek', 'poli_id', 'dr_id', 'poli_desc', 'dr_name', 'shift')
             ->where('kd_poli_bpjs', $row->kodepoli)
             ->where('kd_dr_bpjs', $row->kodedokter)
@@ -202,7 +202,7 @@ new class extends Component {
             return;
         }
 
-        $cekDaftar = DB::table('rsview_rjkasir')
+        $cekDaftar = DB::table('skview_rjkasir')
             ->where('kd_poli_bpjs', $row->kodepoli)
             ->where('kd_dr_bpjs', $row->kodedokter)
             ->where('rj_status', '!=', 'F')
@@ -215,7 +215,7 @@ new class extends Component {
         }
 
         // Idempotency: cegah double-checkin
-        $existingRj = DB::table('rstxn_rjhdrs')->where('nobooking', $nobooking)->first();
+        $existingRj = DB::table('sktxn_rjhdrs')->where('nobooking', $nobooking)->first();
         if ($existingRj) {
             $this->dispatch('toast', type: 'warning', message: "Booking sudah pernah di-checkin (rj_no: {$existingRj->rj_no}).");
             if ($row->status !== 'Checkin') {
@@ -232,8 +232,8 @@ new class extends Component {
         $nomorAntrean = (string) $row->nomorantrean;
         $rjDateStr    = $now->format('Y-m-d H:i:s');
 
-        // Shift dari RSTXN_SHIFTCTLS berdasarkan jam realtime
-        $shiftRow = DB::table('rstxn_shiftctls')
+        // Shift dari SKTXN_SHIFTCTLS berdasarkan jam realtime
+        $shiftRow = DB::table('sktxn_shiftctls')
             ->whereRaw('? BETWEEN shift_start AND shift_end', [$now->format('H:i:s')])
             ->first();
         $shift = (string) ($shiftRow->shift ?? $cekQuota->shift);
@@ -249,15 +249,15 @@ new class extends Component {
                     throw new \RuntimeException('Status booking sudah berubah (mungkin sudah di-checkin atau dibatalkan oleh proses lain).');
                 }
 
-                if (DB::table('rstxn_rjhdrs')->where('nobooking', $nobooking)->exists()) {
+                if (DB::table('sktxn_rjhdrs')->where('nobooking', $nobooking)->exists()) {
                     throw new \RuntimeException('Booking sudah di-checkin oleh proses lain.');
                 }
 
-                $rjNoNew = DB::table('rstxn_rjhdrs')->selectRaw('nvl(max(rj_no) + 1, 1) as rjno_max')->value('rjno_max');
+                $rjNoNew = DB::table('sktxn_rjhdrs')->selectRaw('nvl(max(rj_no) + 1, 1) as rjno_max')->value('rjno_max');
 
                 // Catatan: kolom siklik beda dari sirus — kunjungan_internal_status
-                // tidak ada di RSTXN_RJHDRS siklik (per memory schema).
-                DB::table('rstxn_rjhdrs')->insert([
+                // tidak ada di SKTXN_RJHDRS siklik (per memory schema).
+                DB::table('sktxn_rjhdrs')->insert([
                     'rj_no'                 => $rjNoNew,
                     'rj_date'               => DB::raw("to_date('" . $rjDateStr . "', 'yyyy-mm-dd hh24:mi:ss')"),
                     'reg_no'                => strtoupper($row->norm),
@@ -353,7 +353,7 @@ new class extends Component {
     public function bookingData()
     {
         $query = DB::table('referensi_mobilejkn_bpjs as b')
-            ->join('rsmst_pasiens as p', DB::raw('UPPER(b.norm)'), '=', 'p.reg_no')
+            ->join('skmst_pasiens as p', DB::raw('UPPER(b.norm)'), '=', 'p.reg_no')
             ->select([
                 'b.nobooking',
                 'b.norm',
@@ -361,10 +361,10 @@ new class extends Component {
                 'b.nik',
                 'b.nohp',
                 'b.kodepoli',
-                DB::raw('(SELECT poli_desc FROM rsmst_polis WHERE kd_poli_bpjs = b.kodepoli AND ROWNUM = 1) AS poli_desc'),
+                DB::raw('(SELECT poli_desc FROM skmst_polis WHERE kd_poli_bpjs = b.kodepoli AND ROWNUM = 1) AS poli_desc'),
                 'b.pasienbaru',
                 'b.kodedokter',
-                DB::raw('(SELECT dr_name FROM rsmst_doctors WHERE kd_dr_bpjs = b.kodedokter AND ROWNUM = 1) AS dr_name'),
+                DB::raw('(SELECT dr_name FROM skmst_doctors WHERE kd_dr_bpjs = b.kodedokter AND ROWNUM = 1) AS dr_name'),
                 DB::raw("TO_CHAR(TO_DATE(b.tanggalperiksa,'yyyy-mm-dd'),'dd/mm/yyyy') AS tanggalperiksa"),
                 'b.jampraktek',
                 'b.jeniskunjungan',

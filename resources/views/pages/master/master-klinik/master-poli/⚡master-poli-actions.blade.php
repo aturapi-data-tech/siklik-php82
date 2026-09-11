@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.poli.openEdit')]
     public function openEdit(string $poliId): void
     {
-        $row = DB::table('rsmst_polis')->where('poli_id', $poliId)->first();
+        $row = DB::table('skmst_polis')->where('poli_id', $poliId)->first();
         if (!$row) {
             return;
         }
@@ -80,7 +80,7 @@ new class extends Component {
     protected function rules(): array
     {
         return [
-            'formPoli.poliId' => $this->formMode === 'create' ? 'required|numeric|unique:rsmst_polis,poli_id' : 'required|numeric|unique:rsmst_polis,poli_id,' . $this->formPoli['poliId'] . ',poli_id',
+            'formPoli.poliId' => $this->formMode === 'create' ? 'required|numeric|unique:skmst_polis,poli_id' : 'required|numeric|unique:skmst_polis,poli_id,' . $this->formPoli['poliId'] . ',poli_id',
 
             'formPoli.poliName' => 'required|string|max:255',
             'formPoli.bpjsPoliCode' => 'nullable|string|max:50',
@@ -125,12 +125,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_polis')->insert([
+            DB::table('skmst_polis')->insert([
                 'poli_id' => $this->formPoli['poliId'],
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_polis')->where('poli_id', $this->formPoli['poliId'])->update($payload);
+            DB::table('skmst_polis')->where('poli_id', $this->formPoli['poliId'])->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data poli berhasil disimpan.');
@@ -150,14 +150,14 @@ new class extends Component {
     public function deleteFromGrid(string $poliId): void
     {
         try {
-            $isUsed = DB::table('rstxn_rjhdrs')->where('poli_id', $poliId)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('poli_id', $poliId)->exists();
 
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Data poli sudah dipakai pada transaksi Rawat Jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_polis')->where('poli_id', $poliId)->delete();
+            $deleted = DB::table('skmst_polis')->where('poli_id', $poliId)->delete();
 
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data poli tidak ditemukan.');

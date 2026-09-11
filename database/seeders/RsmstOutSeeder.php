@@ -19,7 +19,7 @@ class RsmstOutSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_outs')->updateOrInsert(['out_no' => $row['out_no']], $row);
+            DB::table('skmst_outs')->updateOrInsert(['out_no' => $row['out_no']], $row);
         }
     }
 }

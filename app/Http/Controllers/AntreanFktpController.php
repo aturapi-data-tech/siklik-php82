@@ -26,10 +26,10 @@ use Illuminate\Support\Facades\Validator;
  *
  * Tabel siklik yang disentuh:
  *   - REFERENSI_MOBILEJKN_BPJS  : staging booking Mobile JKN
- *   - RSMST_PASIENS             : validasi pasien existing
- *   - RSMST_DOCTORS             : lookup dokter via KD_DR_BPJS
- *   - RSMST_POLIS               : lookup poli via KD_POLI_BPJS
- *   - RSTXN_RJHDRS              : count antrean realtime (sudah checkin)
+ *   - SKMST_PASIENS             : validasi pasien existing
+ *   - SKMST_DOCTORS             : lookup dokter via KD_DR_BPJS
+ *   - SKMST_POLIS               : lookup poli via KD_POLI_BPJS
+ *   - SKTXN_RJHDRS              : count antrean realtime (sudah checkin)
  *   - PASIEN                    : registrasi calon pasien baru dari Mobile JKN
  *   - WEB_LOG_STATUS            : audit log per request (via trait)
  */
@@ -103,7 +103,7 @@ class AntreanFktpController extends Controller
      * bukan progress antrean realtime. BPJS Mobile JKN pakai untuk display
      * pilihan dokter di app sebelum pasien daftar.
      *
-     * Query: SCVIEW_SCPOLIS join hari (Senin-Minggu derived dari $tanggal)
+     * Query: SKVIEW_SCPOLIS join hari (Senin-Minggu derived dari $tanggal)
      *        + filter SC_POLI_STATUS_='1' (jadwal aktif).
      *
      * Response shape (mirror spec BPJS):
@@ -126,7 +126,7 @@ class AntreanFktpController extends Controller
             return $this->sendError($request, $validator->errors()->first(), 201);
         }
 
-        // Hari Indonesia untuk filter SCVIEW_SCPOLIS.day_desc
+        // Hari Indonesia untuk filter SKVIEW_SCPOLIS.day_desc
         $hariMap = [
             'Sunday' => 'MINGGU',
             'Monday' => 'SENIN',
@@ -141,7 +141,7 @@ class AntreanFktpController extends Controller
             return $this->sendError($request, 'Tanggal tidak valid', 201);
         }
 
-        $rows = DB::table('scview_scpolis')
+        $rows = DB::table('skview_scpolis')
             ->select('dr_name', 'kd_dr_bpjs', 'sc_poli_ket', 'kuota')
             ->where('kd_poli_bpjs', $kodepoli)
             ->where('day_desc', $hari)
@@ -169,11 +169,11 @@ class AntreanFktpController extends Controller
      * GET /antrean/status/{kdPoli}/{tgl} — status antrean per dokter di poli pada tgl.
      *
      * Cara kerja:
-     *   1. Lookup poli via RSMST_POLIS.kd_poli_bpjs
-     *   2. Source jadwal dari SCVIEW_SCPOLIS (poli + hari = derived dari tgl)
+     *   1. Lookup poli via SKMST_POLIS.kd_poli_bpjs
+     *   2. Source jadwal dari SKVIEW_SCPOLIS (poli + hari = derived dari tgl)
      *      → cuma dokter yang punya jadwal hari itu yang muncul, plus jam
      *      praktek + kuota dari jadwal.
-     *   3. Untuk tiap row jadwal: count yang sudah daftar (RSTXN_RJHDRS)
+     *   3. Untuk tiap row jadwal: count yang sudah daftar (SKTXN_RJHDRS)
      *      dan yang sedang dilayani (waktu_masuk_poli ada, selesai kosong)
      *   4. Return list per dokter dengan jampraktek, totalantrean, sisaantrean
      */
@@ -193,7 +193,7 @@ class AntreanFktpController extends Controller
             return $this->sendError($request, $validator->errors()->first(), 201);
         }
 
-        $poli = DB::table('rsmst_polis')->where('kd_poli_bpjs', $kdPoli)->first();
+        $poli = DB::table('skmst_polis')->where('kd_poli_bpjs', $kdPoli)->first();
         if (!$poli) {
             return $this->sendError($request, 'Poli tidak ditemukan', 201);
         }
@@ -209,7 +209,7 @@ class AntreanFktpController extends Controller
         ];
         $hari = $hariMap[Carbon::parse($tgl)->dayName] ?? null;
 
-        $jadwals = DB::table('scview_scpolis')
+        $jadwals = DB::table('skview_scpolis')
             ->select('kuota', 'sc_poli_ket', 'kd_dr_bpjs', 'dr_id', 'dr_name', 'mulai_praktek', 'selesai_praktek')
             ->where('kd_poli_bpjs', $kdPoli)
             ->where('day_desc', $hari)
@@ -225,7 +225,7 @@ class AntreanFktpController extends Controller
         $list = [];
         foreach ($jadwals as $jd) {
             // Sudah daftar di RJ pada tgl tsb
-            $totalDaftar = (int) DB::table('rstxn_rjhdrs')
+            $totalDaftar = (int) DB::table('sktxn_rjhdrs')
                 ->where('poli_id', $poli->poli_id)
                 ->where('dr_id', $jd->dr_id)
                 ->whereRaw("to_char(rj_date,'yyyy-mm-dd') = ?", [$tgl])
@@ -233,7 +233,7 @@ class AntreanFktpController extends Controller
                 ->count();
 
             // Antrean yang sedang dilayani (waktu_masuk_poli ada, waktu_selesai_pelayanan kosong)
-            $sedangDilayani = DB::table('rstxn_rjhdrs')
+            $sedangDilayani = DB::table('sktxn_rjhdrs')
                 ->where('poli_id', $poli->poli_id)
                 ->where('dr_id', $jd->dr_id)
                 ->whereRaw("to_char(rj_date,'yyyy-mm-dd') = ?", [$tgl])
@@ -264,12 +264,12 @@ class AntreanFktpController extends Controller
      *       kodedokter, jampraktek, norm, nohp
      *
      * Cara kerja:
-     *   1. Validasi pasien existing di RSMST_PASIENS (by nokartu_bpjs).
+     *   1. Validasi pasien existing di SKMST_PASIENS (by nokartu_bpjs).
      *      Tidak ada → return 202 (pasien baru, BPJS akan retry pakai /peserta)
      *   2. Cek dokter & poli existence
-     *   3. Cek jadwal dokter di SCVIEW_SCPOLIS — wajib match (poli, dokter,
+     *   3. Cek jadwal dokter di SKVIEW_SCPOLIS — wajib match (poli, dokter,
      *      hari, jampraktek). Tanpa jadwal → tolak (cegah booking liar).
-     *   4. Cek quota: SCVIEW_SCPOLIS.kuota − count booking belum batal − count RJHDRS
+     *   4. Cek quota: SKVIEW_SCPOLIS.kuota − count booking belum batal − count RJHDRS
      *   5. Cek duplikasi booking (NIK + tgl)
      *   6. Lock per dokter+tgl (cegah race condition antrean ganda)
      *   7. Generate no_antrian (max + 1 dari RJHDRS & REFERENSI_MOBILEJKN_BPJS)
@@ -302,7 +302,7 @@ class AntreanFktpController extends Controller
 
         // Cek pasien existing — kalau gak ada, return code 202 supaya
         // BPJS tau ini pasien baru & lanjut hit /peserta dulu
-        $pasien = DB::table('rsmst_pasiens')
+        $pasien = DB::table('skmst_pasiens')
             ->select('reg_no', 'nokartu_bpjs', 'nik_bpjs')
             ->where('nokartu_bpjs', $request->nomorkartu)
             ->first();
@@ -313,13 +313,13 @@ class AntreanFktpController extends Controller
             return $this->sendError($request, 'NIK BPJS tidak cocok dengan data klinik. Silahkan perbaiki via pendaftaran offline.', 201);
         }
 
-        $poli = DB::table('rsmst_polis')->where('kd_poli_bpjs', $request->kodepoli)->first();
+        $poli = DB::table('skmst_polis')->where('kd_poli_bpjs', $request->kodepoli)->first();
         if (!$poli) return $this->sendError($request, 'Poli tidak ditemukan', 201);
 
-        $doctor = DB::table('rsmst_doctors')->where('kd_dr_bpjs', $request->kodedokter)->first();
+        $doctor = DB::table('skmst_doctors')->where('kd_dr_bpjs', $request->kodedokter)->first();
         if (!$doctor) return $this->sendError($request, 'Dokter tidak ditemukan', 201);
 
-        // Validasi jadwal dokter di SCVIEW_SCPOLIS (jadwal lokal yg di-Apply
+        // Validasi jadwal dokter di SKVIEW_SCPOLIS (jadwal lokal yg di-Apply
         // dari halaman /master/jadwal-mingguan). Cek 4 dimensi:
         //   poli + dokter + hari (derived dari tgl) + jam praktek match.
         $hariMap = [
@@ -340,7 +340,7 @@ class AntreanFktpController extends Controller
         $jamMulai   = trim($parts[0]) . ':00';
         $jamSelesai = trim($parts[1]) . ':00';
 
-        $jadwal = DB::table('scview_scpolis')
+        $jadwal = DB::table('skview_scpolis')
             ->select('kuota', 'sc_poli_ket', 'shift', 'poli_desc', 'dr_name')
             ->where('kd_poli_bpjs', $request->kodepoli)
             ->where('kd_dr_bpjs', $request->kodedokter)
@@ -362,7 +362,7 @@ class AntreanFktpController extends Controller
             ->where('status', '!=', 'Batal')
             ->count();
 
-        $rjActive = (int) DB::table('rstxn_rjhdrs')
+        $rjActive = (int) DB::table('sktxn_rjhdrs')
             ->where('poli_id', $poli->poli_id)
             ->where('dr_id', $doctor->dr_id)
             ->whereRaw("to_char(rj_date,'yyyy-mm-dd') = ?", [$request->tanggalperiksa])
@@ -393,7 +393,7 @@ class AntreanFktpController extends Controller
                     }
 
                     // Hitung max antrean dari RJHDRS (admin/loket) dan booking JKN
-                    $maxRJ = (int) DB::table('rstxn_rjhdrs')
+                    $maxRJ = (int) DB::table('sktxn_rjhdrs')
                         ->where('dr_id', $doctor->dr_id)
                         ->where('poli_id', $poli->poli_id)
                         ->whereRaw("to_char(rj_date,'yyyy-mm-dd') = ?", [$request->tanggalperiksa])
@@ -502,11 +502,11 @@ class AntreanFktpController extends Controller
             return $this->sendError($request, 'Data booking tidak ditemukan', 201);
         }
 
-        $poli   = DB::table('rsmst_polis')->where('kd_poli_bpjs', $kdPoli)->first();
-        $doctor = DB::table('rsmst_doctors')->where('kd_dr_bpjs', $booking->kodedokter)->first();
+        $poli   = DB::table('skmst_polis')->where('kd_poli_bpjs', $kdPoli)->first();
+        $doctor = DB::table('skmst_doctors')->where('kd_dr_bpjs', $booking->kodedokter)->first();
 
         // Yang sedang dilayani di poli+dokter+tgl tsb
-        $sedangDilayani = DB::table('rstxn_rjhdrs')
+        $sedangDilayani = DB::table('sktxn_rjhdrs')
             ->where('poli_id', $poli->poli_id ?? null)
             ->where('dr_id', $doctor->dr_id ?? null)
             ->whereRaw("to_char(rj_date,'yyyy-mm-dd') = ?", [$tgl])
@@ -532,7 +532,7 @@ class AntreanFktpController extends Controller
      *       namakec, kodekel, namakel, rw, rt
      *
      * Insert ke tabel PASIEN (calon pasien Mobile JKN) — registrasi resmi
-     * ke RSMST_PASIENS dilakukan saat pasien datang ke loket klinik.
+     * ke SKMST_PASIENS dilakukan saat pasien datang ke loket klinik.
      */
     public function pasienBaru(Request $request)
     {

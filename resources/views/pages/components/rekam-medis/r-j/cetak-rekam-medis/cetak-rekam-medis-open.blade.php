@@ -52,7 +52,7 @@ new class extends Component {
                 ->format('%y Thn, %m Bln %d Hr');
         }
 
-        $dokter = DB::table('rsmst_doctors')
+        $dokter = DB::table('skmst_doctors')
             ->where('dr_id', $dataRJ['drId'] ?? '')
             ->select('dr_name')
             ->first();

@@ -160,7 +160,7 @@ new class extends Component {
                         if (!empty($this->dataDaftarPoliRJ['klaimId'])) {
                             $this->dataDaftarPoliRJ['noAntrian'] = $this->hitungNoAntrian($drId, $rjDateCarbon);
                         }
-                        DB::table('rstxn_rjhdrs')->insert($this->buildPayload($rjNo));
+                        DB::table('sktxn_rjhdrs')->insert($this->buildPayload($rjNo));
                         $this->updateJsonData($rjNo);
                         $message = 'Data Rawat Jalan berhasil disimpan.';
                     });
@@ -168,7 +168,7 @@ new class extends Component {
             } else {
                 DB::transaction(function () use ($rjNo, &$message) {
                     $this->lockRJRow($rjNo);
-                    DB::table('rstxn_rjhdrs')->where('rj_no', $rjNo)->update($this->buildPayload($rjNo));
+                    DB::table('sktxn_rjhdrs')->where('rj_no', $rjNo)->update($this->buildPayload($rjNo));
                     $this->updateJsonData($rjNo);
                     $message = 'Data Rawat Jalan berhasil diperbarui.';
                 });
@@ -221,7 +221,7 @@ new class extends Component {
             return '';
         }
 
-        $pasien = DB::table('rsmst_pasiens')->select('reg_no', 'reg_name', 'nokartu_bpjs', 'nik_bpjs', 'phone')->where('reg_no', $data['regNo'])->first();
+        $pasien = DB::table('skmst_pasiens')->select('reg_no', 'reg_name', 'nokartu_bpjs', 'nik_bpjs', 'phone')->where('reg_no', $data['regNo'])->first();
         if (!$pasien) {
             return '';
         }
@@ -231,12 +231,12 @@ new class extends Component {
             return ' · BPJS push dilewati (pasien BPJS tapi nokartu_bpjs kosong)';
         }
 
-        $poli = DB::table('rsmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs')->where('poli_id', $data['poliId'])->first();
+        $poli = DB::table('skmst_polis')->select('poli_id', 'poli_desc', 'kd_poli_bpjs')->where('poli_id', $data['poliId'])->first();
         if (!$poli || empty($poli->kd_poli_bpjs)) {
             return ' · BPJS push dilewati (poli belum mapping kd_poli_bpjs)';
         }
 
-        $doctor = DB::table('rsmst_doctors')->select('dr_id', 'dr_name', 'kd_dr_bpjs')->where('dr_id', $data['drId'])->first();
+        $doctor = DB::table('skmst_doctors')->select('dr_id', 'dr_name', 'kd_dr_bpjs')->where('dr_id', $data['drId'])->first();
         if (!$doctor || empty($doctor->kd_dr_bpjs)) {
             return ' · BPJS push dilewati (dokter belum mapping kd_dr_bpjs)';
         }
@@ -244,7 +244,7 @@ new class extends Component {
         $rjDateCarbon = Carbon::createFromFormat('d/m/Y H:i:s', $data['rjDate']);
         $tanggalperiksa = $rjDateCarbon->format('Y-m-d');
 
-        // jampraktek dari SCVIEW_SCPOLIS — match by dokter + poli + hari + shift
+        // jampraktek dari SKVIEW_SCPOLIS — match by dokter + poli + hari + shift
         $hariMap = [
             'Sunday' => 'MINGGU',
             'Monday' => 'SENIN',
@@ -256,7 +256,7 @@ new class extends Component {
         ];
         $hari = $hariMap[$rjDateCarbon->dayName] ?? null;
 
-        $jadwal = DB::table('scview_scpolis')->select('sc_poli_ket')->where('poli_id', $poli->poli_id)->where('dr_id', $doctor->dr_id)->where('day_desc', $hari)->where('shift', $data['shift'])->where('sc_poli_status_', '1')->first();
+        $jadwal = DB::table('skview_scpolis')->select('sc_poli_ket')->where('poli_id', $poli->poli_id)->where('dr_id', $doctor->dr_id)->where('day_desc', $hari)->where('shift', $data['shift'])->where('sc_poli_status_', '1')->first();
         $jampraktek = $jadwal->sc_poli_ket ?? '';
 
         $noAntrian = (int) ($data['noAntrian'] ?? 0);
@@ -340,7 +340,7 @@ new class extends Component {
         }
 
         if (empty($data['rjNo'])) {
-            $maxRjNo = DB::table('rstxn_rjhdrs')->max('rj_no');
+            $maxRjNo = DB::table('sktxn_rjhdrs')->max('rj_no');
             $data['rjNo'] = $maxRjNo ? $maxRjNo + 1 : 1;
         }
 
@@ -386,10 +386,10 @@ new class extends Component {
         ];
 
         $rules = [
-            'dataDaftarPoliRJ.regNo' => 'bail|required|exists:rsmst_pasiens,reg_no',
-            'dataDaftarPoliRJ.drId' => 'required|exists:rsmst_doctors,dr_id',
+            'dataDaftarPoliRJ.regNo' => 'bail|required|exists:skmst_pasiens,reg_no',
+            'dataDaftarPoliRJ.drId' => 'required|exists:skmst_doctors,dr_id',
             'dataDaftarPoliRJ.drDesc' => 'required|string',
-            'dataDaftarPoliRJ.poliId' => 'required|exists:rsmst_polis,poli_id',
+            'dataDaftarPoliRJ.poliId' => 'required|exists:skmst_polis,poli_id',
             'dataDaftarPoliRJ.poliDesc' => 'required|string',
             'dataDaftarPoliRJ.kddrbpjs' => 'nullable|string',
             'dataDaftarPoliRJ.kdpolibpjs' => 'nullable|string',
@@ -404,7 +404,7 @@ new class extends Component {
             'dataDaftarPoliRJ.txnStatus' => 'required|in:A,L,H',
             'dataDaftarPoliRJ.ermStatus' => 'required|in:A,L',
             'dataDaftarPoliRJ.cekLab' => 'required|in:0,1',
-            'dataDaftarPoliRJ.klaimId' => 'required|exists:rsmst_klaimtypes,klaim_id',
+            'dataDaftarPoliRJ.klaimId' => 'required|exists:skmst_klaimtypes,klaim_id',
         ];
 
         if (($this->dataDaftarPoliRJ['klaimStatus'] ?? '') === 'BPJS' || ($this->dataDaftarPoliRJ['klaimId'] ?? '') === 'JM') {
@@ -936,7 +936,7 @@ new class extends Component {
     {
         // Oracle treats '' as NULL, jadi whereNotNull sudah cukup — jangan tambah where('!=',''),
         // karena `col != NULL` selalu unknown/false → semua row ter-filter habis.
-        $row = DB::table('rstxn_shiftctls')
+        $row = DB::table('sktxn_shiftctls')
             ->select('shift')
             ->whereNotNull('shift_start')
             ->whereNotNull('shift_end')
@@ -949,7 +949,7 @@ new class extends Component {
     {
         $poliId = $this->dataDaftarPoliRJ['poliId'] ?? null;
 
-        $maxAntrianRjhdrs = (int) DB::table('rstxn_rjhdrs')
+        $maxAntrianRjhdrs = (int) DB::table('sktxn_rjhdrs')
             ->where('dr_id', $drId)
             ->when($poliId, fn($q) => $q->where('poli_id', $poliId))
 
@@ -957,7 +957,7 @@ new class extends Component {
             ->max('no_antrian');
 
         // angkaantrean bertipe VARCHAR2 — pakai to_number agar max numeric (bukan lex sort).
-        $maxAntrianBooking = (int) DB::table('referensi_mobilejkn_bpjs as b')->join('rsmst_doctors as d', 'd.kd_dr_bpjs', '=', 'b.kodedokter')->where('d.dr_id', $drId)->where('b.tanggalperiksa', $rjDateCarbon->format('Y-m-d'))->selectRaw('nvl(max(to_number(b.angkaantrean)), 0) as maxq')->value('maxq');
+        $maxAntrianBooking = (int) DB::table('referensi_mobilejkn_bpjs as b')->join('skmst_doctors as d', 'd.kd_dr_bpjs', '=', 'b.kodedokter')->where('d.dr_id', $drId)->where('b.tanggalperiksa', $rjDateCarbon->format('Y-m-d'))->selectRaw('nvl(max(to_number(b.angkaantrean)), 0) as maxq')->value('maxq');
 
         return max($maxAntrianRjhdrs, $maxAntrianBooking) + 1;
     }
@@ -1049,7 +1049,7 @@ new class extends Component {
         if ($name === 'klaimId') {
             $this->klaimId = $value;
             $this->dataDaftarPoliRJ['klaimId'] = $value;
-            $this->dataDaftarPoliRJ['klaimStatus'] = DB::table('rsmst_klaimtypes')->where('klaim_id', $value)->value('klaim_status') ?? 'UMUM';
+            $this->dataDaftarPoliRJ['klaimStatus'] = DB::table('skmst_klaimtypes')->where('klaim_id', $value)->value('klaim_status') ?? 'UMUM';
         }
     }
 

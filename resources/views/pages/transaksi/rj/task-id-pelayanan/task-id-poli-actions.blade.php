@@ -96,7 +96,7 @@ new class extends Component {
             DB::transaction(function () use ($data, $waktuSekarang) {
                 $this->lockRJRow($this->rjNo);
 
-                DB::table('rstxn_rjhdrs')
+                DB::table('sktxn_rjhdrs')
                     ->where('rj_no', $this->rjNo)
                     ->update([
                         'waktu_masuk_poli' => DB::raw("to_date('" . $waktuSekarang . "','dd/mm/yyyy hh24:mi:ss')"),

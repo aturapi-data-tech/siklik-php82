@@ -76,13 +76,13 @@ new class extends Component {
             // Patient UUID registration (SATUSEHAT) di-handle di master-pasien,
             // BUKAN di sini. Kalau kosong, arahkan user ke master-pasien dulu.
             $regNo = $dataRJ['regNo'] ?? '';
-            $patientId = $regNo ? (string) (DB::table('rsmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '') : '';
+            $patientId = $regNo ? (string) (DB::table('skmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '') : '';
 
             $drId = $dataRJ['drId'] ?? '';
-            $practitionerId = $drId ? (string) (DB::table('rsmst_doctors')->where('dr_id', $drId)->value('dr_uuid') ?? '') : '';
+            $practitionerId = $drId ? (string) (DB::table('skmst_doctors')->where('dr_id', $drId)->value('dr_uuid') ?? '') : '';
 
             $poliId = $dataRJ['poliId'] ?? '';
-            $locationId = $poliId ? (string) (DB::table('rsmst_polis')->where('poli_id', $poliId)->value('poli_uuid') ?? '') : '';
+            $locationId = $poliId ? (string) (DB::table('skmst_polis')->where('poli_id', $poliId)->value('poli_uuid') ?? '') : '';
 
             if (empty($patientId)) {
                 $this->dispatch('toast', type: 'error',
@@ -189,9 +189,9 @@ new class extends Component {
             return '';
         }
         $uuidCol = match ($table) {
-            'rsmst_doctors' => 'dr_uuid',
-            'rsmst_polis' => 'poli_uuid',
-            'rsmst_pasiens' => 'patient_uuid',
+            'skmst_doctors' => 'dr_uuid',
+            'skmst_polis' => 'poli_uuid',
+            'skmst_pasiens' => 'patient_uuid',
             default => 'dr_uuid',
         };
         return (string) (DB::table($table)->where($col, $val)->value($uuidCol) ?? '');

@@ -43,7 +43,7 @@ new class extends Component {
         }
 
         $row = $this->baseQuery()
-            ->where('rsmst_desas.des_id', $this->initialDesaId)
+            ->where('skmst_desas.des_id', $this->initialDesaId)
             ->first();
 
         if ($row) {
@@ -68,14 +68,14 @@ new class extends Component {
 
         // ===== 1) exact match by des_id =====
         if (ctype_digit($keyword)) {
-            $query = $this->baseQuery()->where('rsmst_desas.des_id', $keyword);
+            $query = $this->baseQuery()->where('skmst_desas.des_id', $keyword);
 
             // Jika ada filter kota/propinsi, gunakan
             if ($this->kotaId) {
-                $query->where('rsmst_kabupatens.kab_id', $this->kotaId);
+                $query->where('skmst_kabupatens.kab_id', $this->kotaId);
             }
             if ($this->propinsiId) {
-                $query->where('rsmst_propinsis.prop_id', $this->propinsiId);
+                $query->where('skmst_propinsis.prop_id', $this->propinsiId);
             }
 
             $exactRow = $query->first();
@@ -95,24 +95,24 @@ new class extends Component {
         foreach ($words as $word) {
             $term = '%' . $word . '%';
             $query->whereRaw(
-                "UPPER(rsmst_desas.des_name || ' ' || rsmst_kecamatans.kec_name || ' ' || rsmst_kabupatens.kab_name || ' ' || rsmst_propinsis.prop_name) LIKE ?",
+                "UPPER(skmst_desas.des_name || ' ' || skmst_kecamatans.kec_name || ' ' || skmst_kabupatens.kab_name || ' ' || skmst_propinsis.prop_name) LIKE ?",
                 [$term]
             );
         }
 
         // Jika ada filter kota/propinsi, prioritaskan
         if ($this->kotaId) {
-            $query->where('rsmst_kabupatens.kab_id', $this->kotaId);
+            $query->where('skmst_kabupatens.kab_id', $this->kotaId);
         }
         if ($this->propinsiId) {
-            $query->where('rsmst_propinsis.prop_id', $this->propinsiId);
+            $query->where('skmst_propinsis.prop_id', $this->propinsiId);
         }
 
         $rows = $query
-            ->orderBy('rsmst_propinsis.prop_name')
-            ->orderBy('rsmst_kabupatens.kab_name')
-            ->orderBy('rsmst_kecamatans.kec_name')
-            ->orderBy('rsmst_desas.des_name')
+            ->orderBy('skmst_propinsis.prop_name')
+            ->orderBy('skmst_kabupatens.kab_name')
+            ->orderBy('skmst_kecamatans.kec_name')
+            ->orderBy('skmst_desas.des_name')
             ->limit(30)
             ->get();
 
@@ -199,16 +199,16 @@ new class extends Component {
 
     protected function baseQuery()
     {
-        return DB::table('rsmst_desas')
+        return DB::table('skmst_desas')
             ->select(
-                'rsmst_desas.des_id', 'rsmst_desas.des_name',
-                'rsmst_kecamatans.kec_id', 'rsmst_kecamatans.kec_name',
-                'rsmst_kabupatens.kab_id', 'rsmst_kabupatens.kab_name',
-                'rsmst_propinsis.prop_id', 'rsmst_propinsis.prop_name'
+                'skmst_desas.des_id', 'skmst_desas.des_name',
+                'skmst_kecamatans.kec_id', 'skmst_kecamatans.kec_name',
+                'skmst_kabupatens.kab_id', 'skmst_kabupatens.kab_name',
+                'skmst_propinsis.prop_id', 'skmst_propinsis.prop_name'
             )
-            ->join('rsmst_kecamatans', 'rsmst_kecamatans.kec_id', 'rsmst_desas.kec_id')
-            ->join('rsmst_kabupatens', 'rsmst_kabupatens.kab_id', 'rsmst_kecamatans.kab_id')
-            ->join('rsmst_propinsis', 'rsmst_propinsis.prop_id', 'rsmst_kabupatens.prop_id');
+            ->join('skmst_kecamatans', 'skmst_kecamatans.kec_id', 'skmst_desas.kec_id')
+            ->join('skmst_kabupatens', 'skmst_kabupatens.kab_id', 'skmst_kecamatans.kab_id')
+            ->join('skmst_propinsis', 'skmst_propinsis.prop_id', 'skmst_kabupatens.prop_id');
     }
 
     protected function mapRow($row): array

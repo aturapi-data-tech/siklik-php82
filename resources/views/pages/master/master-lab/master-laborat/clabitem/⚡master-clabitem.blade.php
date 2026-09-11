@@ -81,7 +81,7 @@ new class extends Component {
             return null;
         }
 
-        $q = DB::table('lbmst_clabitems')
+        $q = DB::table('skmst_clabitems')
             ->select(
                 'clabitem_id',
                 'clabitem_desc',

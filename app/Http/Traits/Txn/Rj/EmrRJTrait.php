@@ -14,7 +14,7 @@ trait EmrRJTrait
      * - If null/invalid: fallback to database query (once)
      * - Validate rj_no: if not found or mismatched, return default
      *
-     * ⚠️  Membaca dari VIEW (rsview_rjkasir) — tidak bisa di-lock.
+     * ⚠️  Membaca dari VIEW (skview_rjkasir) — tidak bisa di-lock.
      *     Untuk operasi read-modify-write, panggil lockRJRow() terlebih dahulu
      *     DI DALAM DB::transaction sebelum memanggil findDataRJ().
      *
@@ -29,7 +29,7 @@ trait EmrRJTrait
      */
     protected function findDataRJ($rjNo): array
     {
-        $row = DB::table('rsview_rjkasir')
+        $row = DB::table('skview_rjkasir')
             ->select([
                 'reg_no',
                 'reg_name',
@@ -74,7 +74,7 @@ trait EmrRJTrait
     }
 
     /**
-     * Lock baris di tabel rstxn_rjhdrs (SELECT FOR UPDATE).
+     * Lock baris di tabel sktxn_rjhdrs (SELECT FOR UPDATE).
      *
      * Wajib dipanggil DI DALAM DB::transaction sebelum findDataRJ()
      * pada operasi yang melakukan read-modify-write ke datadaftarpolirj_json.
@@ -84,7 +84,7 @@ trait EmrRJTrait
      */
     protected function lockRJRow($rjNo): void
     {
-        $exists = DB::table('rstxn_rjhdrs')
+        $exists = DB::table('sktxn_rjhdrs')
             ->where('rj_no', $rjNo)
             ->lockForUpdate()
             ->exists();
@@ -112,7 +112,7 @@ trait EmrRJTrait
             );
         }
 
-        DB::table('rstxn_rjhdrs')
+        DB::table('sktxn_rjhdrs')
             ->where('rj_no', $rjNo)
             ->update([
                 'datadaftarpolirj_json' => json_encode(
@@ -206,7 +206,7 @@ trait EmrRJTrait
      */
     private function getKlaimStatus(string $klaimId): string
     {
-        return DB::table('rsmst_klaimtypes')
+        return DB::table('skmst_klaimtypes')
             ->where('klaim_id', $klaimId)
             ->value('klaim_status') ?? 'UMUM';
     }
@@ -277,7 +277,7 @@ trait EmrRJTrait
      */
     protected function checkRJStatus($rjNo): bool
     {
-        $row = DB::table('rstxn_rjhdrs')
+        $row = DB::table('sktxn_rjhdrs')
             ->select('rj_status')
             ->where('rj_no', $rjNo)
             ->first();
@@ -296,7 +296,7 @@ trait EmrRJTrait
      */
     protected function checkEmrRJStatus($rjNo): bool
     {
-        $row = DB::table('rstxn_rjhdrs')
+        $row = DB::table('sktxn_rjhdrs')
             ->select('erm_status')
             ->where('rj_no', $rjNo)
             ->first();
@@ -313,7 +313,7 @@ trait EmrRJTrait
      */
     protected function checkLabPending(int $rjNo, string $statusRjri = 'RJ'): bool
     {
-        return DB::table('lbtxn_checkuphdrs')
+        return DB::table('sktxn_checkuphdrs')
             ->where('status_rjri', $statusRjri)
             ->where('checkup_status', 'P')
             ->where('ref_no', $rjNo)
@@ -325,7 +325,7 @@ trait EmrRJTrait
      */
     protected function calculateRJCosts(int $rjNo): array
     {
-        $hdr = DB::table('rstxn_rjhdrs')
+        $hdr = DB::table('sktxn_rjhdrs')
             ->select('rs_admin', 'rj_admin', 'poli_price')
             ->where('rj_no', $rjNo)
             ->first();
@@ -334,14 +334,14 @@ trait EmrRJTrait
             'rsAdmin'   => (int) ($hdr->rs_admin ?? 0),
             'rjAdmin'   => (int) ($hdr->rj_admin ?? 0),
             'poliPrice' => (int) ($hdr->poli_price ?? 0),
-            'actePrice' => (int) DB::table('rstxn_rjactemps')->where('rj_no', $rjNo)->sum('acte_price'),
-            'actdPrice' => (int) DB::table('rstxn_rjaccdocs')->where('rj_no', $rjNo)->sum('accdoc_price'),
-            'actpPrice' => (int) DB::table('rstxn_rjactparams')->where('rj_no', $rjNo)->sum('pact_price'),
-            'obat'      => (int) DB::table('rstxn_rjobats')->where('rj_no', $rjNo)
+            'actePrice' => (int) DB::table('sktxn_rjactemps')->where('rj_no', $rjNo)->sum('acte_price'),
+            'actdPrice' => (int) DB::table('sktxn_rjaccdocs')->where('rj_no', $rjNo)->sum('accdoc_price'),
+            'actpPrice' => (int) DB::table('sktxn_rjactparams')->where('rj_no', $rjNo)->sum('pact_price'),
+            'obat'      => (int) DB::table('sktxn_rjobats')->where('rj_no', $rjNo)
                             ->selectRaw('nvl(sum(qty * price), 0) as total')->value('total'),
-            'lab'       => (int) DB::table('rstxn_rjlabs')->where('rj_no', $rjNo)->sum('lab_price'),
-            'rad'       => (int) DB::table('rstxn_rjrads')->where('rj_no', $rjNo)->sum('rad_price'),
-            'other'     => (int) DB::table('rstxn_rjothers')->where('rj_no', $rjNo)->sum('other_price'),
+            'lab'       => (int) DB::table('sktxn_rjlabs')->where('rj_no', $rjNo)->sum('lab_price'),
+            'rad'       => (int) DB::table('sktxn_rjrads')->where('rj_no', $rjNo)->sum('rad_price'),
+            'other'     => (int) DB::table('sktxn_rjothers')->where('rj_no', $rjNo)->sum('other_price'),
         ];
     }
 }

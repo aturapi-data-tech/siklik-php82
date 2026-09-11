@@ -96,14 +96,14 @@ new class extends Component {
     }
 
     /* -------------------------
-     | Base Query — RSVIEW_CHECKUPS
+     | Base Query — SKVIEW_CHECKUPS
      * ------------------------- */
     #[Computed]
     public function baseQuery()
     {
         [$start, $end] = $this->dateRange();
 
-        $query = DB::table('rsview_checkups')
+        $query = DB::table('skview_checkups')
             ->select(
                 'checkup_no',
                 DB::raw("to_char(checkup_date,'dd/mm/yyyy hh24:mi:ss') as checkup_date_display"),
@@ -116,9 +116,9 @@ new class extends Component {
                 'checkup_rjri',
                 DB::raw("(
                     SELECT string_agg(clabitem_desc)
-                    FROM lbtxn_checkupdtls a
-                    JOIN lbmst_clabitems b ON a.clabitem_id = b.clabitem_id
-                    WHERE a.checkup_no = rsview_checkups.checkup_no
+                    FROM sktxn_checkupdtls a
+                    JOIN skmst_clabitems b ON a.clabitem_id = b.clabitem_id
+                    WHERE a.checkup_no = skview_checkups.checkup_no
                     AND a.price IS NOT NULL
                 ) AS checkup_dtl_pasien"),
             )

@@ -28,10 +28,10 @@ new class extends Component {
             return;
         }
 
-        $header = DB::table('lbtxn_checkuphdrs as a')
-            ->join('rsmst_pasiens as c', 'a.reg_no', '=', 'c.reg_no')
-            ->leftJoin('rsmst_doctors as d', 'a.dr_id', '=', 'd.dr_id')
-            ->leftJoin('tkmst_kasirs as e', 'a.kasir_id', '=', 'e.kasir_id')
+        $header = DB::table('sktxn_checkuphdrs as a')
+            ->join('skmst_pasiens as c', 'a.reg_no', '=', 'c.reg_no')
+            ->leftJoin('skmst_doctors as d', 'a.dr_id', '=', 'd.dr_id')
+            ->leftJoin('skmst_kasirs as e', 'a.kasir_id', '=', 'e.kasir_id')
             ->select(
                 'a.checkup_no',
                 DB::raw("to_char(a.checkup_date,'dd/mm/yyyy hh24:mi:ss') as checkup_date"),

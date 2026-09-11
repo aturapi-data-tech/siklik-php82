@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.cara-keluar.openEdit')]
     public function openEdit(string $outNo): void
     {
-        $row = DB::table('rsmst_outs')->where('out_no', $outNo)->first();
+        $row = DB::table('skmst_outs')->where('out_no', $outNo)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -58,7 +58,7 @@ new class extends Component {
     public function deleteCaraKeluar(string $outNo): void
     {
         try {
-            $deleted = DB::table('rsmst_outs')->where('out_no', $outNo)->delete();
+            $deleted = DB::table('skmst_outs')->where('out_no', $outNo)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data cara keluar tidak ditemukan.');
                 return;
@@ -79,7 +79,7 @@ new class extends Component {
     {
         $rules = [
             'form.out_no'   => $this->formMode === 'create'
-                ? 'required|string|max:5|regex:/^[A-Z0-9]+$/|unique:rsmst_outs,out_no'
+                ? 'required|string|max:5|regex:/^[A-Z0-9]+$/|unique:skmst_outs,out_no'
                 : 'required|string',
             'form.out_desc' => 'required|string|max:50',
         ];
@@ -103,12 +103,12 @@ new class extends Component {
         $payload = ['out_desc' => mb_strtoupper($this->form['out_desc'])];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_outs')->insert([
+            DB::table('skmst_outs')->insert([
                 'out_no' => mb_strtoupper($this->form['out_no']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_outs')->where('out_no', $this->originalId)->update($payload);
+            DB::table('skmst_outs')->where('out_no', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data cara keluar berhasil disimpan.');

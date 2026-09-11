@@ -28,7 +28,7 @@ class RsmstJobSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_jobs')->updateOrInsert(['job_id' => $row['job_id']], $row);
+            DB::table('skmst_jobs')->updateOrInsert(['job_id' => $row['job_id']], $row);
         }
     }
 }

@@ -1,9 +1,9 @@
 ---
 name: master-pasien
-description: Field path & jebakan data pasien (rsmst_pasiens / MasterPasienTrait). Baca saat membaca/menyimpan data pasien, menampilkan jenis kelamin & umur, atau mengisi form Master Pasien — banyak bug mapping L/P, *Desc tidak sync, dan kolom yang salah nama.
+description: Field path & jebakan data pasien (skmst_pasiens / MasterPasienTrait). Baca saat membaca/menyimpan data pasien, menampilkan jenis kelamin & umur, atau mengisi form Master Pasien — banyak bug mapping L/P, *Desc tidak sync, dan kolom yang salah nama.
 ---
 
-# Master Pasien (rsmst_pasiens)
+# Master Pasien (skmst_pasiens)
 
 ## Field paths via MasterPasienTrait (nested, BUKAN flat)
 - Jenis kelamin: `jenisKelamin.jenisKelaminDesc` (bukan `sex`)
@@ -11,7 +11,7 @@ description: Field path & jebakan data pasien (rsmst_pasiens / MasterPasienTrait
 - `tglLahir` / `tempatLahir` → flat. `regBirth` → `tglLahir`.
 - Cek `app/Http/Traits/Master/MasterPasien/MasterPasienTrait.php` dulu sebelum menebak path.
 
-## Kolom tabel rsmst_pasiens (langsung DB)
+## Kolom tabel skmst_pasiens (langsung DB)
 - Prefix `reg_` HANYA di `reg_no`, `reg_name`, `reg_date`.
 - Alamat = `address` (BUKAN `reg_address`).
 - BPJS = `nokartu_bpjs` (BUKAN `no_bpjs`). Ada juga `no_jkn` dan `nik_bpjs` — jangan tertukar.

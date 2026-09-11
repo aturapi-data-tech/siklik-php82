@@ -49,7 +49,7 @@ new class extends Component {
 
     protected function loadSelected(string $clabitemId): void
     {
-        $row = DB::table('lbmst_clabitems')
+        $row = DB::table('skmst_clabitems')
             ->select('clabitem_id', 'clabitem_desc', 'price')
             ->where('clabitem_id', $clabitemId)
             ->first();
@@ -81,7 +81,7 @@ new class extends Component {
 
         $upper = mb_strtoupper($keyword);
 
-        $q = DB::table('lbmst_clabitems')
+        $q = DB::table('skmst_clabitems')
             ->select('clabitem_id', 'clabitem_desc', 'price')
             ->where('price', '>', 0)
             ->where(function ($sub) use ($upper) {

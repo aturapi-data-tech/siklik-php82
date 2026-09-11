@@ -18,7 +18,7 @@ class RsmstParameterSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            DB::table('rsmst_parameters')->updateOrInsert(['par_id' => $row['par_id']], $row);
+            DB::table('skmst_parameters')->updateOrInsert(['par_id' => $row['par_id']], $row);
         }
     }
 }

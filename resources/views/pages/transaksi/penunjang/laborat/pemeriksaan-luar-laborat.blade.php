@@ -44,7 +44,7 @@ new class extends Component {
      * ======================= */
     private function loadOutDtlRows(): void
     {
-        $rows = DB::table('lbtxn_checkupoutdtls')
+        $rows = DB::table('sktxn_checkupoutdtls')
             ->select('labout_dtl', 'labout_desc', 'labout_result', 'labout_normal')
             ->where('checkup_no', $this->checkupNo)
             ->orderBy('labout_dtl', 'asc')
@@ -72,9 +72,9 @@ new class extends Component {
         ]);
 
         try {
-            $dtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(labout_dtl)) + 1, 1) FROM lbtxn_checkupoutdtls');
+            $dtlNo = DB::scalar('SELECT NVL(TO_NUMBER(MAX(labout_dtl)) + 1, 1) FROM sktxn_checkupoutdtls');
 
-            DB::table('lbtxn_checkupoutdtls')->insert([
+            DB::table('sktxn_checkupoutdtls')->insert([
                 'checkup_no' => $this->checkupNo,
                 'labout_dtl' => $dtlNo,
                 'labout_desc' => $this->formOutDtl['laboutDesc'],
@@ -109,7 +109,7 @@ new class extends Component {
             return;
         }
 
-        DB::table('lbtxn_checkupoutdtls')
+        DB::table('sktxn_checkupoutdtls')
             ->where('checkup_no', $this->checkupNo)
             ->where('labout_dtl', $laboutDtl)
             ->update([$field => $value]);
@@ -128,7 +128,7 @@ new class extends Component {
             return;
         }
 
-        DB::table('lbtxn_checkupoutdtls')
+        DB::table('sktxn_checkupoutdtls')
             ->where('checkup_no', $this->checkupNo)
             ->where('labout_dtl', $laboutDtl)
             ->delete();

@@ -44,19 +44,19 @@ public function dokterList()
     // sengaja TIDAK dipakai supaya opsi dropdown stabil: user bisa pindah-pindah
     // status/klaim tanpa kehilangan dokter yang sudah dipilih, meskipun query
     // utama jadi kosong.
-    return DB::table('rstxn_rjhdrs')   // ganti tabel sesuai modul (rstxn_ugdhdrs, rstxn_rihdrs)
+    return DB::table('sktxn_rjhdrs')   // ganti tabel sesuai modul (sktxn_ugdhdrs, sktxn_rihdrs)
         ->select(
-            'rstxn_rjhdrs.dr_id',
-            DB::raw('MAX(rsmst_doctors.dr_name) as dr_name'),
-            'rstxn_rjhdrs.poli_id',
-            DB::raw('MAX(rsmst_polis.poli_desc) as poli_desc'),
-            DB::raw('COUNT(DISTINCT rstxn_rjhdrs.rj_no) as total_pasien'),
+            'sktxn_rjhdrs.dr_id',
+            DB::raw('MAX(skmst_doctors.dr_name) as dr_name'),
+            'sktxn_rjhdrs.poli_id',
+            DB::raw('MAX(skmst_polis.poli_desc) as poli_desc'),
+            DB::raw('COUNT(DISTINCT sktxn_rjhdrs.rj_no) as total_pasien'),
         )
-        ->join('rsmst_doctors', 'rsmst_doctors.dr_id', '=', 'rstxn_rjhdrs.dr_id')
-        ->join('rsmst_polis', 'rsmst_polis.poli_id', '=', 'rstxn_rjhdrs.poli_id')
-        ->where(DB::raw("to_char(rstxn_rjhdrs.rj_date, 'dd/mm/yyyy')"), '=', $this->filterTanggal)
-        // ↑ atau ->whereBetween('rstxn_rjhdrs.rj_date', [$start, $end]) untuk range bulanan
-        ->groupBy('rstxn_rjhdrs.dr_id', 'rstxn_rjhdrs.poli_id')
+        ->join('skmst_doctors', 'skmst_doctors.dr_id', '=', 'sktxn_rjhdrs.dr_id')
+        ->join('skmst_polis', 'skmst_polis.poli_id', '=', 'sktxn_rjhdrs.poli_id')
+        ->where(DB::raw("to_char(sktxn_rjhdrs.rj_date, 'dd/mm/yyyy')"), '=', $this->filterTanggal)
+        // ↑ atau ->whereBetween('sktxn_rjhdrs.rj_date', [$start, $end]) untuk range bulanan
+        ->groupBy('sktxn_rjhdrs.dr_id', 'sktxn_rjhdrs.poli_id')
         ->orderBy('poli_desc')
         ->orderBy('dr_name')
         ->get();
@@ -123,11 +123,11 @@ Pola di atas berlaku untuk **lookup dropdown filter di halaman listing transaksi
 
 ### 4.1 Master/setting (mis. /master/dokter)
 
-Master Dokter punya tabel sendiri yang murni metadata user — list dokter di sini tidak depend ke transaksi sama sekali. Sumbernya `rsmst_doctors` langsung, tanpa join ke `rstxn_*hdrs`.
+Master Dokter punya tabel sendiri yang murni metadata user — list dokter di sini tidak depend ke transaksi sama sekali. Sumbernya `skmst_doctors` langsung, tanpa join ke `rstxn_*hdrs`.
 
 ### 4.2 Dropdown picker untuk transaksi baru
 
-Saat user buat transaksi baru (mis. SEP, SKDP, Rujukan), dropdown dokter umumnya mau memunculkan **semua dokter aktif** (terlepas dari hari ini praktek atau tidak). Tabel sumbernya `rsmst_doctors` dengan filter `active_status='1'`.
+Saat user buat transaksi baru (mis. SEP, SKDP, Rujukan), dropdown dokter umumnya mau memunculkan **semua dokter aktif** (terlepas dari hari ini praktek atau tidak). Tabel sumbernya `skmst_doctors` dengan filter `active_status='1'`.
 
 ### 4.3 Form filter yang TIDAK paginated (single-query report)
 
@@ -141,7 +141,7 @@ Prinsip "stable lookup list" yang sama bisa diterapkan untuk dropdown lain di ha
 
 ### `poliList()` — Daftar Poli
 
-Tidak ada bug ini di codebase saat ini karena `poliList()` biasanya pakai sumber `rsmst_polis` langsung (tanpa join transaksi) — sudah stabil by design.
+Tidak ada bug ini di codebase saat ini karena `poliList()` biasanya pakai sumber `skmst_polis` langsung (tanpa join transaksi) — sudah stabil by design.
 
 Kalau ingin pola "poli yang ada transaksinya hari ini saja", boleh pakai:
 
@@ -150,11 +150,11 @@ Kalau ingin pola "poli yang ada transaksinya hari ini saja", boleh pakai:
 public function poliList()
 {
     // Sama prinsip: HANYA filter tanggal, tidak ikut filter operasional
-    return DB::table('rstxn_rjhdrs')
-        ->select('rstxn_rjhdrs.poli_id', DB::raw('MAX(rsmst_polis.poli_desc) as poli_desc'))
-        ->join('rsmst_polis', 'rsmst_polis.poli_id', '=', 'rstxn_rjhdrs.poli_id')
-        ->whereBetween('rstxn_rjhdrs.rj_date', [$start, $end])
-        ->groupBy('rstxn_rjhdrs.poli_id')
+    return DB::table('sktxn_rjhdrs')
+        ->select('sktxn_rjhdrs.poli_id', DB::raw('MAX(skmst_polis.poli_desc) as poli_desc'))
+        ->join('skmst_polis', 'skmst_polis.poli_id', '=', 'sktxn_rjhdrs.poli_id')
+        ->whereBetween('sktxn_rjhdrs.rj_date', [$start, $end])
+        ->groupBy('sktxn_rjhdrs.poli_id')
         ->orderBy('poli_desc')
         ->get();
 }
@@ -166,7 +166,7 @@ Kalau pakai listing per range tanggal, sama: depend tanggal saja, **bukan** `fil
 
 ### `klaimList()` — Daftar Jenis Klaim
 
-Hampir selalu di-render dari `rsmst_klaims` (master) — tidak perlu pola ini. Klaim itu master, bukan derived dari transaksi.
+Hampir selalu di-render dari `skmst_klaims` (master) — tidak perlu pola ini. Klaim itu master, bukan derived dari transaksi.
 
 ---
 
@@ -176,7 +176,7 @@ Hampir selalu di-render dari `rsmst_klaims` (master) — tidak perlu pola ini. K
 // ❌ JANGAN — bikin dokterList tergantung filterStatus / filterKlaim
 public function dokterList()
 {
-    $query = DB::table('rstxn_rjhdrs')->whereBetween('rj_date', [$start, $end]);
+    $query = DB::table('sktxn_rjhdrs')->whereBetween('rj_date', [$start, $end]);
 
     if (!empty($this->filterStatus)) {
         $query->where('rj_status', $this->filterStatus);   // ❌ ini bikin dropdown lenyap saat ganti status
@@ -202,7 +202,7 @@ public function dokterList()
 ## 7. Checklist saat menambah halaman listing baru dengan filter dokter
 
 - [ ] Pakai `#[Computed] public function dokterList()` (Livewire 3 computed property).
-- [ ] Query SELECT dr_id + dr_name + poli + total_pasien dari tabel transaksi (`rstxn_*hdrs`) JOIN `rsmst_doctors` + `rsmst_polis`.
+- [ ] Query SELECT dr_id + dr_name + poli + total_pasien dari tabel transaksi (`rstxn_*hdrs`) JOIN `skmst_doctors` + `skmst_polis`.
 - [ ] WHERE clause **HANYA** `rj_date = filterTanggal` (daily) atau `whereBetween('rj_date', [$start, $end])` (range).
 - [ ] JANGAN tambah `if filterStatus/filterKlaim/filterPoli/searchKeyword` di dokterList.
 - [ ] GROUP BY `dr_id + poli_id`, ORDER BY `poli_desc`, `dr_name`.

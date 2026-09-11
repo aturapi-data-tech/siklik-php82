@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.cara-bayar.openEdit')]
     public function openEdit(string $cbId): void
     {
-        $row = DB::table('tkacc_carabayars')->where('cb_id', $cbId)->first();
+        $row = DB::table('skacc_carabayars')->where('cb_id', $cbId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -62,7 +62,7 @@ new class extends Component {
     public function deleteCaraBayar(string $cbId): void
     {
         try {
-            $deleted = DB::table('tkacc_carabayars')->where('cb_id', $cbId)->delete();
+            $deleted = DB::table('skacc_carabayars')->where('cb_id', $cbId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data cara bayar tidak ditemukan.');
                 return;
@@ -91,11 +91,11 @@ new class extends Component {
     {
         $rules = [
             'form.cb_id'         => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkacc_carabayars,cb_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skacc_carabayars,cb_id'
                 : 'required|string',
             'form.cb_desc'       => 'required|string|max:100',
             'form.active_status' => 'required|in:0,1',
-            'form.acc_id'        => 'nullable|string|max:25|exists:tkacc_accountses,acc_id',
+            'form.acc_id'        => 'nullable|string|max:25|exists:skacc_accountses,acc_id',
         ];
 
         $messages = [
@@ -126,12 +126,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkacc_carabayars')->insert([
+            DB::table('skacc_carabayars')->insert([
                 'cb_id' => mb_strtoupper($this->form['cb_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkacc_carabayars')->where('cb_id', $this->originalId)->update($payload);
+            DB::table('skacc_carabayars')->where('cb_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data cara bayar berhasil disimpan.');

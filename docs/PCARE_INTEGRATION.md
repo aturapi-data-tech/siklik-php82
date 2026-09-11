@@ -174,7 +174,7 @@ Kolom utama:
 
 ## Catatan
 
-- **kdPoli BPJS** di `rsmst_polis.kd_poli_bpjs` harus terisi sesuai master BPJS PCare. Cek via `PcareTrait::getPoliFktp()` (perlu di-wire ke UI).
-- **kdDokter BPJS** di `rsmst_doctors.kd_dr_bpjs` harus terisi.
+- **kdPoli BPJS** di `skmst_polis.kd_poli_bpjs` harus terisi sesuai master BPJS PCare. Cek via `PcareTrait::getPoliFktp()` (perlu di-wire ke UI).
+- **kdDokter BPJS** di `skmst_doctors.kd_dr_bpjs` harus terisi.
 - Method PcareTrait lain yg belum di-wire: `getRiwayatKunjungan` (riwayat pasien), `getDiagnosa` (cari ICD-10 dari BPJS), `editKunjungan/deleteKunjungan` (revisi).
 - TaskID 1-7 + 99 internal state tracking masih ada (di `task-id-pelayanan/`), tapi **TIDAK dipush ke BPJS Antrol** (klinik pratama tidak pakai Antrol).

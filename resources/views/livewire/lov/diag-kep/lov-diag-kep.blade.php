@@ -57,7 +57,7 @@ new class extends Component {
 
     protected function loadSelected(string $diagKepId): void
     {
-        $row = DB::table('rsmst_diagkeperawatans')
+        $row = DB::table('skmst_diagkeperawatans')
             ->select('diagkep_id', 'diagkep_desc', 'diagkep_json')
             ->where('diagkep_id', $diagKepId)
             ->first();
@@ -85,7 +85,7 @@ new class extends Component {
         }
 
         // 1) Exact match by diagkep_id
-        $exact = DB::table('rsmst_diagkeperawatans')
+        $exact = DB::table('skmst_diagkeperawatans')
             ->select('diagkep_id', 'diagkep_desc', 'diagkep_json')
             ->where('diagkep_id', $keyword)
             ->first();
@@ -98,7 +98,7 @@ new class extends Component {
         // 2) Partial search
         $upperKw = mb_strtoupper($keyword);
 
-        $rows = DB::table('rsmst_diagkeperawatans')
+        $rows = DB::table('skmst_diagkeperawatans')
             ->select('diagkep_id', 'diagkep_desc', 'diagkep_json')
             ->where(function ($q) use ($keyword, $upperKw) {
                 $q->orWhereRaw('UPPER(diagkep_desc) LIKE ?', ["%{$upperKw}%"])

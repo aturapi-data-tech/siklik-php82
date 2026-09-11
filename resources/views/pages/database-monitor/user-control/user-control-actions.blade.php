@@ -24,7 +24,7 @@ new class extends Component {
     public string $password_confirmation = '';
     public string $myuser_sip = '';
 
-    /* ── Kasir ID — diisi via LOV kasir (TKMST_KASIRS) ── */
+    /* ── Kasir ID — diisi via LOV kasir (SKMST_KASIRS) ── */
     public ?string $kasirId = null;
     public ?string $kasirName = null; // tampilan saja, tidak disimpan ke users
 
@@ -79,8 +79,8 @@ new class extends Component {
         $this->kasirName = null;
 
         if ($this->kasirId) {
-            // Siklik: emp_id user dipetakan ke kasir_id di TKMST_KASIRS.
-            $kasir = DB::table('tkmst_kasirs')->select('kasir_name')->where('kasir_id', $this->kasirId)->first();
+            // Siklik: emp_id user dipetakan ke kasir_id di SKMST_KASIRS.
+            $kasir = DB::table('skmst_kasirs')->select('kasir_name')->where('kasir_id', $this->kasirId)->first();
             $this->kasirName = $kasir?->kasir_name ?? null;
         }
 
@@ -365,7 +365,7 @@ new class extends Component {
                                 <x-input-error :messages="$errors->get('email')" class="mt-1" />
                             </div>
 
-                            {{-- LOV Kasir (mapping user → TKMST_KASIRS.kasir_id) --}}
+                            {{-- LOV Kasir (mapping user → SKMST_KASIRS.kasir_id) --}}
                             <div x-ref="lovKasir">
                                 <livewire:lov.kasir.lov-kasir target="kasir-user-control" label="Kasir"
                                     :initialEmpId="$kasirId"

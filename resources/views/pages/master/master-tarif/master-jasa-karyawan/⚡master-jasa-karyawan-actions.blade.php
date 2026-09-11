@@ -40,7 +40,7 @@ new class extends Component {
     #[On('master.jasa-karyawan.openEdit')]
     public function openEdit(string $acteId): void
     {
-        $row = DB::table('rsmst_actemps')->where('acte_id', $acteId)->first();
+        $row = DB::table('skmst_actemps')->where('acte_id', $acteId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -61,9 +61,9 @@ new class extends Component {
     #[On('master.jasa-karyawan.toggleActive')]
     public function toggleActive(string $acteId): void
     {
-        $cur = (string) DB::table('rsmst_actemps')->where('acte_id', $acteId)->value('active_status');
+        $cur = (string) DB::table('skmst_actemps')->where('acte_id', $acteId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('rsmst_actemps')->where('acte_id', $acteId)->update(['active_status' => $next]);
+        DB::table('skmst_actemps')->where('acte_id', $acteId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status jasa karyawan → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.jasa-karyawan.saved');
@@ -73,13 +73,13 @@ new class extends Component {
     public function deleteJasaDokter(string $acteId): void
     {
         try {
-            $isUsed = DB::table('rstxn_rjactemps')->where('acte_id', $acteId)->exists();
+            $isUsed = DB::table('sktxn_rjactemps')->where('acte_id', $acteId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Jasa dokter tidak bisa dihapus karena masih dipakai pada transaksi rawat jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_actemps')->where('acte_id', $acteId)->delete();
+            $deleted = DB::table('skmst_actemps')->where('acte_id', $acteId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data jasa karyawan tidak ditemukan.');
                 return;
@@ -100,7 +100,7 @@ new class extends Component {
     {
         $rules = [
             'form.acte_id'     => $this->formMode === 'create'
-                ? 'required|string|max:10|regex:/^[A-Z0-9_-]+$/|unique:rsmst_actemps,acte_id'
+                ? 'required|string|max:10|regex:/^[A-Z0-9_-]+$/|unique:skmst_actemps,acte_id'
                 : 'required|string',
             'form.acte_desc'   => 'required|string|max:100',
             'form.acte_price'  => 'required|numeric|min:0|max:999999999',
@@ -137,12 +137,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_actemps')->insert([
+            DB::table('skmst_actemps')->insert([
                 'acte_id' => mb_strtoupper($this->form['acte_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_actemps')->where('acte_id', $this->originalId)->update($payload);
+            DB::table('skmst_actemps')->where('acte_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data jasa karyawan berhasil disimpan.');

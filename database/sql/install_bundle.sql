@@ -8,8 +8,8 @@
 --            02  Mark 18 migration sebagai sudah-jalan
 --            09  REF_BPJS_TABLE (cache BPJS PCare)
 --            11  USERS — rename EMP_ID → KASIR_ID (atau create kalau belum ada)
---            12  TKTXN_SOWHS + RE-CREATE view TKVIEW_IOSTOCKWHS
---            13  RSTXN_RJACCDOCS — tambah kolom DR_ID + FK
+--            12  SKTXN_SOWHS + RE-CREATE view SKVIEW_IOSTOCKWHS
+--            13  SKTXN_RJACCDOCS — tambah kolom DR_ID + FK
 --
 --          ❌ Tidak termasuk: SatuSehat (file 03–08). Run terpisah pakai
 --             `install_bundle_satusehat.sql` kalau klinik mau aktifkan
@@ -277,17 +277,17 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('  ⚠ KASIR_ID already exists — skip.');
     END IF;
 
-    EXECUTE IMMEDIATE q'[COMMENT ON COLUMN users.kasir_id IS 'FK ke TKMST_KASIRS.kasir_id (mapping user Laravel ke kasir). Nullable.']';
+    EXECUTE IMMEDIATE q'[COMMENT ON COLUMN users.kasir_id IS 'FK ke SKMST_KASIRS.kasir_id (mapping user Laravel ke kasir). Nullable.']';
     COMMIT;
 END;
 /
 
 
 -- =============================================================================
--- SECTION 12 — TKTXN_SOWHS + view TKVIEW_IOSTOCKWHS
+-- SECTION 12 — SKTXN_SOWHS + view SKVIEW_IOSTOCKWHS
 -- =============================================================================
 PROMPT
-PROMPT ─── [5/6] TKTXN_SOWHS + TKVIEW_IOSTOCKWHS ───────────────────
+PROMPT ─── [5/6] SKTXN_SOWHS + SKVIEW_IOSTOCKWHS ───────────────────
 
 -- Precondition check
 DECLARE
@@ -301,14 +301,14 @@ DECLARE
         END IF;
     END;
 BEGIN
-    check_table('TKMST_PRODUCTS');
-    check_table('TKMST_KASIRS');
-    check_table('TKTXN_RCVHDRS');
-    check_table('TKTXN_RCVDTLS');
-    check_table('TKTXN_SLSHDRS');
-    check_table('TKTXN_SLSDTLS');
-    check_table('RSTXN_RJHDRS');
-    check_table('RSTXN_RJOBATS');
+    check_table('SKMST_PRODUCTS');
+    check_table('SKMST_KASIRS');
+    check_table('SKTXN_RCVHDRS');
+    check_table('SKTXN_RCVDTLS');
+    check_table('SKTXN_SLSHDRS');
+    check_table('SKTXN_SLSDTLS');
+    check_table('SKTXN_RJHDRS');
+    check_table('SKTXN_RJOBATS');
 
     IF LENGTH(v_missing) > 0 THEN
         RAISE_APPLICATION_ERROR(-20001,
@@ -318,15 +318,15 @@ BEGIN
 END;
 /
 
--- TKTXN_SOWHS — create kalau belum ada. Kalau sudah ada, SKIP (preserve data opname).
+-- SKTXN_SOWHS — create kalau belum ada. Kalau sudah ada, SKIP (preserve data opname).
 -- View di-recreate selalu (lihat di bawah) — grants ke DITOKOKU ter-preserve.
 DECLARE
     v_count NUMBER;
 BEGIN
-    SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'TKTXN_SOWHS';
+    SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'SKTXN_SOWHS';
     IF v_count = 0 THEN
         EXECUTE IMMEDIATE q'[
-            CREATE TABLE TKTXN_SOWHS (
+            CREATE TABLE SKTXN_SOWHS (
                 SO_NO       NUMBER          NOT NULL,
                 PRODUCT_ID  VARCHAR2(20)    NOT NULL,
                 SO_DATE     DATE            DEFAULT SYSDATE,
@@ -337,30 +337,30 @@ BEGIN
                 CONSTRAINT PK_TKTXN_SOWHS PRIMARY KEY (SO_NO)
             )
         ]';
-        EXECUTE IMMEDIATE 'ALTER TABLE TKTXN_SOWHS ADD CONSTRAINT FK_TKTXN_SOWHS_PRODUCT FOREIGN KEY (PRODUCT_ID) REFERENCES TKMST_PRODUCTS(PRODUCT_ID)';
-        EXECUTE IMMEDIATE 'ALTER TABLE TKTXN_SOWHS ADD CONSTRAINT FK_TKTXN_SOWHS_KASIR   FOREIGN KEY (KASIR_ID)   REFERENCES TKMST_KASIRS(KASIR_ID)';
-        EXECUTE IMMEDIATE 'CREATE INDEX IDX_TKTXN_SOWHS_PRODUCT_DATE ON TKTXN_SOWHS(PRODUCT_ID, SO_DATE)';
-        EXECUTE IMMEDIATE q'[COMMENT ON TABLE  TKTXN_SOWHS            IS 'Stock Opname Warehouse — catat selisih hasil opname per produk. INSERT-only.']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.SO_NO      IS 'PK auto-increment via NVL(MAX(so_no),0)+1 di app']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.PRODUCT_ID IS 'FK → TKMST_PRODUCTS']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.SO_DATE    IS 'Tanggal opname (default SYSDATE)']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.SO_D       IS 'Debit/Masuk — fisik LEBIH dari catatan']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.SO_K       IS 'Kredit/Keluar — fisik KURANG dari catatan']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.KASIR_ID   IS 'FK → TKMST_KASIRS']';
-        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN TKTXN_SOWHS.SO_DESC    IS 'Default ''SO''']';
-        DBMS_OUTPUT.PUT_LINE('  ✓ TKTXN_SOWHS created (table + 2 FK + index + comments).');
+        EXECUTE IMMEDIATE 'ALTER TABLE SKTXN_SOWHS ADD CONSTRAINT FK_TKTXN_SOWHS_PRODUCT FOREIGN KEY (PRODUCT_ID) REFERENCES SKMST_PRODUCTS(PRODUCT_ID)';
+        EXECUTE IMMEDIATE 'ALTER TABLE SKTXN_SOWHS ADD CONSTRAINT FK_TKTXN_SOWHS_KASIR   FOREIGN KEY (KASIR_ID)   REFERENCES SKMST_KASIRS(KASIR_ID)';
+        EXECUTE IMMEDIATE 'CREATE INDEX IDX_TKTXN_SOWHS_PRODUCT_DATE ON SKTXN_SOWHS(PRODUCT_ID, SO_DATE)';
+        EXECUTE IMMEDIATE q'[COMMENT ON TABLE  SKTXN_SOWHS            IS 'Stock Opname Warehouse — catat selisih hasil opname per produk. INSERT-only.']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.SO_NO      IS 'PK auto-increment via NVL(MAX(so_no),0)+1 di app']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.PRODUCT_ID IS 'FK → SKMST_PRODUCTS']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.SO_DATE    IS 'Tanggal opname (default SYSDATE)']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.SO_D       IS 'Debit/Masuk — fisik LEBIH dari catatan']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.SO_K       IS 'Kredit/Keluar — fisik KURANG dari catatan']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.KASIR_ID   IS 'FK → SKMST_KASIRS']';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN SKTXN_SOWHS.SO_DESC    IS 'Default ''SO''']';
+        DBMS_OUTPUT.PUT_LINE('  ✓ SKTXN_SOWHS created (table + 2 FK + index + comments).');
     ELSE
-        DBMS_OUTPUT.PUT_LINE('  ⚠ TKTXN_SOWHS already exists — skip table create (data preserved).');
+        DBMS_OUTPUT.PUT_LINE('  ⚠ SKTXN_SOWHS already exists — skip table create (data preserved).');
     END IF;
 END;
 /
 
 -- View (CREATE OR REPLACE = idempotent native, grants ke DITOKOKU ter-preserve)
-CREATE OR REPLACE FORCE VIEW TKVIEW_IOSTOCKWHS
+CREATE OR REPLACE FORCE VIEW SKVIEW_IOSTOCKWHS
     ("PRODUCT_ID", "TXN_STATUS", "QTY_D", "QTY_K", "TXN_DATE", "TXN_NO", "PRODUCT_NAME") AS
 (
     SELECT b.product_id, 'RCV', SUM(qty), 0, rcv_date, a.rcv_no, product_name
-    FROM TKTXN_RCVHDRS a, TKTXN_RCVDTLS b, TKMST_PRODUCTS c
+    FROM SKTXN_RCVHDRS a, SKTXN_RCVDTLS b, SKMST_PRODUCTS c
     WHERE a.rcv_no = b.rcv_no
         AND rcv_status NOT IN ('A','F')
         AND b.product_id = c.product_id
@@ -369,7 +369,7 @@ CREATE OR REPLACE FORCE VIEW TKVIEW_IOSTOCKWHS
     UNION ALL
 
     SELECT b.product_id, 'SLS', 0, SUM(qty), sls_date, a.sls_no, product_name
-    FROM TKTXN_SLSDTLS b, TKTXN_SLSHDRS a, TKMST_PRODUCTS c
+    FROM SKTXN_SLSDTLS b, SKTXN_SLSHDRS a, SKMST_PRODUCTS c
     WHERE a.sls_no = b.sls_no
         AND b.product_id = c.product_id
         AND sls_status NOT IN ('A','F')
@@ -378,7 +378,7 @@ CREATE OR REPLACE FORCE VIEW TKVIEW_IOSTOCKWHS
     UNION ALL
 
     SELECT b.product_id, 'RJ', 0, SUM(qty), rj_date, a.rj_no, product_name
-    FROM RSTXN_RJOBATS b, RSTXN_RJHDRS a, TKMST_PRODUCTS c
+    FROM SKTXN_RJOBATS b, SKTXN_RJHDRS a, SKMST_PRODUCTS c
     WHERE a.rj_no = b.rj_no
         AND b.product_id = c.product_id
         AND rj_status NOT IN ('A','F')
@@ -388,7 +388,7 @@ CREATE OR REPLACE FORCE VIEW TKVIEW_IOSTOCKWHS
 
     SELECT s.product_id, 'SO', NVL(s.so_d, 0), NVL(s.so_k, 0),
            s.so_date, s.so_no, c.product_name
-    FROM TKTXN_SOWHS s, TKMST_PRODUCTS c
+    FROM SKTXN_SOWHS s, SKMST_PRODUCTS c
     WHERE s.product_id = c.product_id
 );
 
@@ -396,32 +396,32 @@ COMMIT;
 
 
 -- =============================================================================
--- SECTION 13 — RSTXN_RJACCDOCS tambah kolom DR_ID + FK
+-- SECTION 13 — SKTXN_RJACCDOCS tambah kolom DR_ID + FK
 -- =============================================================================
 PROMPT
-PROMPT ─── [6/6] RSTXN_RJACCDOCS.DR_ID ──────────────────────────────
+PROMPT ─── [6/6] SKTXN_RJACCDOCS.DR_ID ──────────────────────────────
 
 DECLARE
     v_count NUMBER;
 BEGIN
     -- Precondition
-    SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'RSTXN_RJACCDOCS';
+    SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'SKTXN_RJACCDOCS';
     IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Tabel RSTXN_RJACCDOCS belum ada.');
+        RAISE_APPLICATION_ERROR(-20001, 'Tabel SKTXN_RJACCDOCS belum ada.');
     END IF;
 
-    SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'RSMST_DOCTORS';
+    SELECT COUNT(*) INTO v_count FROM USER_TABLES WHERE TABLE_NAME = 'SKMST_DOCTORS';
     IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Tabel RSMST_DOCTORS (FK target) belum ada.');
+        RAISE_APPLICATION_ERROR(-20002, 'Tabel SKMST_DOCTORS (FK target) belum ada.');
     END IF;
 
     -- Add column DR_ID
     SELECT COUNT(*) INTO v_count
     FROM USER_TAB_COLUMNS
-    WHERE TABLE_NAME = 'RSTXN_RJACCDOCS' AND COLUMN_NAME = 'DR_ID';
+    WHERE TABLE_NAME = 'SKTXN_RJACCDOCS' AND COLUMN_NAME = 'DR_ID';
 
     IF v_count = 0 THEN
-        EXECUTE IMMEDIATE 'ALTER TABLE RSTXN_RJACCDOCS ADD (DR_ID VARCHAR2(9))';
+        EXECUTE IMMEDIATE 'ALTER TABLE SKTXN_RJACCDOCS ADD (DR_ID VARCHAR2(9))';
         DBMS_OUTPUT.PUT_LINE('  ✓ Kolom DR_ID ditambahkan.');
     ELSE
         DBMS_OUTPUT.PUT_LINE('  ⚠ Kolom DR_ID sudah ada — skip.');
@@ -430,13 +430,13 @@ BEGIN
     -- Add FK
     SELECT COUNT(*) INTO v_count
     FROM USER_CONSTRAINTS
-    WHERE TABLE_NAME = 'RSTXN_RJACCDOCS' AND CONSTRAINT_NAME = 'FK_RSTXN_RJACCDOCS_DR';
+    WHERE TABLE_NAME = 'SKTXN_RJACCDOCS' AND CONSTRAINT_NAME = 'FK_RSTXN_RJACCDOCS_DR';
 
     IF v_count = 0 THEN
         EXECUTE IMMEDIATE
-            'ALTER TABLE RSTXN_RJACCDOCS '
+            'ALTER TABLE SKTXN_RJACCDOCS '
          || 'ADD CONSTRAINT FK_RSTXN_RJACCDOCS_DR '
-         || 'FOREIGN KEY (DR_ID) REFERENCES RSMST_DOCTORS(DR_ID)';
+         || 'FOREIGN KEY (DR_ID) REFERENCES SKMST_DOCTORS(DR_ID)';
         DBMS_OUTPUT.PUT_LINE('  ✓ FK FK_RSTXN_RJACCDOCS_DR ditambahkan.');
     ELSE
         DBMS_OUTPUT.PUT_LINE('  ⚠ FK FK_RSTXN_RJACCDOCS_DR sudah ada — skip.');
@@ -444,8 +444,8 @@ BEGIN
 END;
 /
 
-COMMENT ON COLUMN RSTXN_RJACCDOCS.DR_ID IS
-    'FK → RSMST_DOCTORS.DR_ID — dokter yg lakukan jasa medik di detail RJ';
+COMMENT ON COLUMN SKTXN_RJACCDOCS.DR_ID IS
+    'FK → SKMST_DOCTORS.DR_ID — dokter yg lakukan jasa medik di detail RJ';
 
 COMMIT;
 
@@ -459,10 +459,10 @@ PROMPT ║  VERIFY                                                    ║
 PROMPT ╚════════════════════════════════════════════════════════════╝
 
 PROMPT
-PROMPT === Tabel sistem (harus ada 7 baris: 5 Laravel + REF_BPJS + TKTXN_SOWHS) ===
+PROMPT === Tabel sistem (harus ada 7 baris: 5 Laravel + REF_BPJS + SKTXN_SOWHS) ===
 SELECT table_name FROM user_tables
  WHERE table_name IN ('SESSIONS','CACHE','CACHE_LOCKS','JOBS','JOB_BATCHES',
-                      'REF_BPJS_TABLE','TKTXN_SOWHS')
+                      'REF_BPJS_TABLE','SKTXN_SOWHS')
  ORDER BY table_name;
 
 PROMPT
@@ -472,20 +472,20 @@ FROM user_tab_columns
 WHERE table_name = 'USERS' AND column_name IN ('EMP_ID','KASIR_ID');
 
 PROMPT
-PROMPT === RSTXN_RJACCDOCS.DR_ID (harus ada 1 baris) ===
+PROMPT === SKTXN_RJACCDOCS.DR_ID (harus ada 1 baris) ===
 SELECT column_name, data_type || '(' || data_length || ')' AS data_type
 FROM user_tab_columns
-WHERE table_name = 'RSTXN_RJACCDOCS' AND column_name = 'DR_ID';
+WHERE table_name = 'SKTXN_RJACCDOCS' AND column_name = 'DR_ID';
 
 PROMPT
 PROMPT === MIGRATIONS count (harus >= 18) ===
 SELECT COUNT(*) AS migration_count FROM migrations;
 
 PROMPT
-PROMPT === TKVIEW_IOSTOCKWHS valid (harus VALID) ===
+PROMPT === SKVIEW_IOSTOCKWHS valid (harus VALID) ===
 SELECT view_name, status FROM user_views u
 JOIN user_objects o ON o.object_name = u.view_name AND o.object_type = 'VIEW'
-WHERE u.view_name = 'TKVIEW_IOSTOCKWHS';
+WHERE u.view_name = 'SKVIEW_IOSTOCKWHS';
 
 PROMPT
 PROMPT ╔════════════════════════════════════════════════════════════╗

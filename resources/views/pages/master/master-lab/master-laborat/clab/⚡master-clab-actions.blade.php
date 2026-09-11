@@ -41,7 +41,7 @@ new class extends Component {
     #[On('master.laborat.openEditClab')]
     public function openEditClab(string $clabId): void
     {
-        $row = DB::table('lbmst_clabs')->where('clab_id', $clabId)->first();
+        $row = DB::table('skmst_clabs')->where('clab_id', $clabId)->first();
         if (! $row) {
             return;
         }
@@ -63,13 +63,13 @@ new class extends Component {
     public function deleteClab(string $clabId): void
     {
         try {
-            $hasItems = DB::table('lbmst_clabitems')->where('clab_id', $clabId)->exists();
+            $hasItems = DB::table('skmst_clabitems')->where('clab_id', $clabId)->exists();
             if ($hasItems) {
                 $this->dispatch('toast', type: 'error', message: 'Kategori tidak bisa dihapus karena masih memiliki item pemeriksaan.');
                 return;
             }
 
-            $deleted = DB::table('lbmst_clabs')->where('clab_id', $clabId)->delete();
+            $deleted = DB::table('skmst_clabs')->where('clab_id', $clabId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data kategori lab tidak ditemukan.');
                 return;
@@ -90,7 +90,7 @@ new class extends Component {
     {
         $this->validate(
             [
-                'formClab.clab_id'   => $this->formMode === 'create' ? 'required|string|max:5|unique:lbmst_clabs,clab_id' : 'required|string|max:5',
+                'formClab.clab_id'   => $this->formMode === 'create' ? 'required|string|max:5|unique:skmst_clabs,clab_id' : 'required|string|max:5',
                 'formClab.clab_desc' => 'required|string|max:50',
                 'formClab.app_seq'   => 'nullable|integer|min:0',
             ],
@@ -108,9 +108,9 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('lbmst_clabs')->insert(['clab_id' => $this->formClab['clab_id'], ...$payload]);
+            DB::table('skmst_clabs')->insert(['clab_id' => $this->formClab['clab_id'], ...$payload]);
         } else {
-            DB::table('lbmst_clabs')->where('clab_id', $this->formClab['clab_id'])->update($payload);
+            DB::table('skmst_clabs')->where('clab_id', $this->formClab['clab_id'])->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data kategori lab berhasil disimpan.');

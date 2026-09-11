@@ -48,9 +48,9 @@ new class extends Component {
 
         // Ambil data dokter langsung dari DB berdasarkan drId
         $drId = $dataRJ['drId'] ?? '';
-        $dokter = DB::table('rsmst_doctors')->where('dr_id', $drId)->select('dr_name')->first();
+        $dokter = DB::table('skmst_doctors')->where('dr_id', $drId)->select('dr_name')->first();
 
-        // TTD dokter dari storage (users.myuser_code == rsmst_doctors.dr_id)
+        // TTD dokter dari storage (users.myuser_code == skmst_doctors.dr_id)
         $ttdDokterPath = null;
         if ($drId) {
             $ttdPath = DB::table('users')->where('myuser_code', $drId)->value('myuser_ttd_image');

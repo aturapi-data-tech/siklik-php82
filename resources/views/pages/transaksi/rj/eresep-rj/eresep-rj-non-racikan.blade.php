@@ -34,7 +34,7 @@ new class extends Component {
         // Guard: tabel baru (database/sql/create_tkmst_signa_catatans.sql) —
         // jangan fatal bila belum di-deploy; combobox degrade jadi input bebas.
         try {
-            $this->signaCatatanOptions = DB::table('tkmst_signa_catatans')
+            $this->signaCatatanOptions = DB::table('skmst_signa_catatans')
                 ->where('active_status', '1')
                 ->orderBy('catatan')
                 ->pluck('catatan')
@@ -201,12 +201,12 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Insert ke tabel transaksi
-                $lastDtl = DB::table('rstxn_rjobats')->max('rjobat_dtl') + 1;
-                // Siklik (klinik pratama): kolom 'takar' tdk ada di tkmst_products,
+                $lastDtl = DB::table('sktxn_rjobats')->max('rjobat_dtl') + 1;
+                // Siklik (klinik pratama): kolom 'takar' tdk ada di skmst_products,
                 // siklik-lite default 'Tablet'.
                 $takar = 'Tablet';
 
-                DB::table('rstxn_rjobats')->insert([
+                DB::table('sktxn_rjobats')->insert([
                     'rjobat_dtl' => $lastDtl,
                     'rj_no' => $this->rjNo,
                     'product_id' => $this->formEresep['productId'],
@@ -276,7 +276,7 @@ new class extends Component {
                 $this->lockRJRow($this->rjNo);
 
                 // 2. Update tabel transaksi
-                DB::table('rstxn_rjobats')
+                DB::table('sktxn_rjobats')
                     ->where('rjobat_dtl', $rjobatDtl)
                     ->update([
                         'qty' => $qty,
@@ -333,7 +333,7 @@ new class extends Component {
                 }
 
                 // 3. Hapus dari tabel transaksi
-                DB::table('rstxn_rjobats')->where('rjobat_dtl', $rjObatDtl)->delete();
+                DB::table('sktxn_rjobats')->where('rjobat_dtl', $rjObatDtl)->delete();
 
                 // 4. Hapus dari array lokal
                 $this->dataDaftarPoliRJ['eresep'] = collect($this->dataDaftarPoliRJ['eresep'] ?? [])
@@ -450,7 +450,7 @@ new class extends Component {
                                         x-on:keydown.enter.prevent="document.getElementById('formEresep.catatanKhusus')?.focus()" />
                                 </div>
 
-                                {{-- Catatan Khusus (Blade combobox Alpine: pilih dari tkmst_signa_catatans, masih bisa diketik) --}}
+                                {{-- Catatan Khusus (Blade combobox Alpine: pilih dari skmst_signa_catatans, masih bisa diketik) --}}
                                 <div class="flex-[3]">
                                     <x-input-label for="formEresep.catatanKhusus" :value="__('Catatan Khusus')" />
                                     <div class="mt-1">

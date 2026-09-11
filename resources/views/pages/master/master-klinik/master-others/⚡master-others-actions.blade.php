@@ -38,7 +38,7 @@ new class extends Component {
     #[On('master.others.openEdit')]
     public function openEdit(string $otherId): void
     {
-        $row = DB::table('rsmst_others')->where('other_id', $otherId)->first();
+        $row = DB::table('skmst_others')->where('other_id', $otherId)->first();
         if (!$row) {
             return;
         }
@@ -76,7 +76,7 @@ new class extends Component {
     protected function rules(): array
     {
         return [
-            'otherId' => ['required', 'numeric', $this->formMode === 'create' ? Rule::unique('rsmst_others', 'other_id') : Rule::unique('rsmst_others', 'other_id')->ignore($this->otherId, 'other_id')],
+            'otherId' => ['required', 'numeric', $this->formMode === 'create' ? Rule::unique('skmst_others', 'other_id') : Rule::unique('skmst_others', 'other_id')->ignore($this->otherId, 'other_id')],
             'otherDesc' => ['required', 'string', 'max:255'],
             'otherPrice' => ['required', 'numeric', 'min:0'],
             'activeStatus' => ['required', Rule::in(['0', '1'])],
@@ -123,12 +123,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_others')->insert([
+            DB::table('skmst_others')->insert([
                 'other_id' => $data['otherId'],
                 ...$payload,
             ]);
         } else {
-            DB::table('rsmst_others')->where('other_id', $data['otherId'])->update($payload);
+            DB::table('skmst_others')->where('other_id', $data['otherId'])->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data lain-lain berhasil disimpan.');
@@ -142,14 +142,14 @@ new class extends Component {
     {
         try {
             // Cek apakah data sudah dipakai di tabel transaksi
-            $isUsed = DB::table('rstxn_rjhdrs')->where('other_id', $otherId)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('other_id', $otherId)->exists();
 
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Data lain-lain sudah dipakai pada transaksi Rawat Jalan.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_others')->where('other_id', $otherId)->delete();
+            $deleted = DB::table('skmst_others')->where('other_id', $otherId)->delete();
 
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data lain-lain tidak ditemukan.');

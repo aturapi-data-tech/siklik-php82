@@ -32,7 +32,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('immst_groupproducts')
+        $row = DB::table('skmst_groupproducts')
             ->select(['grp_id', 'grp_name'])
             ->where('grp_id', $this->initialGrpId)
             ->first();
@@ -62,7 +62,7 @@ new class extends Component {
 
         // ===== 1) exact match by grp_id =====
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('immst_groupproducts')
+            $exactRow = DB::table('skmst_groupproducts')
                 ->select(['grp_id', 'grp_name'])
                 ->where('grp_id', $keyword)
                 ->first();
@@ -79,7 +79,7 @@ new class extends Component {
         // ===== 2) search by grp_name partial =====
         $upperKeyword = mb_strtoupper($keyword);
 
-        $rows = DB::table('immst_groupproducts')
+        $rows = DB::table('skmst_groupproducts')
             ->select(['grp_id', 'grp_name'])
             ->where(function ($query) use ($keyword, $upperKeyword) {
                 if (ctype_digit($keyword)) {

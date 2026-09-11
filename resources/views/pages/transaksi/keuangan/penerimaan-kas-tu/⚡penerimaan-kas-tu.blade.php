@@ -53,14 +53,14 @@ new class extends Component {
         $this->resetPage();
     }
 
-    /* ── Query — Penerimaan Kas TU = TKTXN_TUCASHINS ── */
+    /* ── Query — Penerimaan Kas TU = SKTXN_TUCASHINS ── */
     #[Computed]
     public function baseQuery()
     {
-        $query = DB::table('tktxn_tucashins as a')
-            ->leftJoin('tkacc_tucicos as t', 'a.tucico_id', '=', 't.tucico_id')
-            ->leftJoin('tkmst_kasirs as k', 'a.kasir_id', '=', 'k.kasir_id')
-            ->leftJoin('tkacc_carabayars as cb', 'a.cb_id', '=', 'cb.cb_id')
+        $query = DB::table('sktxn_tucashins as a')
+            ->leftJoin('skacc_tucicos as t', 'a.tucico_id', '=', 't.tucico_id')
+            ->leftJoin('skmst_kasirs as k', 'a.kasir_id', '=', 'k.kasir_id')
+            ->leftJoin('skacc_carabayars as cb', 'a.cb_id', '=', 'cb.cb_id')
             ->select([
                 'a.ci_no',
                 DB::raw("to_char(a.ci_date,'dd/mm/yyyy hh24:mi:ss') as ci_date_display"),

@@ -77,8 +77,8 @@ new class extends Component {
     #[On('keuangan.saldo-kas.openHistory')]
     public function openHistory(string $cbId, string $tanggal): void
     {
-        $row = DB::table('tkacc_carabayars as cb')
-            ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
+        $row = DB::table('skacc_carabayars as cb')
+            ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'cb.acc_id')
             ->select('cb.cb_id', 'cb.cb_desc', 'cb.acc_id', 'a.acc_desc', 'a.acc_dk_status')
             ->where('cb.cb_id', $cbId)
             ->first();
@@ -108,7 +108,7 @@ new class extends Component {
     {
         $tahun = (int) substr($tanggal, 0, 4);
 
-        $sa = DB::table('tktxn_saldoawalakuns')
+        $sa = DB::table('sktxn_saldoawalakuns')
             ->where('acc_id', $this->accId)->where('sa_year', (string) $tahun)->first();
 
         $saldoAwalTahun = $this->accDkStatus === 'D'
@@ -116,14 +116,14 @@ new class extends Component {
             : (float) ($sa->sa_acc_k ?? 0);
 
         if ($this->accDkStatus === 'D') {
-            $arus = (float) DB::table('tkview_accounts')
+            $arus = (float) DB::table('skview_accounts')
                 ->where('txn_acc_k', $this->accId)
                 ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                     sprintf('%04d-01-01', $tahun), $tanggal,
                 ])
                 ->sum(DB::raw('NVL(txn_k,0) - NVL(txn_d,0)'));
         } else {
-            $arus = (float) DB::table('tkview_accounts')
+            $arus = (float) DB::table('skview_accounts')
                 ->where('txn_acc', $this->accId)
                 ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [
                     sprintf('%04d-01-01', $tahun), $tanggal,
@@ -176,8 +176,8 @@ new class extends Component {
         // Untuk D-acc: filter txn_acc_k = acc, "counter row" → txn_acc = lawan, txn_d = lawan didebit (kita dikredit), txn_k = lawan dikredit (kita didebit)
         // Untuk K-acc: filter txn_acc = acc, langsung "row tentang akun kita".
         if ($this->accDkStatus === 'D') {
-            $q = DB::table('tkview_accounts as v')
-                ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc')
+            $q = DB::table('skview_accounts as v')
+                ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc')
                 ->select(
                     'v.txn_date', 'v.txn_name',
                     'v.txn_acc as lawan_acc_id', 'a.acc_desc as lawan_acc_desc',
@@ -186,8 +186,8 @@ new class extends Component {
                 )
                 ->where('v.txn_acc_k', $this->accId);
         } else {
-            $q = DB::table('tkview_accounts as v')
-                ->leftJoin('tkacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc_k')
+            $q = DB::table('skview_accounts as v')
+                ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 'v.txn_acc_k')
                 ->select(
                     'v.txn_date', 'v.txn_name',
                     'v.txn_acc_k as lawan_acc_id', 'a.acc_desc as lawan_acc_desc',

@@ -69,7 +69,7 @@ new class extends Component {
             $patientId = $this->getPatientIHS($dataRJ['regNo'] ?? '');
             if (empty($patientId)) { $this->dispatch('toast', type: 'error', message: 'Patient IHS Number kosong.'); return; }
 
-            $practitionerId = (string) (DB::table('rsmst_doctors')->where('dr_id', $dataRJ['drId'] ?? '')->value('dr_uuid') ?? '');
+            $practitionerId = (string) (DB::table('skmst_doctors')->where('dr_id', $dataRJ['drId'] ?? '')->value('dr_uuid') ?? '');
             $rjDate = $this->parseDate($dataRJ['rjDate'] ?? '');
             $orgId = env('SATUSEHAT_ORGANIZATION_ID');
             $drDesc = $dataRJ['drDesc'] ?? '';
@@ -112,7 +112,7 @@ new class extends Component {
     private function getPatientIHS(string $regNo): string
     {
         if (empty($regNo)) return '';
-        return (string) (DB::table('rsmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '');
+        return (string) (DB::table('skmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '');
     }
 
     private function saveResult(string $rjNo, array $ss): void

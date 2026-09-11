@@ -47,7 +47,7 @@ new class extends Component {
     #[On('master.radiologis.openEdit')]
     public function openEdit(string $radId): void
     {
-        $row = DB::table('rsmst_radiologis')->where('rad_id', $radId)->first();
+        $row = DB::table('skmst_radiologis')->where('rad_id', $radId)->first();
         if (!$row) {
             $this->dispatch('toast', type: 'error', message: 'Data radiologis tidak ditemukan.');
             return;
@@ -98,8 +98,8 @@ new class extends Component {
                 'required', 
                 'numeric', 
                 $this->formMode === 'create' 
-                    ? Rule::unique('rsmst_radiologis', 'rad_id') 
-                    : Rule::unique('rsmst_radiologis', 'rad_id')->ignore($this->radId, 'rad_id')
+                    ? Rule::unique('skmst_radiologis', 'rad_id') 
+                    : Rule::unique('skmst_radiologis', 'rad_id')->ignore($this->radId, 'rad_id')
             ],
             'radDesc' => ['required', 'string', 'max:255'],
             'radPrice' => ['required', 'numeric', 'min:0'],
@@ -156,12 +156,12 @@ new class extends Component {
 
         try {
             if ($this->formMode === 'create') {
-                DB::table('rsmst_radiologis')->insert([
+                DB::table('skmst_radiologis')->insert([
                     'rad_id' => $data['radId'],
                     ...$payload,
                 ]);
             } else {
-                DB::table('rsmst_radiologis')->where('rad_id', $data['radId'])->update($payload);
+                DB::table('skmst_radiologis')->where('rad_id', $data['radId'])->update($payload);
             }
 
             $this->dispatch('toast', type: 'success', message: 'Data radiologis berhasil disimpan.');
@@ -179,7 +179,7 @@ new class extends Component {
     {
         try {
             // Cek apakah data sudah dipakai di tabel transaksi (sesuaikan dengan struktur DB Anda)
-            $isUsed = DB::table('rstxn_rjhdrs')->where('rad_id', $radId)->exists();
+            $isUsed = DB::table('sktxn_rjhdrs')->where('rad_id', $radId)->exists();
             // Tambahkan pengecekan tabel lain jika diperlukan
 
             if ($isUsed) {
@@ -187,7 +187,7 @@ new class extends Component {
                 return;
             }
 
-            $deleted = DB::table('rsmst_radiologis')->where('rad_id', $radId)->delete();
+            $deleted = DB::table('skmst_radiologis')->where('rad_id', $radId)->delete();
 
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data radiologis tidak ditemukan.');

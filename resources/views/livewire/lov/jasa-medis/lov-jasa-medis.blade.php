@@ -43,7 +43,7 @@ new class extends Component {
 
     protected function loadSelected(string $pactId): void
     {
-        $row = DB::table('rsmst_actparamedics')->select('pact_id', 'pact_desc', 'pact_price')->where('pact_id', $pactId)->first();
+        $row = DB::table('skmst_actparamedics')->select('pact_id', 'pact_desc', 'pact_price')->where('pact_id', $pactId)->first();
 
         if ($row) {
             $this->selected = [
@@ -69,7 +69,7 @@ new class extends Component {
 
         // ── Exact match by pact_id ──
         if (ctype_alnum($keyword)) {
-            $exact = DB::table('rsmst_actparamedics')->select('pact_id', 'pact_desc', 'pact_price')->where('pact_id', $keyword)->first();
+            $exact = DB::table('skmst_actparamedics')->select('pact_id', 'pact_desc', 'pact_price')->where('pact_id', $keyword)->first();
 
             if ($exact) {
                 $this->dispatchSelected([
@@ -84,7 +84,7 @@ new class extends Component {
         // ── Partial search ──
         $upper = mb_strtoupper($keyword);
 
-        $rows = DB::table('rsmst_actparamedics')
+        $rows = DB::table('skmst_actparamedics')
             ->select('pact_id', 'pact_desc', 'pact_price')
             ->where(function ($q) use ($upper) {
                 $q->where(DB::raw('upper(pact_desc)'), 'like', "%{$upper}%")->orWhere(DB::raw('upper(pact_id)'), 'like', "%{$upper}%");

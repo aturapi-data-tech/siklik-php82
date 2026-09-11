@@ -22,7 +22,7 @@ new class extends Component {
             return;
         }
 
-        $row = DB::table('rsmst_propinsis')
+        $row = DB::table('skmst_propinsis')
             ->select('prop_id', 'prop_name')
             ->where('prop_id', $this->initialPropId)
             ->first();
@@ -52,7 +52,7 @@ new class extends Component {
 
         // Exact match by prop_id
         if (ctype_digit($keyword)) {
-            $exactRow = DB::table('rsmst_propinsis')
+            $exactRow = DB::table('skmst_propinsis')
                 ->select('prop_id', 'prop_name')
                 ->where('prop_id', $keyword)
                 ->first();
@@ -69,7 +69,7 @@ new class extends Component {
         // Search by name
         $searchTerm = '%' . strtoupper($keyword) . '%';
 
-        $rows = DB::table('rsmst_propinsis')
+        $rows = DB::table('skmst_propinsis')
             ->select('prop_id', 'prop_name')
             ->whereRaw("UPPER(prop_name) LIKE ?", [$searchTerm])
             ->orderBy('prop_name')

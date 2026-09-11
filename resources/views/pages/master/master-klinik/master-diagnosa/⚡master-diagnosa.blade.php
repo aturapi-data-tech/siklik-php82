@@ -56,7 +56,7 @@ new class extends Component {
 
     /* -------------------------
      | Import diagnosa BPJS PCare berdasarkan keyword
-     | (kdDiag/nmDiag → upsert ke rsmst_mstdiags via icdx)
+     | (kdDiag/nmDiag → upsert ke skmst_mstdiags via icdx)
      * ------------------------- */
     public function importBpjs(): void
     {
@@ -95,16 +95,16 @@ new class extends Component {
                 $nm = (string) ($row['nmDiag'] ?? $row['nama'] ?? '');
                 if ($kd === '' || $nm === '') { $skipped++; continue; }
 
-                $exists = DB::table('rsmst_mstdiags')->where('icdx', $kd)->exists();
+                $exists = DB::table('skmst_mstdiags')->where('icdx', $kd)->exists();
                 if ($exists) { $skipped++; continue; }
 
                 // Generate diag_id baru: NUMBER(MAX)+1 (kalau diag_id numeric); fallback pakai icdx
-                $maxId = (int) DB::table('rsmst_mstdiags')
+                $maxId = (int) DB::table('skmst_mstdiags')
                     ->whereRaw("REGEXP_LIKE(diag_id, '^\\d+$')")
                     ->max(DB::raw('TO_NUMBER(diag_id)'));
                 $newId = (string) (($maxId ?: 0) + 1);
 
-                DB::table('rsmst_mstdiags')->insert([
+                DB::table('skmst_mstdiags')->insert([
                     'diag_id'   => $newId,
                     'icdx'      => $kd,
                     'diag_desc' => $nm,
@@ -141,7 +141,7 @@ new class extends Component {
     {
         $searchKeyword = trim($this->searchKeyword);
 
-        $queryBuilder = DB::table('rsmst_mstdiags')->select('diag_id', 'diag_desc', 'icdx')->orderBy('diag_desc', 'asc');
+        $queryBuilder = DB::table('skmst_mstdiags')->select('diag_id', 'diag_desc', 'icdx')->orderBy('diag_desc', 'asc');
 
         if ($searchKeyword !== '') {
             $uppercaseKeyword = mb_strtoupper($searchKeyword);

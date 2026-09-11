@@ -70,7 +70,7 @@ new class extends Component {
                 }
             }
             if (empty($dokterTindakanName)) {
-                $dokterTindakanName = DB::table('rsmst_doctors')->where('dr_id', $consent['petugasPemeriksaCode'])->value('dr_name');
+                $dokterTindakanName = DB::table('skmst_doctors')->where('dr_id', $consent['petugasPemeriksaCode'])->value('dr_name');
             }
         }
 

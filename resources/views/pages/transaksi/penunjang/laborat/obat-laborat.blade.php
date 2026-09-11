@@ -45,8 +45,8 @@ new class extends Component {
      * ======================= */
     private function loadObatRows(): void
     {
-        $rows = DB::table('lbtxn_checkupobats as a')
-            ->leftJoin('tkmst_products as b', 'a.product_id', '=', 'b.product_id')
+        $rows = DB::table('sktxn_checkupobats as a')
+            ->leftJoin('skmst_products as b', 'a.product_id', '=', 'b.product_id')
             ->select('a.id', 'a.product_id', 'b.product_name', 'a.qty', 'a.price')
             ->where('a.checkup_no', $this->checkupNo)
             ->orderBy('a.id', 'asc')
@@ -94,9 +94,9 @@ new class extends Component {
         ]);
 
         try {
-            $id = DB::scalar('SELECT NVL(TO_NUMBER(MAX(id)) + 1, 1) FROM lbtxn_checkupobats');
+            $id = DB::scalar('SELECT NVL(TO_NUMBER(MAX(id)) + 1, 1) FROM sktxn_checkupobats');
 
-            DB::table('lbtxn_checkupobats')->insert([
+            DB::table('sktxn_checkupobats')->insert([
                 'id' => $id,
                 'checkup_no' => $this->checkupNo,
                 'product_id' => $this->formObat['productId'],
@@ -123,7 +123,7 @@ new class extends Component {
             return;
         }
 
-        DB::table('lbtxn_checkupobats')
+        DB::table('sktxn_checkupobats')
             ->where('checkup_no', $this->checkupNo)
             ->where('id', $id)
             ->delete();

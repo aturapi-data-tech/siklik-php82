@@ -39,7 +39,7 @@ new class extends Component {
     #[On('master.kategori.openEdit')]
     public function openEdit(string $catId): void
     {
-        $row = DB::table('tkmst_categories')->where('cat_id', $catId)->first();
+        $row = DB::table('skmst_categories')->where('cat_id', $catId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -59,9 +59,9 @@ new class extends Component {
     #[On('master.kategori.toggleActive')]
     public function toggleActive(string $catId): void
     {
-        $cur = (string) DB::table('tkmst_categories')->where('cat_id', $catId)->value('active_status');
+        $cur = (string) DB::table('skmst_categories')->where('cat_id', $catId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_categories')->where('cat_id', $catId)->update(['active_status' => $next]);
+        DB::table('skmst_categories')->where('cat_id', $catId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status kategori → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.kategori.saved');
@@ -71,13 +71,13 @@ new class extends Component {
     public function deleteKategori(string $catId): void
     {
         try {
-            $isUsed = DB::table('tkmst_products')->where('cat_id', $catId)->exists();
+            $isUsed = DB::table('skmst_products')->where('cat_id', $catId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Kategori tidak bisa dihapus karena masih dipakai pada data produk.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_categories')->where('cat_id', $catId)->delete();
+            $deleted = DB::table('skmst_categories')->where('cat_id', $catId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data kategori tidak ditemukan.');
                 return;
@@ -98,7 +98,7 @@ new class extends Component {
     {
         $rules = [
             'form.cat_id'        => $this->formMode === 'create'
-                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:tkmst_categories,cat_id'
+                ? 'required|string|max:25|regex:/^[A-Z0-9_-]+$/|unique:skmst_categories,cat_id'
                 : 'required|string',
             'form.cat_desc'      => 'required|string|max:100',
             'form.active_status' => 'required|in:0,1',
@@ -128,12 +128,12 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_categories')->insert([
+            DB::table('skmst_categories')->insert([
                 'cat_id' => mb_strtoupper($this->form['cat_id']),
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_categories')->where('cat_id', $this->originalId)->update($payload);
+            DB::table('skmst_categories')->where('cat_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data kategori berhasil disimpan.');

@@ -10,7 +10,7 @@ use App\Http\Traits\SATUSEHAT\SnomedTrait;
  *
  * Alur pencarian:
  *   1. User ketik keyword (min 3 karakter)
- *   2. Cari di tabel lokal rsmst_snomed_codes (display_id + display_en)
+ *   2. Cari di tabel lokal skmst_snomed_codes (display_id + display_en)
  *   3. Kalau hasil lokal < 5, panggil FHIR server (tx.fhir.org) via SnomedTrait
  *   4. Hasil dari FHIR server disimpan ke tabel lokal (cache)
  *   5. Gabungkan hasil lokal + server, tampilkan di dropdown
@@ -56,7 +56,7 @@ new class extends Component {
     {
         if (empty($this->initialSnomedCode)) return;
 
-        $row = DB::table('rsmst_snomed_codes')->where('snomed_code', $this->initialSnomedCode)->first();
+        $row = DB::table('skmst_snomed_codes')->where('snomed_code', $this->initialSnomedCode)->first();
         if ($row) {
             $this->setSelectedFromRow($row);
         }
@@ -69,7 +69,7 @@ new class extends Component {
 
         if (empty($value)) return;
 
-        $row = DB::table('rsmst_snomed_codes')->where('snomed_code', $value)->first();
+        $row = DB::table('skmst_snomed_codes')->where('snomed_code', $value)->first();
         if ($row) {
             $this->setSelectedFromRow($row);
         }
@@ -96,7 +96,7 @@ new class extends Component {
 
         // ═══ Step 1: Cari di tabel lokal ═══
         $upperKeyword = mb_strtoupper($keyword);
-        $localRows = DB::table('rsmst_snomed_codes')
+        $localRows = DB::table('skmst_snomed_codes')
             ->where('value_set', $this->valueSet)
             ->where(function ($q) use ($upperKeyword) {
                 $q->whereRaw('UPPER(display_id) LIKE ?', ["%{$upperKeyword}%"])
@@ -142,7 +142,7 @@ new class extends Component {
                 if (empty($code) || in_array($code, $existingCodes)) continue;
 
                 // ═══ Step 3: Simpan ke tabel lokal (cache) ═══
-                DB::table('rsmst_snomed_codes')->updateOrInsert(
+                DB::table('skmst_snomed_codes')->updateOrInsert(
                     ['snomed_code' => $code],
                     [
                         'display_en' => $display,

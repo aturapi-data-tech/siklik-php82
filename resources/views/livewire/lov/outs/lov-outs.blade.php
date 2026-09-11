@@ -3,7 +3,7 @@
 /**
  * resources/views/livewire/lov/outs/lov-outs.blade.php
  *
- * LOV Keterangan Keluar (rsmst_outs).
+ * LOV Keterangan Keluar (skmst_outs).
  *
  * Payload dispatch ke parent:
  *   [
@@ -68,7 +68,7 @@ new class extends Component {
 
     protected function loadSelected(string $outNo): void
     {
-        $row = DB::table('rsmst_outs')
+        $row = DB::table('skmst_outs')
             ->where('out_no', $outNo)
             ->first();
 
@@ -95,7 +95,7 @@ new class extends Component {
         $upperKeyword = mb_strtoupper($keyword);
 
         // Exact match → langsung pilih
-        $exactRow = DB::table('rsmst_outs')
+        $exactRow = DB::table('skmst_outs')
             ->whereRaw("UPPER(out_no) = ?", [mb_strtoupper($keyword)])
             ->first();
 
@@ -105,7 +105,7 @@ new class extends Component {
         }
 
         // Partial match
-        $rows = DB::table('rsmst_outs')
+        $rows = DB::table('skmst_outs')
             ->where(fn($q) => $q
                 ->whereRaw('UPPER(out_no) LIKE ?', ["%{$upperKeyword}%"])
                 ->orWhereRaw('UPPER(out_desc) LIKE ?', ["%{$upperKeyword}%"])

@@ -39,7 +39,7 @@ new class extends Component {
     #[On('master.parameter.openEdit')]
     public function openEdit(int $parId): void
     {
-        $row = DB::table('rsmst_parameters')->where('par_id', $parId)->first();
+        $row = DB::table('skmst_parameters')->where('par_id', $parId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -60,7 +60,7 @@ new class extends Component {
     public function deleteParameter(int $parId): void
     {
         try {
-            $deleted = DB::table('rsmst_parameters')->where('par_id', $parId)->delete();
+            $deleted = DB::table('skmst_parameters')->where('par_id', $parId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data parameter tidak ditemukan.');
                 return;
@@ -81,7 +81,7 @@ new class extends Component {
     {
         $rules = [
             'form.par_id'    => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:99999|unique:rsmst_parameters,par_id'
+                ? 'required|integer|min:1|max:99999|unique:skmst_parameters,par_id'
                 : 'required|integer',
             'form.par_desc'  => 'required|string|max:100',
             'form.par_value' => 'required|numeric|min:0|max:999999999',
@@ -111,9 +111,9 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_parameters')->insert(['par_id' => (int) $this->form['par_id'], ...$payload]);
+            DB::table('skmst_parameters')->insert(['par_id' => (int) $this->form['par_id'], ...$payload]);
         } else {
-            DB::table('rsmst_parameters')->where('par_id', $this->originalId)->update($payload);
+            DB::table('skmst_parameters')->where('par_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data parameter berhasil disimpan.');

@@ -30,7 +30,7 @@ new class extends Component {
 
     public function uomOptions(): array
     {
-        return DB::table('tkmst_uoms')
+        return DB::table('skmst_uoms')
             ->select('uom_id', 'uom_desc')
             ->where('active_status', '1')
             ->orderBy('uom_desc')
@@ -53,7 +53,7 @@ new class extends Component {
     #[On('master.product-non.openEdit')]
     public function openEdit(string $productId): void
     {
-        $row = DB::table('tkmst_productnons')->where('product_id', $productId)->first();
+        $row = DB::table('skmst_productnons')->where('product_id', $productId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -76,9 +76,9 @@ new class extends Component {
     #[On('master.product-non.toggleActive')]
     public function toggleActive(string $productId): void
     {
-        $cur = (string) DB::table('tkmst_productnons')->where('product_id', $productId)->value('active_status');
+        $cur = (string) DB::table('skmst_productnons')->where('product_id', $productId)->value('active_status');
         $next = $cur === '1' ? '0' : '1';
-        DB::table('tkmst_productnons')->where('product_id', $productId)->update(['active_status' => $next]);
+        DB::table('skmst_productnons')->where('product_id', $productId)->update(['active_status' => $next]);
         $this->dispatch('toast', type: 'success',
             message: 'Status barang → ' . ($next === '1' ? 'AKTIF' : 'NONAKTIF'));
         $this->dispatch('master.product-non.saved');
@@ -88,13 +88,13 @@ new class extends Component {
     public function deleteProductNon(string $productId): void
     {
         try {
-            $isUsed = DB::table('tktxn_rcvdtlnons')->where('product_id', $productId)->exists();
+            $isUsed = DB::table('sktxn_rcvdtlnons')->where('product_id', $productId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Barang tidak bisa dihapus karena sudah dipakai pada penerimaan.');
                 return;
             }
 
-            $deleted = DB::table('tkmst_productnons')->where('product_id', $productId)->delete();
+            $deleted = DB::table('skmst_productnons')->where('product_id', $productId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data barang tidak ditemukan.');
                 return;
@@ -150,13 +150,13 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('tkmst_productnons')->insert([
+            DB::table('skmst_productnons')->insert([
                 'product_id' => DB::raw('productnon_seq.nextval'),
                 'qty_box'    => 0,
                 ...$payload,
             ]);
         } else {
-            DB::table('tkmst_productnons')->where('product_id', $this->originalId)->update($payload);
+            DB::table('skmst_productnons')->where('product_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data barang berhasil disimpan.');

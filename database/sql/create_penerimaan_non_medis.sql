@@ -1,7 +1,7 @@
 -- ============================================================
 -- Modul  : Penerimaan Barang NON-MEDIS (ATK / Rumah Tangga / dll)
 -- Pola   : klinik (TKMST/TKTXN + kasir_id + cb_id, TANPA shift/sp_no)
--- Stok   : TUNGGAL langsung di master (tkmst_productnons.qty_box).
+-- Stok   : TUNGGAL langsung di master (skmst_productnons.qty_box).
 --          Tidak ada lokasi / transfer stok (kebijakan klinik).
 --          qty_box di-update APLIKASI saat posting/edit/hapus penerimaan
 --          (tabel baru — tidak ada trigger legacy seperti tabel medis).
@@ -11,10 +11,10 @@
 -- ============================================================
 
 -- ── 1. Master barang non-medis ──────────────────────────────
-CREATE TABLE tkmst_productnons (
+CREATE TABLE skmst_productnons (
     product_id     NUMBER          NOT NULL,
     product_name   VARCHAR2(150)   NOT NULL,
-    uom_id         VARCHAR2(20),                          -- FK logis tkmst_uoms
+    uom_id         VARCHAR2(20),                          -- FK logis skmst_uoms
     cost_price     NUMBER          DEFAULT 0 NOT NULL,
     qty_box        NUMBER          DEFAULT 0 NOT NULL,    -- stok berjalan (single location)
     limit_stock    NUMBER          DEFAULT 0,
@@ -24,16 +24,16 @@ CREATE TABLE tkmst_productnons (
 
 CREATE SEQUENCE productnon_seq START WITH 1 INCREMENT BY 1 NOCACHE;
 
-COMMENT ON TABLE  tkmst_productnons          IS 'Master barang non-medis (ATK/RT) — stok tunggal di qty_box';
-COMMENT ON COLUMN tkmst_productnons.qty_box  IS 'Stok berjalan — di-update aplikasi saat posting/hapus penerimaan';
+COMMENT ON TABLE  skmst_productnons          IS 'Master barang non-medis (ATK/RT) — stok tunggal di qty_box';
+COMMENT ON COLUMN skmst_productnons.qty_box  IS 'Stok berjalan — di-update aplikasi saat posting/hapus penerimaan';
 
 -- ── 2. Header penerimaan non-medis ──────────────────────────
-CREATE TABLE tktxn_rcvhdrnons (
+CREATE TABLE sktxn_rcvhdrnons (
     rcv_no         NUMBER          NOT NULL,
     rcv_date       DATE            NOT NULL,
-    supp_id        VARCHAR2(20),                          -- FK logis tkmst_suppliers
-    kasir_id       VARCHAR2(20),                          -- FK logis tkmst_kasirs
-    cb_id          VARCHAR2(20),                          -- FK logis tkacc_carabayars
+    supp_id        VARCHAR2(20),                          -- FK logis skmst_suppliers
+    kasir_id       VARCHAR2(20),                          -- FK logis skmst_kasirs
+    cb_id          VARCHAR2(20),                          -- FK logis skacc_carabayars
     rcv_desc       VARCHAR2(400),
     rcv_status     VARCHAR2(1)     DEFAULT 'A' NOT NULL,  -- H=hutang, L=lunas, F=batal, A=daftar tunggu/rollback (aplikasi selalu set eksplisit)
     pay_date       DATE,
@@ -46,10 +46,10 @@ CREATE TABLE tktxn_rcvhdrnons (
     CONSTRAINT pk_tktxn_rcvhdrnons PRIMARY KEY (rcv_no)
 );
 
-COMMENT ON TABLE tktxn_rcvhdrnons IS 'Header penerimaan barang non-medis dari supplier (rcv_no = MAX+1 per tabel ini)';
+COMMENT ON TABLE sktxn_rcvhdrnons IS 'Header penerimaan barang non-medis dari supplier (rcv_no = MAX+1 per tabel ini)';
 
 -- ── 3. Detail penerimaan non-medis ──────────────────────────
-CREATE TABLE tktxn_rcvdtlnons (
+CREATE TABLE sktxn_rcvdtlnons (
     rcv_dtl      NUMBER  NOT NULL,
     rcv_no       NUMBER  NOT NULL,
     product_id   NUMBER  NOT NULL,
@@ -60,27 +60,27 @@ CREATE TABLE tktxn_rcvdtlnons (
     dtl_persen   NUMBER  DEFAULT 0,   -- persen diskon 1
     dtl_persen1  NUMBER  DEFAULT 0,   -- persen diskon 2
     CONSTRAINT pk_tktxn_rcvdtlnons PRIMARY KEY (rcv_dtl),
-    CONSTRAINT fk_rcvdtlnons_hdr FOREIGN KEY (rcv_no)     REFERENCES tktxn_rcvhdrnons (rcv_no),
-    CONSTRAINT fk_rcvdtlnons_prd FOREIGN KEY (product_id) REFERENCES tkmst_productnons (product_id)
+    CONSTRAINT fk_rcvdtlnons_hdr FOREIGN KEY (rcv_no)     REFERENCES sktxn_rcvhdrnons (rcv_no),
+    CONSTRAINT fk_rcvdtlnons_prd FOREIGN KEY (product_id) REFERENCES skmst_productnons (product_id)
 );
 
 CREATE SEQUENCE rcvdtlnon_seq START WITH 1 INCREMENT BY 1 NOCACHE;
-CREATE INDEX idx_rcvdtlnons_rcvno ON tktxn_rcvdtlnons (rcv_no);
+CREATE INDEX idx_rcvdtlnons_rcvno ON sktxn_rcvdtlnons (rcv_no);
 
 -- ── 4. Riwayat pembayaran penerimaan (cicilan/pelunasan) ────
-CREATE TABLE tktxn_rcvpaymentnons (
+CREATE TABLE sktxn_rcvpaymentnons (
     rcvp_no    NUMBER  NOT NULL,
     rcv_no     NUMBER  NOT NULL,
     rcvp_date  DATE    NOT NULL,
     rcvp_value NUMBER  DEFAULT 0 NOT NULL,
     CONSTRAINT pk_tktxn_rcvpaymentnons PRIMARY KEY (rcvp_no),
-    CONSTRAINT fk_rcvpaynons_hdr FOREIGN KEY (rcv_no) REFERENCES tktxn_rcvhdrnons (rcv_no)
+    CONSTRAINT fk_rcvpaynons_hdr FOREIGN KEY (rcv_no) REFERENCES sktxn_rcvhdrnons (rcv_no)
 );
 
 CREATE SEQUENCE rcvpnon_seq START WITH 1 INCREMENT BY 1 NOCACHE;
 
 -- ── 5. Pengeluaran kas utk pembayaran non-medis ─────────────
-CREATE TABLE tktxn_cashouthdrnons (
+CREATE TABLE sktxn_cashouthdrnons (
     cashout_no    NUMBER         NOT NULL,
     cashout_date  DATE           NOT NULL,
     kasir_id      VARCHAR2(20),
@@ -93,16 +93,16 @@ CREATE TABLE tktxn_cashouthdrnons (
 
 CREATE SEQUENCE cashoutnon_seq START WITH 1 INCREMENT BY 1 NOCACHE;
 
-CREATE TABLE tktxn_cashoutdtlnons (
+CREATE TABLE sktxn_cashoutdtlnons (
     cashout_dtl NUMBER NOT NULL,
     cashout_no  NUMBER NOT NULL,
     rcv_no      NUMBER NOT NULL,
     CONSTRAINT pk_tktxn_cashoutdtlnons PRIMARY KEY (cashout_dtl),
-    CONSTRAINT fk_codtlnons_hdr FOREIGN KEY (cashout_no) REFERENCES tktxn_cashouthdrnons (cashout_no),
-    CONSTRAINT fk_codtlnons_rcv FOREIGN KEY (rcv_no)     REFERENCES tktxn_rcvhdrnons (rcv_no)
+    CONSTRAINT fk_codtlnons_hdr FOREIGN KEY (cashout_no) REFERENCES sktxn_cashouthdrnons (cashout_no),
+    CONSTRAINT fk_codtlnons_rcv FOREIGN KEY (rcv_no)     REFERENCES sktxn_rcvhdrnons (rcv_no)
 );
 
 CREATE SEQUENCE codtlnon_seq START WITH 1 INCREMENT BY 1 NOCACHE;
-CREATE INDEX idx_codtlnons_rcvno ON tktxn_cashoutdtlnons (rcv_no);
+CREATE INDEX idx_codtlnons_rcvno ON sktxn_cashoutdtlnons (rcv_no);
 
 COMMIT;

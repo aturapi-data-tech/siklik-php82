@@ -30,7 +30,7 @@ new class extends Component {
     #[Computed]
     public function parents()
     {
-        return DB::table('rsmst_kecamatans')
+        return DB::table('skmst_kecamatans')
             ->select('kab_id', 'kab_name')
             ->orderBy('kab_name')
             ->get();
@@ -50,7 +50,7 @@ new class extends Component {
     #[On('master.kecamatan.openEdit')]
     public function openEdit(int $kecId): void
     {
-        $row = DB::table('rsmst_kecamatans')->where('kec_id', $kecId)->first();
+        $row = DB::table('skmst_kecamatans')->where('kec_id', $kecId)->first();
         if (!$row) return;
 
         $this->resetForm();
@@ -71,13 +71,13 @@ new class extends Component {
     public function deleteKecamatan(int $kecId): void
     {
         try {
-            $isUsed = DB::table('rsmst_desas')->where('kec_id', $kecId)->exists();
+            $isUsed = DB::table('skmst_desas')->where('kec_id', $kecId)->exists();
             if ($isUsed) {
                 $this->dispatch('toast', type: 'error', message: 'Kecamatan tidak bisa dihapus karena masih punya desa turunannya.');
                 return;
             }
 
-            $deleted = DB::table('rsmst_kecamatans')->where('kec_id', $kecId)->delete();
+            $deleted = DB::table('skmst_kecamatans')->where('kec_id', $kecId)->delete();
             if ($deleted === 0) {
                 $this->dispatch('toast', type: 'error', message: 'Data kecamatan tidak ditemukan.');
                 return;
@@ -98,10 +98,10 @@ new class extends Component {
     {
         $rules = [
             'form.kec_id'   => $this->formMode === 'create'
-                ? 'required|integer|min:1|max:9999999|unique:rsmst_kecamatans,kec_id'
+                ? 'required|integer|min:1|max:9999999|unique:skmst_kecamatans,kec_id'
                 : 'required|integer',
             'form.kec_name' => 'required|string|max:50',
-            'form.kab_id'  => 'required|integer|exists:rsmst_kecamatans,kab_id',
+            'form.kab_id'  => 'required|integer|exists:skmst_kecamatans,kab_id',
         ];
 
         $messages = [
@@ -126,9 +126,9 @@ new class extends Component {
         ];
 
         if ($this->formMode === 'create') {
-            DB::table('rsmst_kecamatans')->insert(['kec_id' => (int) $this->form['kec_id'], ...$payload]);
+            DB::table('skmst_kecamatans')->insert(['kec_id' => (int) $this->form['kec_id'], ...$payload]);
         } else {
-            DB::table('rsmst_kecamatans')->where('kec_id', $this->originalId)->update($payload);
+            DB::table('skmst_kecamatans')->where('kec_id', $this->originalId)->update($payload);
         }
 
         $this->dispatch('toast', type: 'success', message: 'Data kecamatan berhasil disimpan.');

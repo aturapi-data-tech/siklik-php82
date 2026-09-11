@@ -77,11 +77,11 @@ new class extends Component {
     #[Computed]
     public function baseQuery()
     {
-        // Siklik schema NON-MEDIS: TKTXN_RCVHDRNONS + TKTXN_RCVDTLNONS,
-        // TKMST_SUPPLIERS, TKMST_KASIRS. Header non-medis TANPA shift & sp_no.
-        $query = DB::table('tktxn_rcvhdrnons as a')
-            ->leftJoin('tkmst_suppliers as b', 'a.supp_id', '=', 'b.supp_id')
-            ->leftJoin('tkmst_kasirs as c', 'a.kasir_id', '=', 'c.kasir_id')
+        // Siklik schema NON-MEDIS: SKTXN_RCVHDRNONS + SKTXN_RCVDTLNONS,
+        // SKMST_SUPPLIERS, SKMST_KASIRS. Header non-medis TANPA shift & sp_no.
+        $query = DB::table('sktxn_rcvhdrnons as a')
+            ->leftJoin('skmst_suppliers as b', 'a.supp_id', '=', 'b.supp_id')
+            ->leftJoin('skmst_kasirs as c', 'a.kasir_id', '=', 'c.kasir_id')
             ->select([
                 'a.rcv_no',
                 DB::raw("to_char(a.rcv_date,'dd/mm/yyyy hh24:mi:ss') as rcv_date_display"),
@@ -101,7 +101,7 @@ new class extends Component {
                         - NVL(d.dtl_diskon,0))
                       * NVL(d.dtl_persen1,0)/100)
                     - NVL(d.dtl_diskon1,0)
-                ) FROM tktxn_rcvdtlnons d WHERE d.rcv_no = a.rcv_no) as total_detail"),
+                ) FROM sktxn_rcvdtlnons d WHERE d.rcv_no = a.rcv_no) as total_detail"),
                 'a.rcv_diskon',
                 'a.rcv_ppn',
                 'a.rcv_ppn_status',

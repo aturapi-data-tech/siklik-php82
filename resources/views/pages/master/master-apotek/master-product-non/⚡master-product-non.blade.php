@@ -54,8 +54,8 @@ new class extends Component {
     #[Computed]
     public function rows()
     {
-        $q = DB::table('tkmst_productnons as p')
-            ->leftJoin('tkmst_uoms as u', 'p.uom_id', '=', 'u.uom_id')
+        $q = DB::table('skmst_productnons as p')
+            ->leftJoin('skmst_uoms as u', 'p.uom_id', '=', 'u.uom_id')
             ->select(
                 'p.product_id', 'p.product_name', 'p.uom_id', 'u.uom_desc',
                 'p.cost_price', 'p.qty_box', 'p.limit_stock', 'p.active_status'
