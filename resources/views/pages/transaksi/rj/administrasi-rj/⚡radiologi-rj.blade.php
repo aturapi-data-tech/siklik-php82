@@ -5,6 +5,7 @@ use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Support\KolomOpsional;
 
 new class extends Component {
     use EmrRJTrait, WithRenderVersioningTrait;
@@ -56,9 +57,15 @@ new class extends Component {
      =============================== */
     private function findData(int $rjNo): void
     {
+        // Diagnosis/Keterangan Klinis ditulis dokter di form order EMR. Kolomnya datang dari
+        // database/sql/2026_09_11_alter_penunjang_add_klinis_desc.sql — selama belum dijalankan
+        // kolom ini tidak ikut di-SELECT (cegah ORA-00904) dan barisnya menampilkan "-".
+        $punyaKlinisDesc = KolomOpsional::radiologiRjPunyaKlinisDesc();
+
         $this->rjRad = DB::table('sktxn_rjrads')
             ->join('skmst_radiologis', 'skmst_radiologis.rad_id', 'sktxn_rjrads.rad_id')
             ->select('sktxn_rjrads.rad_dtl', 'sktxn_rjrads.rad_id', 'skmst_radiologis.rad_desc', 'sktxn_rjrads.rad_price')
+            ->when($punyaKlinisDesc, fn($query) => $query->addSelect('sktxn_rjrads.klinis_desc'))
             ->where('rj_no', $rjNo)
             ->orderBy('sktxn_rjrads.rad_dtl')
             ->get()
@@ -68,6 +75,7 @@ new class extends Component {
                     'radId' => $r->rad_id,
                     'radDesc' => $r->rad_desc,
                     'radPrice' => $r->rad_price,
+                    'klinisDesc' => $r->klinis_desc ?? null,
                 ],
             )
             ->toArray();
@@ -153,6 +161,7 @@ new class extends Component {
                     'radId' => $this->formEntryRad['radId'],
                     'radDesc' => $this->formEntryRad['radDesc'],
                     'radPrice' => $this->formEntryRad['radPrice'],
+                    'klinisDesc' => null,
                 ];
 
                 $this->appendAdminLogRJ($this->rjNo, 'Tambah Radiologi: ' . $this->formEntryRad['radDesc']);
@@ -406,9 +415,14 @@ new class extends Component {
                                 {{ $item['radId'] }}
                             </td>
 
-                            {{-- Deskripsi --}}
-                            <td class="whitespace-nowrap">
-                                {{ $item['radDesc'] }}
+                            {{-- Deskripsi + Diagnosis/Ket. Klinis dari dokter pengirim --}}
+                            <td class="align-top">
+                                <div class="whitespace-nowrap">{{ $item['radDesc'] }}</div>
+                                <div class="text-xs max-w-xs truncate" title="{{ $item['klinisDesc'] ?? '' }}">
+                                    <span class="text-gray-500">Klinis:</span>
+                                    <span
+                                        class="ml-1 font-medium text-amber-700 dark:text-amber-400">{{ ($item['klinisDesc'] ?? null) ?: '-' }}</span>
+                                </div>
                             </td>
 
                             {{-- Tarif --}}

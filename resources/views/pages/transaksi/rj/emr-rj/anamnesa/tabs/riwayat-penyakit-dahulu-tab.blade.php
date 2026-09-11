@@ -14,33 +14,61 @@
             <x-input-error :messages="$errors->get('dataDaftarPoliRJ.anamnesa.riwayatPenyakitDahulu.riwayatPenyakitDahulu')" class="mt-1" />
         </div>
 
-        {{-- Alergi --}}
+        {{-- Ada Alergi? — "punya alergi atau tidak?" dan "alergi terhadap apa?" itu DUA
+             pertanyaan. Jawaban "Tidak" memasang SNOMED 716186003 di server (bukan lewat
+             LOV zat): 716186003 itu konsep *situation*, bukan zat, jadi ditolak valueset
+             substance-code yang dipakai LOV. Lihat App\Support\Terminologi\AlergiSnomed. --}}
         <div>
-            <x-input-label for="dataDaftarPoliRJ.anamnesa.alergi.alergi" value="Alergi" :required="false" />
-
-            <x-textarea id="dataDaftarPoliRJ.anamnesa.alergi.alergi"
-                wire:model.live="dataDaftarPoliRJ.anamnesa.alergi.alergi"
-                placeholder="Jenis Alergi — Makanan / Obat / Udara" :error="$errors->has('dataDaftarPoliRJ.anamnesa.alergi.alergi')" :disabled="$isFormLocked"
-                :rows="3" class="w-full mt-1" />
-
-            <x-input-error :messages="$errors->get('dataDaftarPoliRJ.anamnesa.alergi.alergi')" class="mt-1" />
+            <x-input-label value="Ada Alergi?" :required="false" />
+            <div class="flex gap-4 mt-2">
+                @foreach (['Ya', 'Tidak'] as $opsiAlergi)
+                    <x-radio-button :label="$opsiAlergi" :value="$opsiAlergi" name="adaAlergi"
+                        wire:model.live="dataDaftarPoliRJ.anamnesa.alergi.adaAlergi" :disabled="$isFormLocked" />
+                @endforeach
+            </div>
         </div>
 
-        {{-- SNOMED CT — Alergi (untuk Satu Sehat) --}}
-        <div>
-            <livewire:lov.snomed.lov-snomed
-                target="alergiSnomed"
-                label="Kode SNOMED Alergi (Satu Sehat)"
-                placeholder="Ketik nama alergi / obat..."
-                valueSet="substance-code"
-                :initialSnomedCode="$dataDaftarPoliRJ['anamnesa']['alergi']['snomedCode'] ?? null"
-                :disabled="$isFormLocked"
-                wire:key="lov-snomed-alergi-{{ $rjNo ?? 'new' }}-{{ $renderVersions['modal-anamnesa-rj'] ?? 0 }}"
-            />
-        </div>
+        @php $adaAlergi = ($dataDaftarPoliRJ['anamnesa']['alergi']['adaAlergi'] ?? 'Tidak') === 'Ya'; @endphp
+
+        @if ($adaAlergi)
+            {{-- Alergi (teks) — hanya saat "Ya" --}}
+            <div>
+                <x-input-label for="dataDaftarPoliRJ.anamnesa.alergi.alergi" value="Alergi" :required="false" />
+
+                <x-textarea id="dataDaftarPoliRJ.anamnesa.alergi.alergi"
+                    wire:model.live="dataDaftarPoliRJ.anamnesa.alergi.alergi"
+                    placeholder="Jenis Alergi — Makanan / Obat / Udara" :error="$errors->has('dataDaftarPoliRJ.anamnesa.alergi.alergi')" :disabled="$isFormLocked"
+                    :rows="3" class="w-full mt-1" />
+
+                <x-input-error :messages="$errors->get('dataDaftarPoliRJ.anamnesa.alergi.alergi')" class="mt-1" />
+            </div>
+
+            {{-- SNOMED CT — ZAT penyebab alergi (untuk Satu Sehat). Hanya relevan saat "Ya". --}}
+            <div>
+                <livewire:lov.snomed.lov-snomed
+                    target="alergiSnomed"
+                    label="Kode SNOMED Zat Penyebab Alergi (Satu Sehat)"
+                    placeholder="Ketik nama zat / obat penyebab..."
+                    valueSet="substance-code"
+                    :initialSnomedCode="$dataDaftarPoliRJ['anamnesa']['alergi']['snomedCode'] ?? null"
+                    :disabled="$isFormLocked"
+                    wire:key="lov-snomed-alergi-{{ $rjNo ?? 'new' }}-{{ $renderVersions['modal-anamnesa-rj'] ?? 0 }}"
+                />
+            </div>
+        @else
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+                Terekam sebagai <span class="font-semibold text-gray-800 dark:text-gray-100">Tidak ada alergi</span>
+                <span class="font-mono text-[10px] text-gray-400">716186003</span> untuk Satu Sehat.
+            </div>
+        @endif
 
         {{-- ============================================================
              Alergi BPJS PCare — Makanan / Udara / Obat (klinik pratama)
+
+             Kodifikasi BPJS yang BERDIRI SENDIRI, bukan turunan radio "Ada Alergi?" di
+             atas (itu SNOMED/Satu Sehat). Sengaja TIDAK ikut disembunyikan saat "Tidak":
+             nilainya wajib ikut payload PCare, dan menyembunyikannya bisa meninggalkan
+             pilihan lama yang tak terlihat. Default '00' = Tidak Ada sudah selaras.
              ============================================================ --}}
         @php
             $alergi = $dataDaftarPoliRJ['anamnesa']['alergi'] ?? [];

@@ -1,13 +1,14 @@
 -- =============================================================================
 -- File   : install_bundle_fitur_lanjutan.sql
 -- Tujuan : Bundle SEMUA SQL fitur lanjutan siklik-php82 (Juni 2026) dalam 1 file.
---          Gabungan idempotent dari 6 file referensi:
+--          Gabungan idempotent dari 7 file referensi:
 --            01  create_tkmst_signa_catatans.sql   — LOV catatan khusus signa e-resep
 --            02  create_penerimaan_non_medis.sql   — master + penerimaan + hutang non-medis
 --            03  create_kartu_stock_non_medis.sql  — saldo awal + opname + view mutasi non-medis
 --            04  alter_users_add_last_seen.sql     — kolom tracking utk halaman User Online
 --            05  2026_09_11_alter_skmst_products_add_satusehat.sql  — kolom KFA master obat
 --            06  2026_09_11_alter_skmst_radiologis_add_loinc.sql    — kolom LOINC master radiologi
+--            07  2026_09_11_alter_penunjang_add_klinis_desc.sql     — kolom Diagnosis/Ket. Klinis order penunjang
 --
 --          Catatan stok non-medis: stok TUNGGAL di SKMST_PRODUCTNONS.QTY_BOX
 --          (tanpa lokasi/transfer). Tabel ini TANPA trigger legacy — qty_box
@@ -39,7 +40,7 @@ PROMPT ╚═══════════════════════�
 -- SECTION 01 — SKMST_SIGNA_CATATANS (LOV catatan khusus signa e-resep)
 -- =============================================================================
 PROMPT
-PROMPT ─── [1/6] SKMST_SIGNA_CATATANS ───────────────────────────────
+PROMPT ─── [1/7] SKMST_SIGNA_CATATANS ───────────────────────────────
 
 DECLARE
     v_count NUMBER;
@@ -78,7 +79,7 @@ END;
 --   rcv_status: H=hutang, L=lunas, F=batal, A=daftar tunggu/rollback.
 -- =============================================================================
 PROMPT
-PROMPT ─── [2/6] Penerimaan Non-Medis (6 tabel + 5 sequence) ────────
+PROMPT ─── [2/7] Penerimaan Non-Medis (6 tabel + 5 sequence) ────────
 
 DECLARE
     v_count NUMBER;
@@ -243,7 +244,7 @@ END;
 -- SECTION 03 — Kartu Stock NON-MEDIS (saldo awal + opname + view mutasi)
 -- =============================================================================
 PROMPT
-PROMPT ─── [3/6] Kartu Stock Non-Medis ──────────────────────────────
+PROMPT ─── [3/7] Kartu Stock Non-Medis ──────────────────────────────
 
 DECLARE
     v_count NUMBER;
@@ -323,7 +324,7 @@ COMMENT ON TABLE skview_iostockwhsnon IS 'View mutasi stok non-medis: RCV (pener
 -- SECTION 04 — USERS: kolom tracking aktivitas (halaman User Online)
 -- =============================================================================
 PROMPT
-PROMPT ─── [4/6] USERS.LAST_SEEN_AT + LAST_SEEN_ROUTE ───────────────
+PROMPT ─── [4/7] USERS.LAST_SEEN_AT + LAST_SEEN_ROUTE ───────────────
 
 DECLARE
     v_count NUMBER;
@@ -362,7 +363,7 @@ COMMIT;
 -- bisa dikirim ke SATUSEHAT (MedicationRequest & MedicationDispense).
 -- =============================================================================
 PROMPT
-PROMPT ─── [5/6] SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT + _NAME_ ───────
+PROMPT ─── [5/7] SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT + _NAME_ ───────
 
 DECLARE
     v_count NUMBER;
@@ -411,7 +412,7 @@ COMMIT;
 -- tapi memakai LOINC generik 18748-4 untuk semua pemeriksaan (dan melaporkannya).
 -- =============================================================================
 PROMPT
-PROMPT ─── [6/6] SKMST_RADIOLOGIS.LOINC_CODE + LOINC_DISPLAY ────────
+PROMPT ─── [6/7] SKMST_RADIOLOGIS.LOINC_CODE + LOINC_DISPLAY ────────
 
 DECLARE
     v_count NUMBER;
@@ -448,6 +449,52 @@ END;
 
 COMMIT;
 
+
+-- =============================================================================
+-- SECTION 07 — Order penunjang: kolom Diagnosis/Keterangan Klinis
+--   SKTXN_CHECKUPHDRS.KLINIS_DESC  keterangan klinis order laboratorium (per header)
+--   SKTXN_RJRADS.KLINIS_DESC       keterangan klinis order radiologi RJ (per baris)
+--   (file referensi: 2026_09_11_alter_penunjang_add_klinis_desc.sql)
+--
+-- Form order lab & radiologi di EMR RJ MEWAJIBKAN field ini; layar petugas
+-- (Daftar Laborat, Display Pasien Laborat, Radiologi RJ) menampilkannya.
+-- Sebelum section ini jalan app tidak error — App\Support\KolomOpsional menahan
+-- kolomnya keluar dari query/insert dan layar menampilkan "-".
+--
+-- Oracle dev 11/09/2026: SKTXN_RJRADS.KLINIS_DESC sudah ada (VARCHAR2(4000)) — bagian
+-- radiologi jadi no-op & tidak mempersempit kolom; yang benar-benar dibuat di sini
+-- SKTXN_CHECKUPHDRS.KLINIS_DESC.
+-- =============================================================================
+PROMPT
+PROMPT ─── [7/7] SKTXN_CHECKUPHDRS + SKTXN_RJRADS: KLINIS_DESC ──────
+
+DECLARE
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count FROM user_tab_cols
+     WHERE table_name = 'SKTXN_CHECKUPHDRS' AND column_name = 'KLINIS_DESC';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'ALTER TABLE sktxn_checkuphdrs ADD (klinis_desc VARCHAR2(500))';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN sktxn_checkuphdrs.klinis_desc IS 'Diagnosis kerja / keterangan klinis order laboratorium — wajib diisi dokter di form order EMR']';
+        DBMS_OUTPUT.PUT_LINE('  + kolom SKTXN_CHECKUPHDRS.KLINIS_DESC ditambah');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = SKTXN_CHECKUPHDRS.KLINIS_DESC sudah ada — skip');
+    END IF;
+
+    SELECT COUNT(*) INTO v_count FROM user_tab_cols
+     WHERE table_name = 'SKTXN_RJRADS' AND column_name = 'KLINIS_DESC';
+    IF v_count = 0 THEN
+        EXECUTE IMMEDIATE 'ALTER TABLE sktxn_rjrads ADD (klinis_desc VARCHAR2(500))';
+        EXECUTE IMMEDIATE q'[COMMENT ON COLUMN sktxn_rjrads.klinis_desc IS 'Diagnosis kerja / keterangan klinis order radiologi RJ — wajib diisi dokter di form order EMR']';
+        DBMS_OUTPUT.PUT_LINE('  + kolom SKTXN_RJRADS.KLINIS_DESC ditambah');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('  = SKTXN_RJRADS.KLINIS_DESC sudah ada — skip');
+    END IF;
+END;
+/
+
+COMMIT;
+
 PROMPT
 PROMPT ╔════════════════════════════════════════════════════════════╗
 PROMPT ║  SIKLIK-PHP82 INSTALL BUNDLE FITUR LANJUTAN — SELESAI ✓    ║
@@ -461,4 +508,6 @@ PROMPT ║    SELECT COUNT(*) FROM skmst_products                     ║
 PROMPT ║     WHERE product_id_satusehat IS NOT NULL;                ║
 PROMPT ║    SELECT COUNT(*) FROM skmst_radiologis                   ║
 PROMPT ║     WHERE loinc_code IS NOT NULL;                          ║
+PROMPT ║    SELECT column_name FROM user_tab_columns                ║
+PROMPT ║     WHERE column_name = 'KLINIS_DESC';                     ║
 PROMPT ╚════════════════════════════════════════════════════════════╝

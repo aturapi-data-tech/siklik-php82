@@ -7,6 +7,7 @@ use App\Http\Traits\WithValidationToast\WithValidationToastTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
 use App\Http\Traits\BPJS\PcareTrait;
+use App\Support\Terminologi\AlergiSnomed;
 use Livewire\Attributes\On;
 
 new class extends Component {
@@ -70,10 +71,29 @@ new class extends Component {
             $this->dataDaftarPoliRJ['anamnesa']['alergi']['alergi'] = $pasienData['pasien']['alergi'];
         }
 
+        // ✅ Isi kode SNOMED alergi dari master pasien — supaya kunjungan berikutnya tak
+        // perlu pilih LOV ulang. Kode HANYA ikut kalau teks alerginya juga ikut dari master;
+        // kalau tidak, kode bisa "menempel" ke teks alergi lain (mis. dokter mengetik alergi
+        // baru) dan salah kode.
+        if (isset($pasienData['pasien']['alergi']) && !empty($pasienData['pasien']['alergiSnomedCode'])) {
+            $this->dataDaftarPoliRJ['anamnesa']['alergi']['snomedCode'] = $pasienData['pasien']['alergiSnomedCode'];
+            $this->dataDaftarPoliRJ['anamnesa']['alergi']['snomedDisplayEn'] = $pasienData['pasien']['alergiSnomedDisplayEn'] ?? '';
+            $this->dataDaftarPoliRJ['anamnesa']['alergi']['snomedDisplayId'] = $pasienData['pasien']['alergiSnomedDisplayId'] ?? '';
+        }
+
         // ✅ Isi riwayat penyakit dahulu jika ada
         if (isset($pasienData['pasien']['riwayatPenyakitDahulu'])) {
             $this->dataDaftarPoliRJ['anamnesa']['riwayatPenyakitDahulu']['riwayatPenyakitDahulu'] = $pasienData['pasien']['riwayatPenyakitDahulu'];
         }
+
+        // ✅ Seragamkan node alergi + turunkan radio "Ada Alergi?" (Tidak -> SNOMED
+        // 716186003). Record lama tak punya key adaAlergi -> diturunkan dari teksnya, jadi
+        // tak perlu migrasi data. Dipasang di sini (form DIBUKA) supaya petugas MELIHAT
+        // jawabannya & bisa mengubah — bukan disisipkan diam-diam saat simpan.
+        // Key BPJS PCare di node yang sama dibiarkan utuh. Lihat App\Support\Terminologi\AlergiSnomed.
+        $this->dataDaftarPoliRJ['anamnesa']['alergi'] = AlergiSnomed::normalisasi(
+            $this->dataDaftarPoliRJ['anamnesa']['alergi'] ?? [],
+        );
 
         // Pre-load 3 alergi options dari cache ref_bpjs_table (silent).
         $this->preloadAlergiOptions();
@@ -85,6 +105,18 @@ new class extends Component {
         if ($this->checkEmrRJStatus($rjNo)) {
             $this->isFormLocked = true;
         }
+    }
+
+    /**
+     * Radio "Ada Alergi?" diubah -> seragamkan node lewat sumber tunggal.
+     * 'Tidak' membuang teks & kode zat lalu memasang 716186003; 'Ya' mengosongkan
+     * teks/kode "tidak ada" supaya petugas mengisi zat yang sebenarnya.
+     */
+    public function updatedDataDaftarPoliRJAnamnesaAlergiAdaAlergi(): void
+    {
+        $this->dataDaftarPoliRJ['anamnesa']['alergi'] = AlergiSnomed::normalisasi(
+            $this->dataDaftarPoliRJ['anamnesa']['alergi'] ?? [],
+        );
     }
 
     /* ===============================
@@ -129,6 +161,7 @@ new class extends Component {
 
             'alergiTab' => 'Alergi',
             'alergi' => [
+                'adaAlergi' => '', // diturunkan normalisasi() dari teks — JANGAN preset 'Tidak'
                 'alergi' => '',
                 'snomedCode' => '',
                 'snomedDisplayEn' => '',
@@ -397,9 +430,17 @@ new class extends Component {
 
         $updated = false;
 
-        // ✅ Update Alergi (text)
+        // ✅ Update Alergi (text) + kode SNOMED-nya
         if (!empty(($alergi = $this->dataDaftarPoliRJ['anamnesa']['alergi']['alergi'] ?? ''))) {
             $pasienData['pasien']['alergi'] = $alergi;
+            // Kode SNOMED ikut teksnya — SELALU ditimpa (termasuk jadi kosong) supaya kode
+            // lama tak tertinggal menempel pada teks alergi yang sudah diganti. Tanpa ini,
+            // petugas yang mengganti teks jadi "allopurinol" tanpa memilih LOV akan membawa
+            // kode 716186003 = "No known allergy" -> melapor pasien TIDAK punya alergi
+            // padahal alergi.
+            $pasienData['pasien']['alergiSnomedCode'] = $this->dataDaftarPoliRJ['anamnesa']['alergi']['snomedCode'] ?? '';
+            $pasienData['pasien']['alergiSnomedDisplayEn'] = $this->dataDaftarPoliRJ['anamnesa']['alergi']['snomedDisplayEn'] ?? '';
+            $pasienData['pasien']['alergiSnomedDisplayId'] = $this->dataDaftarPoliRJ['anamnesa']['alergi']['snomedDisplayId'] ?? '';
             $updated = true;
         }
 

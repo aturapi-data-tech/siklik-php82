@@ -6,6 +6,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\RisikoJatuh;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
 use App\Http\Traits\Txn\Rj\EmrCompletenessRJTrait;
 
@@ -238,6 +239,11 @@ new class extends Component {
                 $row->task_id6 = $json['taskIdPelayanan']['taskId6'] ?? null;
                 $row->task_id7 = $json['taskIdPelayanan']['taskId7'] ?? null;
                 $row->no_referensi = $json['noReferensi'] ?? null;
+
+                // Penanda risiko jatuh (Sedang/Tinggi) — dihitung dari $json yang SUDAH
+                // di-decode di atas, jadi nol query & nol pembacaan CLOB tambahan.
+                // Logika "penilaian terakhir" satu sumber di App\Support\RisikoJatuh.
+                $row->resiko_jatuh = RisikoJatuh::terakhir($json);
 
                 $row->admin_user = isset($json['AdministrasiRj']) ? $json['AdministrasiRj']['userLog'] ?? '✔' : '—';
                 $row->tindak_lanjut = $json['perencanaan']['tindakLanjut']['tindakLanjut'] ?? '-';
@@ -550,6 +556,19 @@ new class extends Component {
                                         <x-badge :variant="$row->status_variant">
                                             {{ $row->status_text }}
                                         </x-badge>
+
+                                        {{-- Penanda Risiko Jatuh — tampil hanya bila penilaian terakhir Sedang/Tinggi --}}
+                                        @if (!empty($row->resiko_jatuh))
+                                            <x-badge :variant="$row->resiko_jatuh['kategori'] === 'Tinggi' ? 'danger' : 'warning'" class="gap-1 font-bold"
+                                                title="Penilaian terakhir{{ $row->resiko_jatuh['tgl'] ? ' ' . $row->resiko_jatuh['tgl'] : '' }}{{ $row->resiko_jatuh['metode'] ? ' — ' . $row->resiko_jatuh['metode'] : '' }}{{ $row->resiko_jatuh['skor'] !== '' ? ' (skor ' . $row->resiko_jatuh['skor'] . ')' : '' }}">
+                                                <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                                Risiko Jatuh {{ $row->resiko_jatuh['kategori'] }}
+                                            </x-badge>
+                                        @endif
 
                                         @if (!$row->is_booking_pending)
                                             {{-- EMR progress + EMR/E-Resep % — tampil di collapsed (dokter/perawat butuh at-a-glance) --}}

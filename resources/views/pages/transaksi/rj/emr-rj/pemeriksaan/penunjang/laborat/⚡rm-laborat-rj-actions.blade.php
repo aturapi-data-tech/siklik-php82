@@ -7,10 +7,12 @@ use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Http\Traits\WithValidationToast\WithValidationToastTrait;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
+use App\Support\KolomOpsional;
 
 new class extends Component {
-    use WithPagination, WithRenderVersioningTrait, EmrRJTrait;
+    use WithPagination, WithRenderVersioningTrait, WithValidationToastTrait, EmrRJTrait;
 
     public array $renderVersions = [];
     protected array $renderAreas = ['laborat-order-modal'];
@@ -26,6 +28,22 @@ new class extends Component {
      * ======================= */
     public string $searchItem = '';
     public array $selectedItems = []; // [ clabitem_id => [...item] ]
+    public string $klinisDesc = ''; // Diagnosis/Keterangan Klinis — wajib diisi
+
+    protected function rules(): array
+    {
+        return [
+            'klinisDesc' => 'required|string|max:500',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'klinisDesc.required' => 'Diagnosis/Keterangan Klinis harus diisi.',
+            'klinisDesc.max' => 'Diagnosis/Keterangan Klinis maksimal 500 karakter.',
+        ];
+    }
 
     /* ===============================
      | MOUNT
@@ -48,6 +66,8 @@ new class extends Component {
 
         $this->selectedItems = [];
         $this->searchItem = '';
+        $this->klinisDesc = '';
+        $this->resetValidation();
         $this->resetPage();
         $this->incrementVersion('laborat-order-modal');
 
@@ -57,7 +77,8 @@ new class extends Component {
     public function closeModal(): void
     {
         $this->dispatch('close-modal', name: "laborat-order-rj-{$this->rjNo}");
-        $this->reset(['selectedItems', 'searchItem']);
+        $this->reset(['selectedItems', 'searchItem', 'klinisDesc']);
+        $this->resetValidation();
     }
 
     /* ===============================
@@ -109,13 +130,18 @@ new class extends Component {
             return;
         }
 
-        // 2. Guard: pasien sudah pulang
+        // 2. Guard: Diagnosis/Keterangan Klinis wajib diisi (rules + toast)
+        //    Dilempar SEBELUM sentuhan DB apa pun — order gagal tanpa menulis baris.
+        $this->klinisDesc = trim($this->klinisDesc);
+        $this->validateWithToast();
+
+        // 3. Guard: pasien sudah pulang
         if ($this->checkRJStatus($this->rjNo)) {
             $this->dispatch('toast', type: 'error', message: 'Pasien sudah pulang, tidak dapat menambah pemeriksaan.');
             return;
         }
 
-        // 3. Ambil reg_no & dr_id
+        // 4. Ambil reg_no & dr_id
         $rjData = $this->getRjData();
         if (!$rjData) {
             $this->dispatch('toast', type: 'error', message: 'Data RJ tidak ditemukan.');
@@ -124,14 +150,14 @@ new class extends Component {
 
         try {
             DB::transaction(function () use ($rjData) {
-                // 4. Lock row JSON dulu — cegah race condition update JSON bersamaan
+                // 5. Lock row JSON dulu — cegah race condition update JSON bersamaan
                 $this->lockRJRow($this->rjNo);
 
                 $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
                 $checkupNo = DB::scalar('SELECT NVL(MAX(TO_NUMBER(checkup_no)) + 1, 1) FROM sktxn_checkuphdrs');
 
-                // 5. Insert header sktxn_checkuphdrs
-                DB::table('sktxn_checkuphdrs')->insert([
+                // 6. Insert header sktxn_checkuphdrs
+                $header = [
                     'checkup_no' => $checkupNo,
                     'reg_no' => $rjData->reg_no,
                     'dr_id' => $rjData->dr_id,
@@ -139,14 +165,23 @@ new class extends Component {
                     'status_rjri' => 'RJ',
                     'checkup_status' => 'P',
                     'ref_no' => $this->rjNo,
-                ]);
+                ];
 
-                // 6. Insert detail untuk setiap item yang dipilih
+                // Kolom klinis_desc datang dari database/sql/2026_09_11_alter_penunjang_add_klinis_desc.sql.
+                // Selama SQL itu belum dijalankan DBA, key-nya tidak ikut di-insert (cegah ORA-00904)
+                // — order tetap terkirim, keterangan klinisnya saja yang belum tersimpan.
+                if (KolomOpsional::laboratPunyaKlinisDesc()) {
+                    $header[KolomOpsional::KLINIS_DESC] = $this->klinisDesc;
+                }
+
+                DB::table('sktxn_checkuphdrs')->insert($header);
+
+                // 7. Insert detail untuk setiap item yang dipilih
                 foreach ($this->selectedItems as $item) {
                     $this->insertItemAndChildren($checkupNo, $item);
                 }
 
-                // 7. Ambil data terkini dari DB (setelah lock) + patch key lab
+                // 8. Ambil data terkini dari DB (setelah lock) + patch key lab
                 $data = $this->findDataRJ($this->rjNo) ?? [];
 
                 if (empty($data)) {
@@ -170,7 +205,7 @@ new class extends Component {
                 $this->appendAdminLogRJ((int) $this->rjNo, 'Order Lab — ' . collect($this->selectedItems)->pluck('clabitem_desc')->implode(', '), 'MR');
             });
 
-            // 8. Notify parent agar refresh dataDaftarPoliRJ
+            // 9. Notify parent agar refresh dataDaftarPoliRJ
             $this->dispatch('laborat-order-terkirim');
             $this->dispatch('toast', type: 'success', message: count($this->selectedItems) . ' item laboratorium berhasil dikirim.');
             $this->closeModal();
@@ -290,12 +325,11 @@ new class extends Component {
 
             {{-- Selected Items Chips --}}
             @if (!empty($selectedItems))
-                <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-brand-green/5">
-                    <p class="mb-2 text-xs font-semibold text-brand-green">
+                <div class="flex flex-wrap items-center gap-1.5 px-6 py-2 border-b border-gray-100 dark:border-gray-700 bg-brand-green/5">
+                    <p class="text-xs font-semibold text-brand-green shrink-0">
                         {{ count($selectedItems) }} item dipilih:
                     </p>
-                    <div class="flex flex-wrap gap-1.5">
-                        @foreach ($selectedItems as $id => $sel)
+                    @foreach ($selectedItems as $id => $sel)
                             <x-badge variant="brand" class="gap-1 !rounded-full border border-brand-green/20">
                                 {{ $sel['clabitem_desc'] }}
                                 @if ($sel['price'])
@@ -310,10 +344,18 @@ new class extends Component {
                                     </svg>
                                 </button>
                             </x-badge>
-                        @endforeach
-                    </div>
+                    @endforeach
                 </div>
             @endif
+
+            {{-- Diagnosis/Keterangan Klinis — wajib, dibaca petugas laboratorium --}}
+            <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
+                <x-input-label for="klinisDescLaborat" value="Diagnosis/Keterangan Klinis" required />
+                <x-textarea id="klinisDescLaborat" wire:model="klinisDesc" rows="2" maxlength="500"
+                    class="mt-1 text-sm" placeholder="Diagnosis kerja / keterangan klinis pasien..."
+                    :error="$errors->has('klinisDesc')" />
+                <x-input-error :messages="$errors->get('klinisDesc')" class="mt-1" />
+            </div>
 
             {{-- Search --}}
             <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
@@ -330,57 +372,8 @@ new class extends Component {
                 </div>
             </div>
 
-            {{-- Item Grid --}}
-            <div class="flex-1 p-5 overflow-y-auto bg-gray-50/70 dark:bg-gray-950/20">
-                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                    @forelse ($this->items as $item)
-                        @php $selected = $this->isSelected($item->clabitem_id); @endphp
-                        <button type="button"
-                            wire:click="toggleItem('{{ $item->clabitem_id }}', '{{ addslashes($item->clabitem_desc) }}', {{ $item->price ?? 'null' }}, '{{ $item->item_code }}')"
-                            class="relative flex flex-col items-center justify-center p-3 rounded-xl border-2 text-center transition-all
-                                {{ $selected
-                                    ? 'border-brand-green bg-brand-green/10 text-brand-green shadow-sm'
-                                    : 'border-gray-200 bg-white hover:border-brand-green/40 hover:bg-brand-green/5 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300' }}">
-
-                            {{-- Checkmark --}}
-                            @if ($selected)
-                                <span
-                                    class="absolute top-1.5 right-1.5 flex items-center justify-center w-4 h-4 bg-brand-green rounded-full">
-                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                            d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </span>
-                            @endif
-
-                            <p class="text-xs font-medium leading-tight">{{ $item->clabitem_desc }}</p>
-
-                            @if ($item->price)
-                                <p class="mt-1 text-[10px] {{ $selected ? 'text-brand-green/70' : 'text-gray-400' }}">
-                                    {{ number_format($item->price) }}
-                                </p>
-                            @endif
-                        </button>
-                    @empty
-                        <div class="py-12 text-center text-gray-400 col-span-full">
-                            <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            <p class="text-sm">Tidak ada item ditemukan</p>
-                        </div>
-                    @endforelse
-                </div>
-
-                {{-- Pagination --}}
-                @if ($this->items->hasPages())
-                    <div class="mt-4">
-                        {{ $this->items->links() }}
-                    </div>
-                @endif
-            </div>
+            {{-- Item Grid — partial: pilihan item pemeriksaan --}}
+            @include('pages.transaksi.rj.emr-rj.pemeriksaan.penunjang.laborat.partials.grid-item-laborat')
 
             {{-- Modal Footer --}}
             <div
