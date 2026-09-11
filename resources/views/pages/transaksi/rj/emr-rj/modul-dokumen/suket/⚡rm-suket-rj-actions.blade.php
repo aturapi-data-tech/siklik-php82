@@ -22,9 +22,18 @@ new class extends Component {
     /* ===============================
      | MOUNT
      =============================== */
-    public function mount(): void
+    public function mount(?int $rjNo = null, bool $disabled = false): void
     {
         $this->registerAreas(['modal-suket-rj']);
+
+        // Hub memount komponen ini hanya saat modal terbuka (guard if($rjNo)),
+        // jadi data dimuat langsung dari prop — tidak menunggu event open-rm-suket-rj.
+        if (filled($rjNo)) {
+            $this->openSuket($rjNo);
+            if ($disabled) {
+                $this->isFormLocked = true;
+            }
+        }
     }
 
     public function rendering(): void

@@ -40,8 +40,9 @@ new class extends Component {
             $this->isFormLocked = true;
         }
 
+        // Anak (suket/general consent/inform consent) memuat datanya dari prop rjNo
+        // saat di-mount di balik guard if($rjNo) — tidak perlu event open terpisah.
         $this->dispatch('open-modal', name: 'modul-dokumen-rj');
-        $this->dispatch('open-rm-suket-rj', $rjNo);
     }
 
     /* ===============================
@@ -116,6 +117,8 @@ new class extends Component {
 
 <div>
     <x-modal name="modul-dokumen-rj" size="full" height="full" focusable>
+        {{-- Anak hanya di-mount saat modal terbuka: tertutup = nol komponen, buka = mount sekali, tutup = dihapus. --}}
+        @if ($rjNo)
         {{-- CONTAINER UTAMA --}}
         <div class="flex flex-col min-h-[calc(100vh-8rem)]" wire:key="{{ $this->renderKey('modal', [$rjNo ?? 'new']) }}">
 
@@ -267,5 +270,6 @@ new class extends Component {
             </div>
 
         </div>
+        @endif
     </x-modal>
 </div>

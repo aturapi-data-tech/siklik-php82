@@ -57,6 +57,11 @@ Muat entri lama dengan `array_replace_recursive(defaultForm(), $tersimpan)` supa
    Simpan nilai lama → stempel → `try { $this->validate(); } catch (ValidationException $e)
    { kembalikan nilai lama; throw $e; }`. Kalau tidak: stempel tersangkut di layar, tombol
    TTD hilang (komponen mengira sudah TTD), padahal tak ada yang tersimpan.
+2b. **Modul multi-entri WAJIB dua layar** (`docs/modul-dokumen-rj-pattern.md` §5b): `$layar`
+   `'daftar'` ⇄ `'form'`, `$editingKey` = `signatureDate`, `diForm()`, `tambahEntri()`,
+   `kembaliKeDaftar()`, `editEntri($key)`, `saveDraft()` upsert by key, `bukaKunci($key)`;
+   `reset*()` menyetel `layar = 'daftar'`; guard `@if ($this->diForm())` tepat sebelum
+   `<section>` formulir (bukan di header modal), `@unless` membungkus tabel.
 3. **Role Hapus & Buka Kunci = SATU SUMBER** `App\Support\AksiRole`
    (`DOKUMEN_HAPUS`, `DOKUMEN_BUKA_KUNCI`), didaftarkan sebagai Gate di
    `AppServiceProvider::boot()`. **JANGAN** tulis `@hasanyrole('Admin|Mr')` literal —

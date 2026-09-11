@@ -43,7 +43,7 @@ new class extends Component {
             return;
         }
 
-        $this->$rjNo = $rjNo;
+        $this->rjNo = $rjNo;
 
         $this->resetForm();
         $this->resetValidation();
@@ -742,9 +742,13 @@ new class extends Component {
         $this->rekonsiliasiObatInput = ['namaObat' => '', 'dosis' => '', 'rute' => ''];
     }
 
-    public function mount()
+    public function mount(?int $rjNo = null): void
     {
         $this->registerAreas(['modal-anamnesa-rj']);
+        // Dimuat lazy oleh induk (@if($rjNo)): data dibaca dari prop, bukan menunggu event open-rm-*.
+        if (filled($rjNo)) {
+            $this->openAnamnesa($rjNo);
+        }
     }
 
     public function rendering(): void

@@ -32,5 +32,10 @@ Compiler Volt salah-strip komentar `//` bila ada substring `re-use` / `reuse` �
 // BENAR: tulis ulang tanpa "use", mis. "pakai ulang komponen ini"
 ```
 
+## 3b. Jangan tulis `@directive` di komentar PHP
+Blade mengompilasi `@foreach`/`@if`/`@php` dst. **di mana pun** ia muncul, termasuk di komentar `//` dalam blok
+`<?php` komponen ⚡ — `php artisan view:cache` gagal `Malformed @foreach statement`. Tulis "perulangan" /
+"kondisi", bukan nama directive-nya.
+
 ## 4. Pola UI sudah terdokumentasi — jangan reinvent
 Sebelum bikin komponen, cek `docs/` (lihat skill `ui-pattern-docs`): tombol standar, UI komponen umum, page-frame, dirty-modal, print PDF/TTD, tinymce, stable-lookup. Ikuti pola yang ada agar konsisten.
