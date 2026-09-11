@@ -17,11 +17,21 @@ trait SnomedTrait
     protected string $txFhirBaseUrl;
 
     /**
+     * Pin edisi SNOMED (URI version, config txfhir.snomed_version).
+     * Edisi SATUSEHAT lebih tua dari tx.fhir.org — tanpa pin, pencarian bisa
+     * mengembalikan konsep baru yang ditolak validator Kemkes (RuleNumber 10003).
+     *
+     * @var string|null
+     */
+    protected ?string $snomedVersion = null;
+
+    /**
      * Initialize the FHIR base URL from config
      */
     public function initializeTxFhir(): void
     {
         $this->txFhirBaseUrl = config('txfhir.base_url', 'http://tx.fhir.org/r4');
+        $this->snomedVersion = config('txfhir.snomed_version') ?: null;
     }
 
     /**
@@ -33,12 +43,17 @@ trait SnomedTrait
      */
     public function lookupSnomedConcept(string $code): array
     {
-        $response = Http::withHeaders([
-            'Accept' => 'application/fhir+json',
-        ])->get($this->txFhirBaseUrl . '/CodeSystem/$lookup', [
+        $params = [
             'system' => 'http://snomed.info/sct',
             'code'   => $code,
-        ]);
+        ];
+        if ($this->snomedVersion) {
+            $params['version'] = $this->snomedVersion;
+        }
+
+        $response = Http::withHeaders([
+            'Accept' => 'application/fhir+json',
+        ])->get($this->txFhirBaseUrl . '/CodeSystem/$lookup', $params);
 
         // if (!$response->successful()) {
         //     throw new \Exception(
@@ -48,6 +63,41 @@ trait SnomedTrait
 
         $json = $response->json();
         return $json['parameter'] ?? [];
+    }
+
+    /**
+     * Cek sebuah kode dikenal pada edisi SNOMED yang di-pin (txfhir.snomed_version).
+     *
+     * @return bool|null true = ada; false = tidak ada di edisi ini (not-found);
+     *                   null = tak bisa dipastikan (server error/timeout) — JANGAN
+     *                   diperlakukan sebagai tidak ada.
+     */
+    public function snomedCodeExists(string $code): ?bool
+    {
+        $params = [
+            'system' => 'http://snomed.info/sct',
+            'code'   => $code,
+        ];
+        if ($this->snomedVersion) {
+            $params['version'] = $this->snomedVersion;
+        }
+
+        $response = Http::withHeaders([
+            'Accept' => 'application/fhir+json',
+        ])->get($this->txFhirBaseUrl . '/CodeSystem/$lookup', $params);
+
+        $json = $response->json() ?? [];
+
+        if ($response->successful() && !empty($json['parameter'])) {
+            return true;
+        }
+
+        if (($json['resourceType'] ?? '') === 'OperationOutcome') {
+            $issueCode = $json['issue'][0]['code'] ?? '';
+            return $issueCode === 'not-found' ? false : null;
+        }
+
+        return null;
     }
 
     /**
@@ -165,6 +215,9 @@ trait SnomedTrait
                 'count'      => $limit,
                 'offset'     => 0,
             ];
+        }
+        if ($this->snomedVersion) {
+            $params['system-version'] = 'http://snomed.info/sct|' . $this->snomedVersion;
         }
         $response = Http::withHeaders([
             'Accept' => 'application/fhir+json',

@@ -28,6 +28,7 @@ Sebelum membuat komponen baru, cek apakah polanya sudah ada di `docs/`. Ikuti po
 | List/lookup stabil (decouple dari filter) | `docs/stable-lookup-list-pattern.md` |
 | Trait untuk integrasi API eksternal (BPJS/PCare dll.) | `docs/trait-template-api-eksternal.md` |
 | Integrasi PCare BPJS | `docs/PCARE_INTEGRATION.md` |
+| Kirim data ke SATUSEHAT (FHIR R4): kartu kirim RJ, key JSON EMR yang benar, aturan payload & jebakan validator Kemkes, uji payload tanpa mengirim | `docs/satusehat-api.md` + skill `satusehat-kirim` |
 | Diagnosa ICD-10 (master, LOV) | skill `diagnosa-flow` (+ dok lengkap versi sirus: `sirus-php82/docs/diagnosa-architecture.md`) |
 
 > Catatan: docs pola diport dari sirus-php82 — contoh path file di dalamnya (mis. `transaksi/ri/eresep-ri/...`) merujuk repo sirus; pakai sebagai acuan pola, bukan path literal. `idrg-bridging.md` sengaja TIDAK diport (iDRG/INACBG = klaim RS, klinik pratama pakai PCare).

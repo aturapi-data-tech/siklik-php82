@@ -499,4 +499,107 @@ trait ConditionTrait
 
         return $this->makeRequest('post', '/Condition', $payload);
     }
+
+    /**
+     * Apakah error ini penolakan DUPLIKAT dari SATUSEHAT?
+     *
+     * Bentuknya OperationOutcome dengan issue.code = "duplicate", dan teksnya
+     * "Found duplicate: Condition (RuleNumber: 20002)". makeRequest() sudah
+     * membungkusnya jadi Exception berisi body mentah, jadi pencocokan
+     * terpaksa dilakukan atas teks — tidak ada jalur terstruktur ke sana.
+     */
+    public function isDuplicateError(\Throwable $e): bool
+    {
+        $pesan = $e->getMessage();
+
+        return str_contains($pesan, '"duplicate"') || str_contains($pesan, 'Found duplicate');
+    }
+
+    /**
+     * Id Condition yang SUDAH ADA di SATUSEHAT untuk satu encounter + kode ICD-10.
+     *
+     * Dipakai saat POST ditolak duplikat: resource-nya jelas sudah terbentuk di
+     * sana, tinggal kita pungut id-nya supaya tidak dianggap "belum terkirim"
+     * selamanya. Tanpa ini, sekali kiriman tergelincir, diagnosa itu tidak akan
+     * pernah bisa diselesaikan dari layar mana pun.
+     *
+     * $lewati = id yang sudah dipakai baris lain pada ronde yang sama, supaya dua
+     * diagnosa berkode sama tidak memungut id yang persis sama.
+     *
+     * DUA JALUR PENCARIAN, sengaja:
+     *   1. `Condition?encounter=` — paling tepat sasaran, TAPI belum terbukti
+     *      didukung SATUSEHAT (searchConditionsByEncounter() selama ini kode mati
+     *      yang tak pernah dipanggil siapa pun, jadi tak pernah teruji).
+     *   2. `Condition?subject=Patient/<id>` lalu disaring sendiri per encounter —
+     *      lebih boros, tapi parameter `subject` SUDAH terbukti dijawab server
+     *      (sementara `patient` ditolak dengan issue code "value").
+     * Jalur 2 hanya ditempuh bila jalur 1 tidak menghasilkan apa-apa.
+     *
+     * Return '' bila tidak ketemu — mis. aturan duplikatnya ternyata lintas
+     * encounter, sehingga pencarian per-encounter memang tidak akan menemukannya.
+     */
+    public function findExistingConditionId(string $encounterId, string $icd10Code, array $lewati = [], string $patientId = ''): string
+    {
+        if ($encounterId === '' || $icd10Code === '') {
+            return '';
+        }
+
+        $id = $this->cocokkanConditionId($this->cariAman("Condition?encounter=Encounter/{$encounterId}"), $icd10Code, $lewati);
+        if ($id !== '' || $patientId === '') {
+            return $id;
+        }
+
+        return $this->cocokkanConditionId(
+            $this->cariAman("Condition?subject=Patient/{$patientId}"),
+            $icd10Code,
+            $lewati,
+            $encounterId
+        );
+    }
+
+    /** GET yang tidak pernah melempar — kegagalan pencarian bukan alasan menggagalkan kiriman. */
+    private function cariAman(string $endpoint): array
+    {
+        try {
+            $hasil = $this->makeRequest('get', $endpoint);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return is_array($hasil) ? $hasil : [];
+    }
+
+    /**
+     * Id Condition pertama di Bundle yang kodenya cocok.
+     * $encounterId diisi hanya bila Bundle-nya hasil pencarian per-pasien, sehingga
+     * penyaringan encounter harus dikerjakan sendiri di sini.
+     */
+    private function cocokkanConditionId(array $bundle, string $icd10Code, array $lewati, string $encounterId = ''): string
+    {
+        foreach ($bundle['entry'] ?? [] as $entry) {
+            $resource = $entry['resource'] ?? [];
+
+            // Entry bisa berupa OperationOutcome bila resource-nya disensor consent.
+            if (($resource['resourceType'] ?? '') !== 'Condition') {
+                continue;
+            }
+
+            $id = (string) ($resource['id'] ?? '');
+            if ($id === '' || \in_array($id, $lewati, true)) {
+                continue;
+            }
+
+            if ($encounterId !== '' && ($resource['encounter']['reference'] ?? '') !== 'Encounter/' . $encounterId) {
+                continue;
+            }
+
+            foreach ($resource['code']['coding'] ?? [] as $coding) {
+                if ((string) ($coding['code'] ?? '') === $icd10Code) {
+                    return $id;
+                }
+            }
+        }
+
+        return '';
+    }
 }

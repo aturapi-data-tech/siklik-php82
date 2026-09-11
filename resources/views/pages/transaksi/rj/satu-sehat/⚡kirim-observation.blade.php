@@ -16,6 +16,9 @@ new class extends Component {
     public bool $hasEncounter = false;
     public int $count = 0;
 
+    /** Berapa Observation yang TERSEDIA (nilai vital terisi) untuk dikirim. */
+    public int $tersedia = 0;
+
     public function mount(?string $rjNo = null): void
     {
         $this->rjNo = $rjNo;
@@ -40,9 +43,20 @@ new class extends Component {
         if (empty($data)) {
             return;
         }
-        $ss = $data['satusehat'] ?? [];
-        $this->hasEncounter = !empty($ss['encounterId']);
-        $this->count = count($ss['observationIds'] ?? []);
+        $satuSehat = $data['satusehat'] ?? [];
+        $this->hasEncounter = !empty($satuSehat['encounterId']);
+        $this->count = count($satuSehat['observationIds'] ?? []);
+
+        // Hitung Observation yang benar-benar akan berangkat: panel tekanan darah
+        // (butuh sistolik DAN distolik) + tiap vital tunggal yang nilainya terisi.
+        $tandaVital = $data['pemeriksaan']['tandaVital'] ?? [];
+        $tersedia = (!empty($tandaVital['sistolik']) && !empty($tandaVital['distolik'])) ? 1 : 0;
+        foreach (['frekuensiNadi', 'suhu', 'frekuensiNafas', 'spo2'] as $kunciVital) {
+            if (!empty($tandaVital[$kunciVital])) {
+                $tersedia++;
+            }
+        }
+        $this->tersedia = $tersedia;
     }
 
     public function kirimForCurrent(): void
@@ -54,17 +68,29 @@ new class extends Component {
         $this->reloadState();
     }
 
+    /**
+     * Pembungkus untuk rantai "Kirim Semua" (rencana potongan B): apa pun hasilnya —
+     * berhasil, ditolak SATUSEHAT, atau berhenti di guard — langkah ini WAJIB memberi
+     * kabar supaya orkestrator bisa melanjutkan.
+     */
     #[On('ss-observation-rj.kirim')]
     public function kirim(string $rjNo): void
     {
+        $this->kirimInti($rjNo);
+        $this->dispatch('rj-satu-sehat.langkah-selesai', langkah: 'observation');
+    }
+
+    public function kirimInti(string $rjNo): void
+    {
+        $satuSehat = null;
         try {
             $this->initializeSatuSehat();
             $dataRJ = $this->findDataRJ($rjNo);
             if (empty($dataRJ)) { $this->dispatch('toast', type: 'error', message: 'Data RJ tidak ditemukan.'); return; }
 
-            $ss = $dataRJ['satusehat'] ?? [];
-            if (empty($ss['encounterId'])) { $this->dispatch('toast', type: 'error', message: 'Kirim Encounter terlebih dahulu.'); return; }
-            if (!empty($ss['observationIds'])) { $this->dispatch('toast', type: 'info', message: 'Tanda vital sudah pernah dikirim.'); return; }
+            $satuSehat = $dataRJ['satusehat'] ?? [];
+            if (empty($satuSehat['encounterId'])) { $this->dispatch('toast', type: 'error', message: 'Kirim Encounter terlebih dahulu.'); return; }
+            if (!empty($satuSehat['observationIds'])) { $this->dispatch('toast', type: 'info', message: 'Tanda vital sudah pernah dikirim.'); return; }
 
             $patientId = $this->getPatientIHS($dataRJ['regNo'] ?? '');
             if (empty($patientId)) { $this->dispatch('toast', type: 'error', message: 'Patient IHS Number kosong.'); return; }
@@ -73,46 +99,59 @@ new class extends Component {
             $rjDate = $this->parseDate($dataRJ['rjDate'] ?? '');
             $isoDate = $rjDate->toIso8601String();
 
-            $pf = $dataRJ['pemeriksaanFisik'] ?? ($dataRJ['tandaVital'] ?? []);
-            if (empty($pf)) { $this->dispatch('toast', type: 'error', message: 'Tidak ada data tanda vital.'); return; }
+            // Tanda vital RJ bersarang di pemeriksaan.tandaVital — key yang sama dengan
+            // yang dibaca EmrCompletenessRJTrait dan cetak rekam medis. Tidak ada node
+            // 'pemeriksaanFisik' maupun 'tandaVital' di akar JSON RJ, jadi pembacaan lama
+            // selalu berakhir "Tidak ada data tanda vital".
+            $tandaVital = $dataRJ['pemeriksaan']['tandaVital'] ?? [];
+            if (empty($tandaVital)) { $this->dispatch('toast', type: 'error', message: 'Tidak ada data tanda vital.'); return; }
 
-            $ss['observationIds'] = [];
-            $base = ['patientId' => $patientId, 'encounterId' => $ss['encounterId'], 'performerId' => $practitionerId, 'effectiveDate' => $isoDate];
+            $satuSehat['observationIds'] = [];
+            $payloadDasar = ['patientId' => $patientId, 'encounterId' => $satuSehat['encounterId'], 'performerId' => $practitionerId, 'effectiveDate' => $isoDate];
 
-            // TD
-            $sistole = $pf['sistole'] ?? null; $diastole = $pf['diastole'] ?? null;
-            if (!empty($sistole) && !empty($diastole)) {
-                $res = $this->createObservation(array_merge($base, [
+            // Tekanan darah — key JSON EMR: sistolik / distolik (bukan sistole/diastole).
+            $sistolik = $tandaVital['sistolik'] ?? null; $distolik = $tandaVital['distolik'] ?? null;
+            if (!empty($sistolik) && !empty($distolik)) {
+                $respons = $this->createObservation(array_merge($payloadDasar, [
                     'code' => ['system' => 'http://loinc.org', 'code' => '85354-9', 'display' => 'Blood pressure panel with all children optional'],
                     'components' => [
-                        ['code' => ['coding' => [['system' => 'http://loinc.org', 'code' => '8480-6', 'display' => 'Systolic blood pressure']]], 'valueQuantity' => ['value' => (float) $sistole, 'unit' => 'mm[Hg]', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]']],
-                        ['code' => ['coding' => [['system' => 'http://loinc.org', 'code' => '8462-4', 'display' => 'Diastolic blood pressure']]], 'valueQuantity' => ['value' => (float) $diastole, 'unit' => 'mm[Hg]', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]']],
+                        ['code' => ['coding' => [['system' => 'http://loinc.org', 'code' => '8480-6', 'display' => 'Systolic blood pressure']]], 'valueQuantity' => ['value' => (float) $sistolik, 'unit' => 'mm[Hg]', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]']],
+                        ['code' => ['coding' => [['system' => 'http://loinc.org', 'code' => '8462-4', 'display' => 'Diastolic blood pressure']]], 'valueQuantity' => ['value' => (float) $distolik, 'unit' => 'mm[Hg]', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]']],
                     ],
                 ]));
-                if (!empty($res['id'])) $ss['observationIds'][] = $res['id'];
+                if (!empty($respons['id'])) $satuSehat['observationIds'][] = $respons['id'];
             }
 
-            // Nadi, Suhu, RR
-            $singles = [
-                ['val' => $pf['nadi'] ?? null, 'loinc' => '8867-4', 'display' => 'Heart rate', 'unit' => 'beats/minute', 'ucum' => '/min'],
-                ['val' => $pf['suhu'] ?? null, 'loinc' => '8310-5', 'display' => 'Body temperature', 'unit' => 'C', 'ucum' => 'Cel'],
-                ['val' => $pf['rr'] ?? ($pf['respirasi'] ?? null), 'loinc' => '9279-1', 'display' => 'Respiratory rate', 'unit' => 'breaths/minute', 'ucum' => '/min'],
+            // Nadi, Suhu, Pernapasan, SpO2 — key JSON EMR: frekuensiNadi / suhu /
+            // frekuensiNafas / spo2 (bukan nadi/rr/respirasi).
+            $vitalTunggal = [
+                ['val' => $tandaVital['frekuensiNadi'] ?? null,  'loinc' => '8867-4',  'display' => 'Heart rate',       'unit' => 'beats/minute',   'ucum' => '/min'],
+                ['val' => $tandaVital['suhu'] ?? null,           'loinc' => '8310-5',  'display' => 'Body temperature', 'unit' => 'C',              'ucum' => 'Cel'],
+                ['val' => $tandaVital['frekuensiNafas'] ?? null, 'loinc' => '9279-1',  'display' => 'Respiratory rate', 'unit' => 'breaths/minute', 'ucum' => '/min'],
+                ['val' => $tandaVital['spo2'] ?? null,           'loinc' => '59408-5', 'display' => 'Oxygen saturation in Arterial blood by Pulse oximetry', 'unit' => '%', 'ucum' => '%'],
             ];
-            foreach ($singles as $v) {
-                if (empty($v['val'])) continue;
-                $res = $this->createObservation(array_merge($base, [
-                    'code' => ['system' => 'http://loinc.org', 'code' => $v['loinc'], 'display' => $v['display']],
-                    'valueQuantity' => ['value' => (float) $v['val'], 'unit' => $v['unit'], 'system' => 'http://unitsofmeasure.org', 'code' => $v['ucum']],
+            foreach ($vitalTunggal as $vital) {
+                if (empty($vital['val'])) continue;
+                $respons = $this->createObservation(array_merge($payloadDasar, [
+                    'code' => ['system' => 'http://loinc.org', 'code' => $vital['loinc'], 'display' => $vital['display']],
+                    'valueQuantity' => ['value' => (float) $vital['val'], 'unit' => $vital['unit'], 'system' => 'http://unitsofmeasure.org', 'code' => $vital['ucum']],
                 ]));
-                if (!empty($res['id'])) $ss['observationIds'][] = $res['id'];
+                if (!empty($respons['id'])) $satuSehat['observationIds'][] = $respons['id'];
             }
 
-            $this->saveResult($rjNo, $ss);
-            $count = count($ss['observationIds']);
+            if (empty($satuSehat['observationIds'])) { $this->dispatch('toast', type: 'error', message: 'Tidak ada nilai vital valid untuk dikirim.'); return; }
+
+            $this->saveResult($rjNo, $satuSehat);
+            $count = count($satuSehat['observationIds']);
             $this->dispatch('toast', type: 'success', message: "Tanda vital berhasil dikirim ({$count} item).");
             $this->dispatch('rj-satu-sehat.refresh', rjNo: $rjNo);
         } catch (\Throwable $e) {
-            $this->dispatch('toast', type: 'error', message: 'Tanda vital gagal: ' . $e->getMessage());
+            // Simpan dulu yang sudah TERLANJUR terbentuk di SATUSEHAT sebelum melapor
+            // gagal. Tanpa ini id-nya hangus padahal resource-nya SUDAH ada di sana,
+            // lalu percobaan berikutnya menumpuk resource yatim. Dibungkus try sendiri
+            // supaya kegagalan menyimpan tidak menutupi error aslinya.
+            try { if (!empty($satuSehat['observationIds'])) { $this->saveResult($rjNo, $satuSehat); } } catch (\Throwable) {}
+            $this->dispatch('toast', type: 'error', message: 'Tanda vital gagal: ' . $this->ringkasErrorSatuSehat($e));
         }
     }
 
@@ -122,21 +161,21 @@ new class extends Component {
         return (string) (DB::table('skmst_pasiens')->where('reg_no', $regNo)->value('patient_uuid') ?? '');
     }
 
-    private function saveResult(string $rjNo, array $ss): void
+    private function saveResult(string $rjNo, array $satuSehat): void
     {
-        DB::transaction(function () use ($rjNo, $ss) {
+        DB::transaction(function () use ($rjNo, $satuSehat) {
             $this->lockRJRow($rjNo);
             $data = $this->findDataRJ($rjNo);
-            $data['satusehat'] = $ss;
+            $data['satusehat'] = $satuSehat;
             $this->updateJsonRJ($rjNo, $data);
         });
     }
 
-    private function parseDate(string $str): Carbon
+    private function parseDate(string $teksTanggal): Carbon
     {
-        if (empty($str)) return Carbon::now();
-        try { return Carbon::createFromFormat('d/m/Y H:i:s', $str); } catch (\Throwable) {
-            try { return Carbon::parse($str); } catch (\Throwable) { return Carbon::now(); }
+        if (empty($teksTanggal)) return Carbon::now();
+        try { return Carbon::createFromFormat('d/m/Y H:i:s', $teksTanggal); } catch (\Throwable) {
+            try { return Carbon::parse($teksTanggal); } catch (\Throwable) { return Carbon::now(); }
         }
     }
 };
@@ -150,7 +189,10 @@ new class extends Component {
         </div>
         <div>
             <div class="font-semibold text-gray-800 dark:text-gray-100">Observation</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">Tanda vital, hasil lab.</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">Tanda vital (TD, nadi, suhu, napas, SpO2).</div>
+            <div class="mt-1 text-xs {{ $tersedia > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400' }}">
+                {{ $tersedia > 0 ? $tersedia . ' nilai vital siap dikirim' : 'Belum ada tanda vital di EMR — Kirim akan ditolak.' }}
+            </div>
             @if ($count > 0)
                 <div class="mt-1 font-mono text-xs text-emerald-600 dark:text-emerald-400">
                     {{ $count }} terkirim
@@ -160,7 +202,7 @@ new class extends Component {
     </div>
     <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled" :disabled="!$hasEncounter"
         class="!bg-teal-600 hover:!bg-teal-700 {{ $count > 0 ? '!bg-emerald-600' : '' }}">
-        <span wire:loading.remove wire:target="kirimForCurrent">{{ $count > 0 ? 'Terkirim' : 'Kirim' }}</span>
-        <span wire:loading wire:target="kirimForCurrent"><x-loading />...</span>
+        <span wire:loading.remove wire:target="kirimForCurrent,kirim">{{ $count > 0 ? 'Terkirim' : 'Kirim' }}</span>
+        <span wire:loading wire:target="kirimForCurrent,kirim"><x-loading />...</span>
     </x-primary-button>
 </div>

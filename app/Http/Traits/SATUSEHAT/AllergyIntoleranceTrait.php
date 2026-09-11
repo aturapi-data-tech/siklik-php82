@@ -43,9 +43,6 @@ trait AllergyIntoleranceTrait
                     "code"   => "confirmed"
                 ]]
             ],
-            "type"               => "allergy",
-            "category"           => [$data['category'] ?? 'medication'],
-            "criticality"        => $data['criticality'] ?? 'low',
             "code"               => [
                 "coding" => [[
                     "system"  => "http://snomed.info/sct",
@@ -68,6 +65,25 @@ trait AllergyIntoleranceTrait
             "onsetDateTime"      => $data['onset']   ?? now()->toIso8601String(),
             "note"               => [["text" => $data['note']  ?? '']],
         ];
+
+        // category WAJIB tanpa perkecualian — SATUSEHAT menolak tanpanya:
+        //   "Element not found: AllergyIntolerance.category (RuleNumber: 10075)".
+        // Pemanggil yang menentukan kategorinya (food / environment / medication);
+        // 'medication' hanya nilai jatuhan supaya payload tetap sah.
+        $payload['category'] = [$data['category'] ?? 'medication'];
+
+        // type & criticality SENGAJA opsional — kirim null untuk MENGHILANGKANNYA.
+        // Wajib dihilangkan untuk pernyataan "tidak ada alergi" (mis. SNOMED 716186003):
+        // keduanya atribut alergi yang ADA. Dulu ketiganya di-HARDCODE
+        // ('allergy'/'medication'/'low') sehingga setiap kiriman "tidak ada alergi"
+        // membawa klaim yang tak pernah dibuat siapa pun — dan criticality='low'
+        // untuk pasien yang justru TIDAK punya alergi sama sekali.
+        if (!array_key_exists('type', $data) || $data['type'] !== null) {
+            $payload['type'] = $data['type'] ?? 'allergy';
+        }
+        if (!array_key_exists('criticality', $data) || $data['criticality'] !== null) {
+            $payload['criticality'] = $data['criticality'] ?? 'low';
+        }
 
         return $this->makeRequest('post', '/AllergyIntolerance', $payload);
     }

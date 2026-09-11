@@ -146,13 +146,19 @@ trait MedicationRequestTrait
                     'value'  => $registrationId
                 ]
             ],
-            'code'   => [
-                'coding' => [[
-                    'system'  => 'http://sys-ids.kemkes.go.id/kfa',
-                    'code'    => $data['medicationCode'],      // e.g. "93001350"
-                    'display' => $data['medicationDisplay']    // e.g. "Captopril 12,5 mg Tablet (PHAPROS)"
-                ]]
-            ],
+            // Racikan (compound) tidak punya kode KFA untuk campurannya — yang ber-KFA
+            // adalah bahan-bahannya (lihat 'ingredient'). Untuk kasus itu pemanggil
+            // mengirim medicationCode kosong, dan code cukup berisi teks.
+            'code'   => trim((string) ($data['medicationCode'] ?? '')) !== ''
+                ? [
+                    'coding' => [[
+                        'system'  => 'http://sys-ids.kemkes.go.id/kfa',
+                        'code'    => $data['medicationCode'],      // e.g. "93001350"
+                        'display' => $data['medicationDisplay']    // e.g. "Captopril 12,5 mg Tablet (PHAPROS)"
+                    ]],
+                    'text' => $data['medicationDisplay'],
+                ]
+                : ['text' => $data['medicationDisplay']],
             'status' => 'active',
             'form'   => [
                 'coding' => [[
@@ -196,6 +202,12 @@ trait MedicationRequestTrait
             ]]
         ];
 
+        // Racikan (compound): kode KFA-nya ada di tiap bahan, bukan di campurannya.
+        // Pemanggil yang menyusun daftar ingredient bergaya FHIR.
+        if (!empty($data['ingredient'])) {
+            $containedMedication['ingredient'] = $data['ingredient'];
+        }
+
         // ---- BUILD MedicationRequest payload ----
         $payload = [
             'resourceType'        => 'MedicationRequest',
@@ -209,7 +221,10 @@ trait MedicationRequestTrait
                 [
                     'system' => "http://sys-ids.kemkes.go.id/prescription-item/{$orgId}",
                     'use'    => 'official',
-                    'value'  => "{$data['prescriptionId']}-1"      // or pass in separate item ID
+                    // Satu resep bisa berisi banyak item; tanpa nomor item sendiri semua
+                    // MedicationRequest-nya memakai identifier yang sama persis — dan
+                    // SATUSEHAT tak bisa membedakan obat kedua dari obat pertama.
+                    'value'  => $data['prescriptionItemId'] ?? "{$data['prescriptionId']}-1"
                 ]
             ],
             'status'              => $data['status']   ?? 'completed',
@@ -238,10 +253,16 @@ trait MedicationRequestTrait
                 'reference' => "Practitioner/{$data['requesterId']}",
                 'display'   => $data['requesterName']
             ],
-            'reasonReference'     => $data['reasonReference'] ?? [],
-            'dosageInstruction'   => $data['dosageInstruction'] ?? [],
-            'dispenseRequest'     => $data['dispenseRequest'] ?? [],
         ];
+
+        // Field opsional HANYA dikirim bila ada isinya. dispenseRequest itu OBJEK
+        // (kardinalitas 0..1) — mengirimnya sebagai array kosong ditolak SATUSEHAT
+        // dengan "invalid value (expected a DispenseRequest object): []".
+        foreach (['reasonReference', 'dosageInstruction', 'dispenseRequest'] as $kunciOpsional) {
+            if (!empty($data[$kunciOpsional])) {
+                $payload[$kunciOpsional] = $data[$kunciOpsional];
+            }
+        }
 
         // Optional: add note
         if (!empty($data['note'])) {
