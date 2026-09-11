@@ -272,7 +272,7 @@ Tiga modul RJ sudah diselaraskan ke §3–§6, dan modul multi-entri sudah dua l
 
 | Modul | Dua layar? | Catatan |
 |---|---|---|
-| Surat Keterangan (`suket`) | — (sekali-entri, tak perlu) | 2 sub-tab (Sehat / Istirahat), `x-cetak-button` per tab; TTD di cetakan = dokter pemeriksa kunjungan, tidak ada stempel petugas di layar |
+| Surat Keterangan (`suket`) | — (sekali-entri, tak perlu) | 2 sub-tab (Sehat / Istirahat), `x-cetak-button` per tab; TTD di cetakan = dokter pemeriksa kunjungan, tidak ada stempel petugas di layar; viewer RM `⚡suket-view-rj` (12 Sep 2026) dua baris Sehat/Istirahat, hanya yang terisi |
 | General Consent | — (sekali-entri, tak perlu) | TTD petugas = pengunci + Buka Kunci (`dokumen.bukaKunci`); form read-only saat final |
 | Inform Consent | **Ya** (11 Sep 2026) | `$layar`/`$editingKey`/`diForm()`; Simpan Draft (hanya tindakan wajib) → TTD pemberi informasi = validasi penuh + kunci; Lanjutkan Pengisian; Buka Kunci per entri |
 
@@ -283,9 +283,7 @@ Tiga modul RJ sudah diselaraskan ke §3–§6, dan modul multi-entri sudah dua l
 2. **Kelola User menyimpan TTD ke folder `ttd/`**, sedangkan data nyata di kolom
    `myuser_ttd_image` memakai `UserTtd/…`. Keduanya terbaca (`TtdUser` menangani nilai
    ber-slash apa pun), tapi dua folder untuk satu keperluan sebaiknya disatukan.
-3. **Suket belum punya viewer di display Rekam Medis** (General Consent & Inform Consent
-   sudah, di `…/rekam-medis/rj/dokumen-view/`).
-4. **Isi modal hub Modul Dokumen sudah lazy** (`@if ($rjNo)` di `⚡modul-dokumen-rj`, anak memuat
+3. **Isi modal hub Modul Dokumen sudah lazy** (`@if ($rjNo)` di `⚡modul-dokumen-rj`, anak memuat
    dari prop di `mount()`), tetapi tiga tab di dalamnya masih Alpine `x-show` (semua anak mounted
    saat modal terbuka) — sengaja, karena komponen dokumen ringan (lihat `docs/standar-ui-komponen.md` §1b).
 

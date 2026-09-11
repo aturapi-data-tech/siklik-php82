@@ -2,6 +2,8 @@
 
 Pola untuk menampilkan dokumen read-only di layar yang **isinya persis sama dengan hasil Cetak PDF**, plus navigasi antar-record tanpa buka-tutup modal. Dipakai di display Rekam Medis RJ (`resources/views/pages/components/rekam-medis/rj/dokumen-view/`).
 
+Viewer yang ada: `⚡inform-consent-view-rj` (multi-entri, nav antar-entri), `⚡general-consent-view-rj` (objek tunggal), `⚡suket-view-rj` (satu node `suket`, dua dokumen Sehat/Istirahat → id `sehat`/`istirahat` memilih blade cetak; hanya yang terisi dirender). Semua didaftarkan di tab Modul Dokumen `⚡cetak-rekam-medis-open.blade.php`.
+
 > Catatan siklik: repo ini **RJ-only** (klinik pratama). Pola ini diadopsi dari sirus-php82 (yang mencakup RI/UGD/RJ) — versi di sini hanya bagian RJ.
 
 Gunakan pola ini kalau: sudah ada blade cetak (DomPDF) untuk suatu dokumen, dan ingin user bisa **melihat** isinya di modal tanpa harus download PDF dulu — dengan jaminan tampilan = cetakan.

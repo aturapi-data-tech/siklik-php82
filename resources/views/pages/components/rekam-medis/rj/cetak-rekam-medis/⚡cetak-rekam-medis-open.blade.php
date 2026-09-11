@@ -647,6 +647,8 @@ new class extends Component {
                         :rjNo="$rjNo" :entries="$txn['informConsentPasienRJ'] ?? []" wire:key="ic-view-{{ $rjNo }}" />
                     <livewire:pages::components.rekam-medis.rj.dokumen-view.general-consent-view-rj
                         :rjNo="$rjNo" :consent="$txn['generalConsentPasienRJ'] ?? []" wire:key="gc-view-{{ $rjNo }}" />
+                    <livewire:pages::components.rekam-medis.rj.dokumen-view.suket-view-rj
+                        :rjNo="$rjNo" :suket="$txn['suket'] ?? []" wire:key="suket-view-{{ $rjNo }}" />
                 @endif
             </div>
 
