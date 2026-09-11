@@ -3,6 +3,7 @@
 
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
@@ -31,6 +32,47 @@ new class extends Component {
      * $bagian berbeda ketika urutan kartu perlu dipisah.
      */
     public string $bagian = 'semua';
+
+    /** Pratinjau dihitung hanya saat dibuka — jangan bebani muat modal berisi banyak kartu. */
+    public bool $pratinjauTerbuka = false;
+
+    public function togglePratinjau(): void
+    {
+        $this->pratinjauTerbuka = !$this->pratinjauTerbuka;
+    }
+
+    /**
+     * Identitas kunjungan yang AKAN dikirim, dibaca dari sumber yang SAMA dengan
+     * kirimInti() — dataRJ['regName'|'regNo'|'drDesc'|'rjDate']. Tanggal ditampilkan
+     * apa adanya dari basis data; kalau kosong, di situlah Kirim akan berhenti, dan
+     * pratinjau ini memperlihatkan sebabnya sebelum tombol ditekan.
+     */
+    #[Computed]
+    public function pratinjau(): array
+    {
+        if (empty($this->rjNo)) {
+            return [];
+        }
+
+        $dataRJ = $this->findDataRJ($this->rjNo);
+        if (empty($dataRJ)) {
+            return [];
+        }
+
+        $tanggal = trim((string) ($dataRJ['rjDate'] ?? ''));
+
+        return [
+            ['label' => 'resourceType', 'nilai' => 'Encounter', 'ket' => 'identifier RJ-' . $this->rjNo],
+            ['label' => 'Pasien', 'nilai' => (string) ($dataRJ['regName'] ?? '-'),
+                'ket' => 'No. RM ' . ($dataRJ['regNo'] ?? '-')],
+            ['label' => 'Dokter', 'nilai' => (string) ($dataRJ['drDesc'] ?? '-')],
+            ['label' => 'Poli', 'nilai' => (string) ($dataRJ['poliDesc'] ?? ($dataRJ['poliId'] ?? '-'))],
+            ['label' => 'Waktu mulai (period.start)',
+                'nilai' => $tanggal ?: '(KOSONG — Kirim akan ditolak)',
+                'ket' => $tanggal ? 'dibekukan di SATUSEHAT begitu Encounter terbentuk' : 'betulkan dulu di pendaftaran'],
+            ['label' => 'Kelas kunjungan', 'nilai' => 'AMB (rawat jalan)'],
+        ];
+    }
 
     public function mount(?string $rjNo = null, string $bagian = 'semua'): void
     {
@@ -92,6 +134,14 @@ new class extends Component {
     #[On('ss-encounter-rj.kirim')]
     public function kirim(string $rjNo): void
     {
+        // Komponen ini dirender DUA KALI di modal (bagian 'kirim' di atas, 'selesai'
+        // paling bawah) dan keduanya mendengar event yang sama. Tanpa penjaring ini
+        // satu klik "Kirim Semua" memberangkatkan Encounter dua kali sekaligus, dan
+        // orkestrator menerima dua kabar untuk satu langkah.
+        if ($this->bagian === 'selesai') {
+            return;
+        }
+
         $this->kirimInti($rjNo);
         $this->dispatch('rj-satu-sehat.langkah-selesai', langkah: 'encounter');
     }
@@ -182,6 +232,12 @@ new class extends Component {
     #[On('ss-encounter-rj.finish')]
     public function finish(string $rjNo): void
     {
+        // Cermin dari penjaring di kirim(): finish hanya dikerjakan instance kartu
+        // penutup, supaya PUT Encounter tidak berangkat dua kali.
+        if ($this->bagian === 'kirim') {
+            return;
+        }
+
         $this->finishInti($rjNo);
         $this->dispatch('rj-satu-sehat.langkah-selesai', langkah: 'encounter-selesai');
     }
@@ -278,7 +334,8 @@ new class extends Component {
     @if ($bagian !== 'selesai')
         {{-- Step 1: Encounter --}}
         <div
-            class="flex items-center justify-between p-4 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+            class="p-4 bg-canvas border border-hairline shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+            <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div
                     class="flex items-center justify-center w-8 h-8 rounded-full {{ !empty($encounterId) ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500' }}">
@@ -306,10 +363,17 @@ new class extends Component {
             <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled"
                 class="!bg-teal-600 hover:!bg-teal-700 {{ !empty($encounterId) ? '!bg-emerald-600' : '' }}">
                 <span wire:loading.remove wire:target="kirimForCurrent,kirim">
-                    {{ !empty($encounterId) ? 'Terkirim' : 'Kirim' }}
+                    <span class="inline-flex items-center gap-1.5">
+                        <x-satu-sehat.ikon-tombol :selesai="!empty($encounterId)" jenis="kirim" />
+                        {{ !empty($encounterId) ? 'Terkirim' : 'Kirim' }}
+                    </span>
                 </span>
                 <span wire:loading wire:target="kirimForCurrent,kirim"><x-loading />...</span>
             </x-primary-button>
+            </div>
+
+            <x-satu-sehat.pratinjau :terbuka="$pratinjauTerbuka" :baris="$pratinjauTerbuka ? $this->pratinjau : []"
+                kosong="Data kunjungan belum lengkap — lihat pesan saat menekan Kirim." />
         </div>
     @endif
 
@@ -340,7 +404,10 @@ new class extends Component {
             <x-primary-button type="button" wire:click="finishForCurrent" wire:loading.attr="disabled"
                 class="{{ $encounterFinished ? '!bg-emerald-600' : '!bg-teal-600 hover:!bg-teal-700' }}">
                 <span wire:loading.remove wire:target="finishForCurrent,finish">
-                    {{ $encounterFinished ? 'Selesai' : 'Finish' }}
+                    <span class="inline-flex items-center gap-1.5">
+                        <x-satu-sehat.ikon-tombol :selesai="$encounterFinished" jenis="finish" />
+                        {{ $encounterFinished ? 'Selesai' : 'Finish' }}
+                    </span>
                 </span>
                 <span wire:loading wire:target="finishForCurrent,finish"><x-loading />...</span>
             </x-primary-button>

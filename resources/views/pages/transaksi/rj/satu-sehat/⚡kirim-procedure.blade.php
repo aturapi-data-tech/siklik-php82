@@ -4,6 +4,7 @@
 
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
@@ -18,6 +19,51 @@ new class extends Component {
 
     /** Berapa tindakan ber-ICD-9-CM yang TERSEDIA di EMR untuk dikirim. */
     public int $tersedia = 0;
+
+    /** Pratinjau dihitung hanya saat dibuka — jangan bebani muat modal berisi banyak kartu. */
+    public bool $pratinjauTerbuka = false;
+
+    public function togglePratinjau(): void
+    {
+        $this->pratinjauTerbuka = !$this->pratinjauTerbuka;
+    }
+
+    /**
+     * Isi yang AKAN dikirim. Memakai daftarTindakan() — helper yang sama persis
+     * dengan yang dipanggil kirimInti().
+     */
+    #[Computed]
+    public function pratinjau(): array
+    {
+        if (empty($this->rjNo)) {
+            return [];
+        }
+
+        $dataRJ = $this->findDataRJ($this->rjNo);
+        if (empty($dataRJ)) {
+            return [];
+        }
+
+        $daftar = $this->daftarTindakan($dataRJ);
+        if (empty($daftar)) {
+            return [];
+        }
+
+        $baris = [[
+            'label' => 'resourceType',
+            'nilai' => 'Procedure',
+            'ket' => 'encounter ' . ($dataRJ['satusehat']['encounterId'] ?? '(belum ada)'),
+        ]];
+        foreach ($daftar as $urutan => $tindakan) {
+            $baris[] = [
+                'label' => 'Tindakan ' . ($urutan + 1),
+                'nilai' => $tindakan['kode'],
+                'ket' => $tindakan['display'],
+            ];
+        }
+
+        return $baris;
+    }
 
     public function mount(?string $rjNo = null): void
     {
@@ -164,7 +210,8 @@ new class extends Component {
 };
 ?>
 
-<div class="flex items-center justify-between p-4 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+<div class="p-4 bg-canvas border border-hairline shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+    <div class="flex items-center justify-between">
     <div class="flex items-center gap-3">
         <div
             class="flex items-center justify-center w-8 h-8 rounded-full {{ $count > 0 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500' }}">
@@ -185,7 +232,16 @@ new class extends Component {
     </div>
     <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled" :disabled="!$hasEncounter"
         class="!bg-teal-600 hover:!bg-teal-700 {{ $count > 0 ? '!bg-emerald-600' : '' }}">
-        <span wire:loading.remove wire:target="kirimForCurrent,kirim">{{ $count > 0 ? 'Terkirim' : 'Kirim' }}</span>
+        <span wire:loading.remove wire:target="kirimForCurrent,kirim">
+            <span class="inline-flex items-center gap-1.5">
+                <x-satu-sehat.ikon-tombol :selesai="$count > 0" jenis="kirim" />
+                {{ $count > 0 ? 'Terkirim' : 'Kirim' }}
+            </span>
+        </span>
         <span wire:loading wire:target="kirimForCurrent,kirim"><x-loading />...</span>
     </x-primary-button>
+    </div>
+
+    <x-satu-sehat.pratinjau :terbuka="$pratinjauTerbuka" :baris="$pratinjauTerbuka ? $this->pratinjau : []"
+        kosong="Belum ada tindakan ber-ICD-9-CM di EMR — Kirim akan ditolak sampai tindakan diisi." />
 </div>

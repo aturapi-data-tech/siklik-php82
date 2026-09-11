@@ -4,6 +4,7 @@
 
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
@@ -18,6 +19,78 @@ new class extends Component {
 
     /** Berapa Observation yang TERSEDIA (nilai vital terisi) untuk dikirim. */
     public int $tersedia = 0;
+
+    /** Pratinjau dihitung hanya saat dibuka — jangan bebani muat modal berisi banyak kartu. */
+    public bool $pratinjauTerbuka = false;
+
+    /**
+     * Vital tunggal yang dikirim sebagai satu Observation masing-masing. Dijadikan
+     * konstanta supaya hitungan kartu, pratinjau, dan payload kirim membaca daftar
+     * yang SAMA — dulu tiga tempat menulis key-nya sendiri-sendiri dan kartu bisa
+     * mengaku siap padahal pengirimnya membaca key lain.
+     *
+     * Key JSON EMR: pemeriksaan.tandaVital.{frekuensiNadi,suhu,frekuensiNafas,spo2}
+     * (bukan nadi/rr/respirasi — key itu tak pernah ditulis siapa pun di siklik).
+     */
+    private const VITAL_TUNGGAL = [
+        ['kunci' => 'frekuensiNadi',  'loinc' => '8867-4',  'display' => 'Heart rate',       'unit' => 'beats/minute',   'ucum' => '/min'],
+        ['kunci' => 'suhu',           'loinc' => '8310-5',  'display' => 'Body temperature', 'unit' => 'C',              'ucum' => 'Cel'],
+        ['kunci' => 'frekuensiNafas', 'loinc' => '9279-1',  'display' => 'Respiratory rate', 'unit' => 'breaths/minute', 'ucum' => '/min'],
+        ['kunci' => 'spo2',           'loinc' => '59408-5', 'display' => 'Oxygen saturation in Arterial blood by Pulse oximetry', 'unit' => '%', 'ucum' => '%'],
+    ];
+
+    public function togglePratinjau(): void
+    {
+        $this->pratinjauTerbuka = !$this->pratinjauTerbuka;
+    }
+
+    /** Observation yang AKAN berangkat, dari node yang SAMA dengan kirimInti(). */
+    #[Computed]
+    public function pratinjau(): array
+    {
+        if (empty($this->rjNo)) {
+            return [];
+        }
+
+        $dataRJ = $this->findDataRJ($this->rjNo);
+        if (empty($dataRJ)) {
+            return [];
+        }
+
+        $tandaVital = $dataRJ['pemeriksaan']['tandaVital'] ?? [];
+        $baris = [];
+
+        if (!empty($tandaVital['sistolik']) && !empty($tandaVital['distolik'])) {
+            $baris[] = [
+                'label' => 'Tekanan darah',
+                'nilai' => $tandaVital['sistolik'] . '/' . $tandaVital['distolik'] . ' mm[Hg]',
+                'ket' => 'LOINC 85354-9 (panel: 8480-6 sistolik, 8462-4 diastolik)',
+            ];
+        }
+
+        foreach (self::VITAL_TUNGGAL as $vital) {
+            if (empty($tandaVital[$vital['kunci']])) {
+                continue;
+            }
+            $baris[] = [
+                'label' => $vital['display'],
+                'nilai' => $tandaVital[$vital['kunci']] . ' ' . $vital['unit'],
+                'ket' => 'LOINC ' . $vital['loinc'],
+            ];
+        }
+
+        if (empty($baris)) {
+            return [];
+        }
+
+        array_unshift($baris, [
+            'label' => 'resourceType',
+            'nilai' => 'Observation',
+            'ket' => 'encounter ' . ($dataRJ['satusehat']['encounterId'] ?? '(belum ada)'),
+        ]);
+
+        return $baris;
+    }
 
     public function mount(?string $rjNo = null): void
     {
@@ -51,8 +124,8 @@ new class extends Component {
         // (butuh sistolik DAN distolik) + tiap vital tunggal yang nilainya terisi.
         $tandaVital = $data['pemeriksaan']['tandaVital'] ?? [];
         $tersedia = (!empty($tandaVital['sistolik']) && !empty($tandaVital['distolik'])) ? 1 : 0;
-        foreach (['frekuensiNadi', 'suhu', 'frekuensiNafas', 'spo2'] as $kunciVital) {
-            if (!empty($tandaVital[$kunciVital])) {
+        foreach (self::VITAL_TUNGGAL as $vital) {
+            if (!empty($tandaVital[$vital['kunci']])) {
                 $tersedia++;
             }
         }
@@ -122,19 +195,14 @@ new class extends Component {
                 if (!empty($respons['id'])) $satuSehat['observationIds'][] = $respons['id'];
             }
 
-            // Nadi, Suhu, Pernapasan, SpO2 — key JSON EMR: frekuensiNadi / suhu /
-            // frekuensiNafas / spo2 (bukan nadi/rr/respirasi).
-            $vitalTunggal = [
-                ['val' => $tandaVital['frekuensiNadi'] ?? null,  'loinc' => '8867-4',  'display' => 'Heart rate',       'unit' => 'beats/minute',   'ucum' => '/min'],
-                ['val' => $tandaVital['suhu'] ?? null,           'loinc' => '8310-5',  'display' => 'Body temperature', 'unit' => 'C',              'ucum' => 'Cel'],
-                ['val' => $tandaVital['frekuensiNafas'] ?? null, 'loinc' => '9279-1',  'display' => 'Respiratory rate', 'unit' => 'breaths/minute', 'ucum' => '/min'],
-                ['val' => $tandaVital['spo2'] ?? null,           'loinc' => '59408-5', 'display' => 'Oxygen saturation in Arterial blood by Pulse oximetry', 'unit' => '%', 'ucum' => '%'],
-            ];
-            foreach ($vitalTunggal as $vital) {
-                if (empty($vital['val'])) continue;
+            // Nadi, Suhu, Pernapasan, SpO2 — daftarnya di konstanta VITAL_TUNGGAL,
+            // sumber tunggal yang juga dibaca hitungan kartu dan pratinjau.
+            foreach (self::VITAL_TUNGGAL as $vital) {
+                $nilaiVital = $tandaVital[$vital['kunci']] ?? null;
+                if (empty($nilaiVital)) continue;
                 $respons = $this->createObservation(array_merge($payloadDasar, [
                     'code' => ['system' => 'http://loinc.org', 'code' => $vital['loinc'], 'display' => $vital['display']],
-                    'valueQuantity' => ['value' => (float) $vital['val'], 'unit' => $vital['unit'], 'system' => 'http://unitsofmeasure.org', 'code' => $vital['ucum']],
+                    'valueQuantity' => ['value' => (float) $nilaiVital, 'unit' => $vital['unit'], 'system' => 'http://unitsofmeasure.org', 'code' => $vital['ucum']],
                 ]));
                 if (!empty($respons['id'])) $satuSehat['observationIds'][] = $respons['id'];
             }
@@ -181,7 +249,8 @@ new class extends Component {
 };
 ?>
 
-<div class="flex items-center justify-between p-4 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+<div class="p-4 bg-canvas border border-hairline shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+    <div class="flex items-center justify-between">
     <div class="flex items-center gap-3">
         <div
             class="flex items-center justify-center w-8 h-8 rounded-full {{ $count > 0 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500' }}">
@@ -202,7 +271,16 @@ new class extends Component {
     </div>
     <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled" :disabled="!$hasEncounter"
         class="!bg-teal-600 hover:!bg-teal-700 {{ $count > 0 ? '!bg-emerald-600' : '' }}">
-        <span wire:loading.remove wire:target="kirimForCurrent,kirim">{{ $count > 0 ? 'Terkirim' : 'Kirim' }}</span>
+        <span wire:loading.remove wire:target="kirimForCurrent,kirim">
+            <span class="inline-flex items-center gap-1.5">
+                <x-satu-sehat.ikon-tombol :selesai="$count > 0" jenis="kirim" />
+                {{ $count > 0 ? 'Terkirim' : 'Kirim' }}
+            </span>
+        </span>
         <span wire:loading wire:target="kirimForCurrent,kirim"><x-loading />...</span>
     </x-primary-button>
+    </div>
+
+    <x-satu-sehat.pratinjau :terbuka="$pratinjauTerbuka" :baris="$pratinjauTerbuka ? $this->pratinjau : []"
+        kosong="Belum ada tanda vital di EMR (pemeriksaan.tandaVital) — Kirim akan ditolak." />
 </div>

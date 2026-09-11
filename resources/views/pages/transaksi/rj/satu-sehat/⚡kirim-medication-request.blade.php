@@ -4,6 +4,7 @@
 
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
@@ -37,6 +38,68 @@ new class extends Component {
      * kartu ini langsung jalan tanpa perubahan kode.
      */
     private const KOLOM_KFA = 'product_id_satusehat';
+
+    /** Pratinjau dihitung hanya saat dibuka — jangan bebani muat modal berisi banyak kartu. */
+    public bool $pratinjauTerbuka = false;
+
+    public function togglePratinjau(): void
+    {
+        $this->pratinjauTerbuka = !$this->pratinjauTerbuka;
+    }
+
+    /**
+     * Isi yang AKAN dikirim, memakai daftarObat() — helper yang sama persis dengan
+     * yang dipanggil kirimInti(). Yang TIDAK berangkat (obat tanpa KFA, racikan)
+     * tetap muncul sebagai baris tersendiri: dilewati boleh, hilang diam-diam tidak.
+     */
+    #[Computed]
+    public function pratinjau(): array
+    {
+        if (empty($this->rjNo)) {
+            return [];
+        }
+
+        $dataRJ = $this->findDataRJ($this->rjNo);
+        if (empty($dataRJ)) {
+            return [];
+        }
+
+        $tanpaKfa = 0;
+        $daftar = $this->daftarObat($dataRJ, $tanpaKfa);
+        $jumlahRacikan = count($dataRJ['eresepRacikan'] ?? []);
+
+        $baris = [];
+        foreach ($daftar as $urutan => $obat) {
+            $baris[] = [
+                'label' => 'Obat ' . ($urutan + 1),
+                'nilai' => $obat['display'] . ' × ' . $obat['qty'],
+                'ket' => 'KFA ' . $obat['kode'] . ' · prescriptionItemId ' . $this->rjNo . '-' . ($urutan + 1),
+            ];
+        }
+
+        if ($tanpaKfa > 0) {
+            $baris[] = ['label' => 'Dilewati', 'nilai' => $tanpaKfa . ' obat tanpa kode KFA',
+                'ket' => $this->kolomKfaAda
+                    ? 'belum ada padanan KFA di Master Obat'
+                    : 'Master Obat belum punya kolom skmst_products.' . self::KOLOM_KFA];
+        }
+        if ($jumlahRacikan > 0) {
+            $baris[] = ['label' => 'Dilewati', 'nilai' => $jumlahRacikan . ' racikan',
+                'ket' => 'pengiriman racikan belum didukung (butuh KFA per bahan)'];
+        }
+
+        if (empty($baris)) {
+            return [];
+        }
+
+        array_unshift($baris, [
+            'label' => 'resourceType',
+            'nilai' => 'MedicationRequest',
+            'ket' => 'prescriptionId ' . $this->rjNo . ' · encounter ' . ($dataRJ['satusehat']['encounterId'] ?? '(belum ada)'),
+        ]);
+
+        return $baris;
+    }
 
     public function mount(?string $rjNo = null): void
     {
@@ -291,7 +354,8 @@ new class extends Component {
 };
 ?>
 
-<div class="flex items-center justify-between p-4 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+<div class="p-4 bg-canvas border border-hairline shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-700">
+    <div class="flex items-center justify-between">
     <div class="flex items-center gap-3">
         <div
             class="flex items-center justify-center w-8 h-8 rounded-full {{ $count > 0 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500' }}">
@@ -327,7 +391,16 @@ new class extends Component {
     </div>
     <x-primary-button type="button" wire:click="kirimForCurrent" wire:loading.attr="disabled" :disabled="!$hasEncounter"
         class="!bg-teal-600 hover:!bg-teal-700 {{ $count > 0 ? '!bg-emerald-600' : '' }}">
-        <span wire:loading.remove wire:target="kirimForCurrent,kirim">{{ $count > 0 ? 'Terkirim' : 'Kirim' }}</span>
+        <span wire:loading.remove wire:target="kirimForCurrent,kirim">
+            <span class="inline-flex items-center gap-1.5">
+                <x-satu-sehat.ikon-tombol :selesai="$count > 0" jenis="kirim" />
+                {{ $count > 0 ? 'Terkirim' : 'Kirim' }}
+            </span>
+        </span>
         <span wire:loading wire:target="kirimForCurrent,kirim"><x-loading />...</span>
     </x-primary-button>
+    </div>
+
+    <x-satu-sehat.pratinjau :terbuka="$pratinjauTerbuka" :baris="$pratinjauTerbuka ? $this->pratinjau : []"
+        kosong="Tidak ada resep obat di EMR — Kirim akan ditolak." />
 </div>
