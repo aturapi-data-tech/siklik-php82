@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Reactive;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\KolomOpsional;
 
 new class extends Component {
     #[Reactive]
@@ -28,6 +29,10 @@ new class extends Component {
             return;
         }
 
+        // Kolom klinis_desc baru ada setelah database/sql/2026_09_11_alter_penunjang_add_klinis_desc.sql
+        // dijalankan; sebelum itu kolomnya tidak ikut di-SELECT (cegah ORA-00904) dan kartu menampilkan "-".
+        $punyaKlinisDesc = KolomOpsional::laboratPunyaKlinisDesc();
+
         $header = DB::table('sktxn_checkuphdrs as a')
             ->join('skmst_pasiens as c', 'a.reg_no', '=', 'c.reg_no')
             ->leftJoin('skmst_doctors as d', 'a.dr_id', '=', 'd.dr_id')
@@ -48,6 +53,7 @@ new class extends Component {
                 'a.status_rjri',
                 'a.ref_no',
             )
+            ->when($punyaKlinisDesc, fn($query) => $query->addSelect('a.klinis_desc'))
             ->where('a.checkup_no', $this->checkupNo)
             ->first();
 
@@ -84,6 +90,7 @@ new class extends Component {
             'statusRjri' => $header->status_rjri ?? '-',
             'refNo' => $header->ref_no ?? '-',
             'checkupStatus' => $header->checkup_status ?? '-',
+            'klinisDesc' => $header->klinis_desc ?? null,
         ];
     }
 };
@@ -185,6 +192,17 @@ new class extends Component {
                             <span
                                 class="ml-1 font-semibold text-brand dark:text-emerald-400">{{ $p['drName'] }}</span>
                         </div>
+                    </div>
+
+                    {{-- Diagnosis/Ket. Klinis dari dokter pengirim --}}
+                    <div>
+                        <span class="text-gray-500">Diagnosis/Ket. Klinis:</span>
+                        @if (!empty($p['klinisDesc']))
+                            <span
+                                class="ml-1 font-medium text-amber-700 dark:text-amber-400">{{ $p['klinisDesc'] }}</span>
+                        @else
+                            <span class="ml-1 text-gray-400 dark:text-gray-500">-</span>
+                        @endif
                     </div>
 
                     {{-- Tanggal --}}

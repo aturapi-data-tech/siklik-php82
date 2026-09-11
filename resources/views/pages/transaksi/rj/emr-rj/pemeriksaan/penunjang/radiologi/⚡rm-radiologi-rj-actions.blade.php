@@ -7,10 +7,12 @@ use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Http\Traits\WithValidationToast\WithValidationToastTrait;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
+use App\Support\KolomOpsional;
 
 new class extends Component {
-    use WithPagination, WithRenderVersioningTrait, EmrRJTrait;
+    use WithPagination, WithRenderVersioningTrait, WithValidationToastTrait, EmrRJTrait;
 
     public array $renderVersions = [];
     protected array $renderAreas = ['radiologi-order-modal'];
@@ -26,6 +28,22 @@ new class extends Component {
      * ======================= */
     public string $searchItem = '';
     public array $selectedItems = []; // [ rad_id => [...item] ]
+    public string $klinisDesc = ''; // Diagnosis/Keterangan Klinis — wajib diisi
+
+    protected function rules(): array
+    {
+        return [
+            'klinisDesc' => 'required|string|max:500',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'klinisDesc.required' => 'Diagnosis/Keterangan Klinis harus diisi.',
+            'klinisDesc.max' => 'Diagnosis/Keterangan Klinis maksimal 500 karakter.',
+        ];
+    }
 
     /* ===============================
      | MOUNT
@@ -48,6 +66,8 @@ new class extends Component {
 
         $this->selectedItems = [];
         $this->searchItem = '';
+        $this->klinisDesc = '';
+        $this->resetValidation();
         $this->resetPage();
         $this->incrementVersion('radiologi-order-modal');
 
@@ -57,7 +77,8 @@ new class extends Component {
     public function closeModal(): void
     {
         $this->dispatch('close-modal', name: "radiologi-order-rj-{$this->rjNo}");
-        $this->reset(['selectedItems', 'searchItem']);
+        $this->reset(['selectedItems', 'searchItem', 'klinisDesc']);
+        $this->resetValidation();
     }
 
     /* ===============================
@@ -108,13 +129,18 @@ new class extends Component {
             return;
         }
 
-        // 2. Guard: pasien sudah pulang
+        // 2. Guard: Diagnosis/Keterangan Klinis wajib diisi (rules + toast)
+        //    Dilempar SEBELUM sentuhan DB apa pun — order gagal tanpa menulis baris.
+        $this->klinisDesc = trim($this->klinisDesc);
+        $this->validateWithToast();
+
+        // 3. Guard: pasien sudah pulang
         if ($this->checkRJStatus($this->rjNo)) {
             $this->dispatch('toast', type: 'error', message: 'Pasien sudah pulang, tidak dapat menambah pemeriksaan.');
             return;
         }
 
-        // 3. Ambil reg_no & dr_id
+        // 4. Ambil reg_no & dr_id
         $rjData = $this->getRjData();
         if (!$rjData) {
             $this->dispatch('toast', type: 'error', message: 'Data RJ tidak ditemukan.');
@@ -123,26 +149,37 @@ new class extends Component {
 
         try {
             DB::transaction(function () {
-                // 4. Lock row JSON dulu — cegah race condition update JSON bersamaan
+                // 5. Lock row JSON dulu — cegah race condition update JSON bersamaan
                 $this->lockRJRow($this->rjNo);
 
                 $now = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
 
-                // 5. Insert detail ke sktxn_rjrads (radiologi tidak punya header tersendiri)
+                // Kolom klinis_desc datang dari database/sql/2026_09_11_alter_penunjang_add_klinis_desc.sql.
+                // Selama SQL itu belum dijalankan DBA, key-nya tidak ikut di-insert (cegah ORA-00904)
+                // — order tetap terkirim, keterangan klinisnya saja yang belum tersimpan.
+                $simpanKlinisDesc = KolomOpsional::radiologiRjPunyaKlinisDesc();
+
+                // 6. Insert detail ke sktxn_rjrads (radiologi tidak punya header tersendiri)
                 foreach ($this->selectedItems as $item) {
                     $radDtlNo = DB::scalar('SELECT NVL(MAX(TO_NUMBER(rad_dtl)) + 1, 1) FROM sktxn_rjrads');
 
-                    DB::table('sktxn_rjrads')->insert([
+                    $baris = [
                         'rad_dtl' => $radDtlNo,
                         'rad_id' => $item['rad_id'],
                         'rj_no' => $this->rjNo,
                         'rad_price' => $item['rad_price'],
                         'dr_radiologi' => 'dr. M.A. Budi Purwito, Sp.Rad.',
                         'waktu_entry' => DB::raw("TO_DATE('{$now}','dd/mm/yyyy hh24:mi:ss')"),
-                    ]);
+                    ];
+
+                    if ($simpanKlinisDesc) {
+                        $baris[KolomOpsional::KLINIS_DESC] = $this->klinisDesc;
+                    }
+
+                    DB::table('sktxn_rjrads')->insert($baris);
                 }
 
-                // 6. Ambil data terkini dari DB (setelah lock) + patch key rad
+                // 7. Ambil data terkini dari DB (setelah lock) + patch key rad
                 $data = $this->findDataRJ($this->rjNo) ?? [];
 
                 if (empty($data)) {
@@ -166,7 +203,7 @@ new class extends Component {
                 $this->appendAdminLogRJ((int) $this->rjNo, 'Order Radiologi — ' . collect($this->selectedItems)->pluck('rad_desc')->implode(', '), 'MR');
             });
 
-            // 7. Notify parent agar refresh dataDaftarPoliRJ — DI LUAR transaksi
+            // 8. Notify parent agar refresh dataDaftarPoliRJ — DI LUAR transaksi
             $this->dispatch('radiologi-order-terkirim');
             $this->dispatch('toast', type: 'success', message: count($this->selectedItems) . ' item radiologi berhasil dikirim.');
             $this->closeModal();
@@ -255,12 +292,11 @@ new class extends Component {
 
             {{-- Selected Items Chips --}}
             @if (!empty($selectedItems))
-                <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-info-tint/40 dark:bg-blue-900/10">
-                    <p class="mb-2 text-xs font-semibold text-info-deep dark:text-blue-300">
+                <div class="flex flex-wrap items-center gap-1.5 px-6 py-2 border-b border-gray-100 dark:border-gray-700 bg-info-tint/40 dark:bg-blue-900/10">
+                    <p class="text-xs font-semibold text-info-deep dark:text-blue-300 shrink-0">
                         {{ count($selectedItems) }} item dipilih:
                     </p>
-                    <div class="flex flex-wrap gap-1.5">
-                        @foreach ($selectedItems as $id => $sel)
+                    @foreach ($selectedItems as $id => $sel)
                             <x-badge variant="info" class="gap-1 !rounded-full border border-info/20">
                                 {{ $sel['rad_desc'] }}
                                 @if ($sel['rad_price'])
@@ -275,10 +311,18 @@ new class extends Component {
                                     </svg>
                                 </button>
                             </x-badge>
-                        @endforeach
-                    </div>
+                    @endforeach
                 </div>
             @endif
+
+            {{-- Diagnosis/Keterangan Klinis — wajib, dibaca petugas radiologi --}}
+            <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
+                <x-input-label for="klinisDescRadiologi" value="Diagnosis/Keterangan Klinis" required />
+                <x-textarea id="klinisDescRadiologi" wire:model="klinisDesc" rows="2" maxlength="500"
+                    class="mt-1 text-sm" placeholder="Diagnosis kerja / keterangan klinis pasien..."
+                    :error="$errors->has('klinisDesc')" />
+                <x-input-error :messages="$errors->get('klinisDesc')" class="mt-1" />
+            </div>
 
             {{-- Search --}}
             <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700">

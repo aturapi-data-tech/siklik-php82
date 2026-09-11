@@ -141,7 +141,7 @@ mana yang kosong — tidak mengirim apa pun.
 | 4 | Procedure | `Procedure` / completed | **ICD-9-CM** | `procedure[]` { `procedureId`, `procedureDesc` } |
 | 5 | MedicationRequest | `MedicationRequest` + contained `Medication` | **KFA** | `eresep[]` { `productId`, `productName`, `qty`, … } + master obat |
 | 6 | Chief Complaint | `Condition` / `problem-list-item` | **SNOMED CT** | `anamnesa.keluhanUtama` { `keluhanUtama`, `snomedCode`, `snomedDisplayEn`, `snomedDisplayId` } |
-| 7 | Allergy Intolerance | `AllergyIntolerance` | **SNOMED CT** | `anamnesa.alergi` { `alergi`, `snomedCode`, `snomedDisplayEn`, `snomedDisplayId` } |
+| 7 | Allergy Intolerance | `AllergyIntolerance` | **SNOMED CT** | `anamnesa.alergi` { `adaAlergi`, `alergi`, `snomedCode`, `snomedDisplayEn`, `snomedDisplayId` } |
 | 8 | Nyeri & Kesadaran | `Observation` / `survey` + `exam` | SNOMED + **LOINC** | `penilaian.nyeri[]` { `nyeri.nyeriMetode.{nyeriMetode,nyeriMetodeScore}` } dan `pemeriksaan.tandaVital.tingkatKesadaran` |
 | 9 | Telaah Resep | `QuestionnaireResponse` **Q0007** | clinical-term Kemkes | `telaahResep` (10 butir + `penanggungJawab`) |
 | 10 | MedicationDispense | `MedicationDispense` + contained `Medication` | **KFA** | `satusehat.medicationRequestItems[]` (peta resep→penyerahan) |
@@ -226,10 +226,74 @@ ber-`snomedCode`** di basis data — LOV-nya baru. Kartu karena itu menyatakan s
 di muka, bukan menunggu tombol ditekan. Kode TIDAK pernah diturunkan dari teks bebas.
 
 **Allergy.** `category` **WAJIB** juga untuk "tidak ada alergi" (RuleNumber 10075);
-`type` & `criticality` justru harus DIHILANGKAN di situ. Pemetaannya di
-`App\Support\Terminologi\AlergiSnomed`. Beda dari sirus: siklik **tidak punya key
-`adaAlergi`**, jadi keadaan "tidak ada alergi" hanya dikenali dari kodenya —
-`AlergiSnomed::normalisasi()` milik sirus sengaja tidak diport.
+`type` & `criticality` justru harus DIHILANGKAN di situ. Semua pemetaan ada di
+`App\Support\Terminologi\AlergiSnomed` (sumber tunggal — jangan menyalin petanya).
+
+*Radio "Ada Alergi?" (selaras sirus, 11/09/2026).* Node `anamnesa.alergi` kini punya key
+status **`adaAlergi`** (`'Ya'` / `'Tidak'`), diisi radio eksplisit di tab *Riwayat & Alergi*:
+
+| `adaAlergi` | `alergi` (teks) | `snomedCode` | LOV zat |
+|---|---|---|---|
+| `Tidak` | `"Tidak ada alergi"` (dipaksa) | `716186003` (dipasang server) | disembunyikan & dikosongkan |
+| `Ya` | zat penyebab, diisi petugas | kode **zat** dari LOV `substance-code` | tampil |
+
+Alasan dipisah: **716186003 "No known allergy" itu konsep SNOMED *situation*, bukan zat** —
+ia ditolak valueset `substance-code` yang dipakai LOV, jadi tak akan pernah bisa dipilih di
+situ. "Punya alergi atau tidak?" dan "alergi terhadap apa?" memang dua pertanyaan.
+
+`AlergiSnomed::normalisasi()` dipanggil saat anamnesa **DIBUKA** dan saat radio diubah —
+bukan saat simpan, supaya petugas melihat jawabannya & bisa mengubah. Record lama tanpa
+`adaAlergi` **tidak perlu migrasi**: statusnya diturunkan dari teks (lihat tabel di bawah).
+Struktur default anamnesa TIDAK boleh preset `adaAlergi => 'Tidak'` — nilai itu tak bisa
+dibedakan dari jawaban asli dan akan menghapus alergi yang baru di-prefill dari master pasien.
+
+*Tafsir teks lama (3.749 record RJ ber-node alergi, 11/09/2026).* Sebarannya **beda jauh
+dari sirus** dan itu mengubah keputusannya:
+
+| teks lama | jumlah | jadi | catatan |
+|---|---|---|---|
+| `"-"` (atau tanda baca saja) | 2.454 | `Tidak` | ⚠️ di sirus entri `'-'` **mati**: `norm()` membuang tanda baca jadi string kosong sehingga tak pernah cocok. Di siklik ini dua pertiga data, jadi norm-kosong diperiksa terpisah |
+| KOSONG | 682 | `Tidak` | konvensi lama: kosong = sudah ditanya, tidak ada |
+| `"taa"` | 55 | `Tidak` | singkatan lazim "tidak ada alergi" |
+| `"tidak ada"` / `"disangkal"` / dll | ±20 | `Tidak` | lima ejaan, disamakan |
+| `"?"` | 14 | **`Ya`** | `?` = *tidak tahu*, **bukan** tidak ada — sengaja tidak dipetakan supaya petugas menjawab ulang |
+| `"tak"` | 12 | **`Ya`** | ambigu/terpotong, idem |
+| `"dingin"`, `"telur"`, `"udang"`, `"ibuprofen"`, … | ±250 | `Ya` | alergi NYATA — di siklik jumlahnya jauh lebih banyak dari sirus (yang cuma 1 dari 397) |
+
+*Sinkron master pasien.* `anamnesa.alergi` ikut disimpan ke `skmst_pasiens.meta_data_pasien_json`
+sebagai `pasien.alergi` + `pasien.alergiSnomedCode` / `alergiSnomedDisplayEn` /
+`alergiSnomedDisplayId`, supaya kunjungan berikutnya tak perlu pilih LOV ulang.
+Aturannya asimetris dan itu disengaja:
+
+- **Prefill** (saat anamnesa dibuka): kode HANYA ikut kalau **teks**-nya juga ikut dari
+  master — kalau tidak, kode bisa "menempel" ke teks alergi lain dan salah kode.
+- **Sync balik** (saat simpan): kode **SELALU** ditimpa bersama teksnya, **termasuk jadi
+  kosong**. Tanpa ini, petugas yang mengganti teks jadi `"allopurinol"` tanpa memilih LOV
+  akan membawa kode `716186003` = *No known allergy* → melapor pasien TIDAK punya alergi
+  padahal alergi.
+- `adaAlergi` **tidak** ikut disimpan ke master (sama seperti sirus): statusnya selalu bisa
+  diturunkan ulang dari teksnya lewat `normalisasi()`, jadi menyimpannya cuma menambah
+  sumber kebenaran kedua yang bisa menyimpang.
+
+*Cetak & preview.* `AlergiSnomed::untukCetak($node)` — dipakai viewer & cetak Rekam Medis RJ
+supaya "pasien tak punya alergi" tidak lagi tertulis sama dengan "petugas lupa mengisi":
+
+| keadaan | tampil |
+|---|---|
+| dikaji, `Tidak` | `Tidak ada alergi` |
+| dikaji `Ya`, dirinci | teksnya |
+| dikaji `Ya`, belum dirinci | `Ada (belum dirinci)` |
+| record lama, teks terisi | teksnya **apa adanya** (tidak ditafsir — cetakan harus memperlihatkan yang benar-benar dicatat) |
+| record lama, KOSONG | `Tidak ada alergi` |
+
+Baris terakhir = keputusan atas dasar konvensi lama (kosong dipersepsikan "tidak ada"),
+dengan risiko yang disadari: record yang benar-benar terlewat akan tercetak sebagai klaim.
+Cara mengubahnya ke `Belum dikaji` ditunjuk di docblock `untukCetak()` — satu baris.
+
+*Dampak ke kartu Kirim.* Node `Tidak` selalu punya kode → kartu Allergy bisa mengirim
+pernyataan negatif yang sah. Node `Ya` butuh kode zat dari LOV; tanpa itu Kirim ditolak di
+muka. Kartu tetap memutuskan `type`/`criticality` dari **kode** (`adalahTidakAdaAlergi()`),
+bukan dari `adaAlergi` — kode itulah yang masuk payload.
 
 **Nyeri & Kesadaran.** Dua jebakan yang masing-masing membuat kartu salah kirim:
 
@@ -548,7 +612,10 @@ Sekali saja, tapi wajib.
    poli/apotek benar-benar dipakai.
 10. **`snomedCode` masih kosong di SELURUH basis data** (0 dari 24.001 kunjungan, per
     11/09/2026) — LOV SNOMED keluhan utama & alergi baru dipasang. Kartu Chief Complaint
-    dan Allergy akan selalu menolak sampai petugas mulai memilih kodenya.
+    akan selalu menolak sampai petugas mulai memilih kodenya. **Alergi sudah tidak lagi:**
+    jawaban radio `Tidak` memasang `716186003` sendiri, jadi sejak kunjungan itu dibuka di
+    anamnesa kartu Allergy punya kode. Yang masih menolak hanya node `Ya` tanpa LOV zat, dan
+    record lama yang belum pernah dibuka ulang (node-nya di DB masih apa adanya).
 11. **Kode "Tidak Sesuai" Q0007 belum diketahui** (§5.4) — telaah yang memuat jawaban
     "Tidak" pada butir ber-`valueCoding` belum bisa dikirim. Begitu kodenya didapat dari
     Lampiran Terminologi SATUSEHAT, cukup isi konstanta `TelaahResepQ0007::TIDAK_SESUAI`.

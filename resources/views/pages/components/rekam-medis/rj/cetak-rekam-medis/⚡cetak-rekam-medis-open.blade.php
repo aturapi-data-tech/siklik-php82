@@ -315,7 +315,7 @@ new class extends Component {
                             <p class="text-sm">
                                 <span class="text-sm text-gray-400">Alergi : </span>
                                 <span
-                                    class="text-gray-700 dark:text-gray-300">{{ $txn['anamnesa']['alergi']['alergi'] ?? '-' }}</span>
+                                    class="text-gray-700 dark:text-gray-300">{{ \App\Support\Terminologi\AlergiSnomed::untukCetak($txn['anamnesa']['alergi'] ?? []) }}</span>
                             </p>
 
                             {{-- Rekonsiliasi Obat --}}

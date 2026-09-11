@@ -7,6 +7,7 @@ use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Support\KolomOpsional;
 
 new class extends Component {
     use WithPagination, WithRenderVersioningTrait;
@@ -124,6 +125,20 @@ new class extends Component {
             )
             ->whereBetween('checkup_date', [$start, $end])
             ->orderBy('checkup_date', 'desc');
+
+        // Diagnosis/Keterangan Klinis ditulis dokter di form order EMR dan disimpan di
+        // header order (SKVIEW_CHECKUPS tidak mengeksposnya) — diambil lewat subquery.
+        // Selama kolomnya belum ada di Oracle, kolom ini tidak ikut di-SELECT sama
+        // sekali (cegah ORA-00904) dan tabel menampilkan "-".
+        if (KolomOpsional::laboratPunyaKlinisDesc()) {
+            $query->addSelect(
+                DB::raw("(
+                    SELECT k.klinis_desc
+                    FROM sktxn_checkuphdrs k
+                    WHERE k.checkup_no = skview_checkups.checkup_no
+                ) AS klinis_desc"),
+            );
+        }
 
         if ($this->filterStatus !== '') {
             $query->where('checkup_status', $this->filterStatus);
@@ -344,10 +359,16 @@ new class extends Component {
                                     </td>
 
                                     {{-- ITEM PEMERIKSAAN --}}
-                                    <td class="align-top">
+                                    <td class="align-top space-y-1">
                                         <div class="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate"
                                             title="{{ $row->checkup_dtl_pasien ?? '' }}">
                                             {{ $row->checkup_dtl_pasien ?? '-' }}
+                                        </div>
+                                        {{-- Diagnosis/Ket. Klinis dari dokter pengirim --}}
+                                        <div class="text-sm max-w-xs truncate"
+                                            title="{{ $row->klinis_desc ?? '' }}">
+                                            <span class="text-gray-500">Klinis:</span>
+                                            <span class="ml-1 font-medium text-amber-700 dark:text-amber-400">{{ $row->klinis_desc ?? '-' }}</span>
                                         </div>
                                     </td>
 

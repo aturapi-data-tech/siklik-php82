@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
+use App\Support\RisikoJatuh;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
 
@@ -13,6 +14,9 @@ new class extends Component {
     public array $dataPasien = [];
     // TTV & alergi bisa disembunyikan (mis. di preview RM yg sudah menampilkan TTV di bawah).
     public bool $showTtv = true;
+
+    /** Penilaian risiko jatuh terakhir — terisi hanya bila kategorinya Sedang/Tinggi. */
+    public array $resikoJatuhTerakhir = [];
 
     public function openDisplay(string $rjNo): void
     {
@@ -30,6 +34,7 @@ new class extends Component {
 
         $this->dataDaftarPoliRJ = $dataDaftarPoliRJ;
         $this->dataPasien = $this->findDataMasterPasien($dataDaftarPoliRJ['regNo']) ?? [];
+        $this->resikoJatuhTerakhir = RisikoJatuh::terakhir($dataDaftarPoliRJ);
     }
 
     public function mount()
@@ -140,9 +145,24 @@ new class extends Component {
                             </div>
                         @endif
                     </div>
-                    <div
-                        class="inline-block border rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $statusClass }}">
-                        {{ $statusText }}
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div
+                            class="inline-block border rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $statusClass }}">
+                            {{ $statusText }}
+                        </div>
+
+                        {{-- Penanda Risiko Jatuh — tampil hanya bila penilaian terakhir Sedang/Tinggi --}}
+                        @if (!empty($resikoJatuhTerakhir))
+                            <x-badge :variant="$resikoJatuhTerakhir['kategori'] === 'Tinggi' ? 'danger' : 'warning'" class="gap-1 font-bold"
+                                title="Penilaian terakhir{{ $resikoJatuhTerakhir['tgl'] ? ' ' . $resikoJatuhTerakhir['tgl'] : '' }}{{ $resikoJatuhTerakhir['metode'] ? ' — ' . $resikoJatuhTerakhir['metode'] : '' }}{{ $resikoJatuhTerakhir['skor'] !== '' ? ' (skor ' . $resikoJatuhTerakhir['skor'] . ')' : '' }}">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                Risiko Jatuh {{ $resikoJatuhTerakhir['kategori'] }}
+                            </x-badge>
+                        @endif
                     </div>
 
                 </div>

@@ -67,11 +67,12 @@ Run hanya kalau klinik mau aktifkan integrasi SatuSehat (kirim FHIR ke Kemenkes)
 
 ### 🆕 `install_bundle_fitur_lanjutan.sql` — fitur lanjutan (Juni 2026, + SatuSehat Sep 2026)
 
-Gabungan idempotent dari 6 file referensi (file aslinya tetap ada sbg dokumentasi:
+Gabungan idempotent dari 7 file referensi (file aslinya tetap ada sbg dokumentasi:
 `create_tkmst_signa_catatans.sql`, `create_penerimaan_non_medis.sql`,
 `create_kartu_stock_non_medis.sql`, `alter_users_add_last_seen.sql`,
 `2026_09_11_alter_skmst_products_add_satusehat.sql`,
-`2026_09_11_alter_skmst_radiologis_add_loinc.sql`).
+`2026_09_11_alter_skmst_radiologis_add_loinc.sql`,
+`2026_09_11_alter_penunjang_add_klinis_desc.sql`).
 
 | Section | Object | Dipakai oleh | Idempotency |
 |---------|--------|--------------|-------------|
@@ -81,6 +82,7 @@ Gabungan idempotent dari 6 file referensi (file aslinya tetap ada sbg dokumentas
 | User tracking | `USERS.LAST_SEEN_AT` + `LAST_SEEN_ROUTE` | Sistem → User Online (middleware `TrackUserActivity`) | ✅ per-kolom check |
 | **KFA master obat** | `SKMST_PRODUCTS.PRODUCT_ID_SATUSEHAT` + `PRODUCT_NAME_SATUSEHAT` + index | Master Produk Apotek (tab KFA), kartu SatuSehat MedicationRequest & MedicationDispense | ✅ per-kolom check |
 | **LOINC master radiologi** | `SKMST_RADIOLOGIS.LOINC_CODE` + `LOINC_DISPLAY` + index | Master Radiologis, kartu SatuSehat Radiologi | ✅ per-kolom check (juga dibuat `install_bundle_satusehat.sql` — no-op kalau sudah) |
+| **Ket. klinis order penunjang** | `SKTXN_CHECKUPHDRS.KLINIS_DESC` + `SKTXN_RJRADS.KLINIS_DESC` (`VARCHAR2(500)`) | Form order Lab & Radiologi EMR RJ (wajib diisi), Daftar Laborat, Display Pasien Laborat, Radiologi RJ | ✅ per-kolom check |
 
 #### 🩺 Dua SQL SatuSehat baru (11 Sep 2026) — bisa dijalankan terpisah
 
@@ -93,6 +95,23 @@ Gabungan idempotent dari 6 file referensi (file aslinya tetap ada sbg dokumentas
 sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/2026_09_11_alter_skmst_products_add_satusehat.sql
 sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/2026_09_11_alter_skmst_radiologis_add_loinc.sql
 ```
+
+#### 🧪 Diagnosis/Keterangan Klinis order penunjang (11 Sep 2026)
+
+| File | Isi | Kenapa perlu |
+|------|-----|--------------|
+| `2026_09_11_alter_penunjang_add_klinis_desc.sql` | `SKTXN_CHECKUPHDRS`: `KLINIS_DESC VARCHAR2(500)` (per header order lab) · `SKTXN_RJRADS`: `KLINIS_DESC VARCHAR2(500)` (per baris order radiologi RJ — di Oracle dev kolom ini **sudah ada** sbg `VARCHAR2(4000)`, section-nya no-op & tidak mempersempit) | Petugas lab/radiologi sebelumnya menerima daftar item tanpa indikasi. Form order EMR RJ kini **mewajibkan** Diagnosis/Keterangan Klinis, dan layar petugas menampilkannya. Padanan sirus: commit `938f72ee` (`LBTXN_CHECKUPHDRS` / `RSTXN_RJRADS`). |
+
+```bash
+sqlplus siklik/<pwd>@//<host>:1521/<service> @database/sql/2026_09_11_alter_penunjang_add_klinis_desc.sql
+```
+
+> **Sebelum SQL ini dijalankan aplikasi TIDAK error.** Guard `App\Support\KolomOpsional`
+> (baca `USER_TAB_COLUMNS`, cache per request) menahan kolomnya keluar dari `SELECT`/`INSERT`:
+> form order tetap bisa mengirim (isian keterangan klinis belum tersimpan) dan layar petugas
+> menampilkan `-`. Sesudah SQL jalan, order berikutnya langsung menyimpan & menampilkannya —
+> order lama tetap kosong. Radiologi: keterangan klinis tampil di **Transaksi RJ → Administrasi
+> → Radiologi**; `SKVIEW_RADS` (riwayat radiologi rekam medis) belum mengekspos kolom ini.
 
 > Sesudah kolom KFA ada, isi kodenya lewat **Master → Apotek → Master Produk** (bagian
 > "SATUSEHAT — Kode KFA", input manual dari `kfa.kemkes.go.id`). Baris tanpa KFA ditandai

@@ -2,14 +2,19 @@
 // resources/views/pages/transaksi/rj/satu-sehat/kirim-allergy.blade.php
 // Step 7: Kirim Alergi (AllergyIntolerance, SNOMED CT)
 //
-// Sumber: anamnesa.alergi.{alergi, snomedCode, snomedDisplayEn, snomedDisplayId} —
-// snomedCode diisi LOV SNOMED (lov.selected.alergiSnomed).
+// Sumber: anamnesa.alergi.{adaAlergi, alergi, snomedCode, snomedDisplayEn, snomedDisplayId}.
 // createAllergyIntolerance WAJIB: patientId, encounterId, code(SNOMED), recorderId.
 //
-// BEDA DARI SIRUS: siklik TIDAK punya key `adaAlergi`, jadi keadaan "tidak ada
-// alergi" hanya dikenali dari KODE-nya (AlergiSnomed::adalahTidakAdaAlergi).
-// Teks bebas "tidak ada" TIDAK diterjemahkan jadi kode diam-diam — itu akan
-// mengarang pernyataan klinis yang tak pernah dibuat siapa pun.
+// Node alergi kini punya radio "Ada Alergi?" (`adaAlergi` = Ya/Tidak, seragam dgn sirus):
+//   Tidak -> AlergiSnomed::normalisasi() memasang teks "Tidak ada alergi" + SNOMED
+//            716186003 di anamnesa, jadi kartu ini SELALU punya kode untuk dikirim
+//            (category tetap wajib — RuleNumber 10075).
+//   Ya    -> teks + kode ZAT dari LOV SNOMED (lov.selected.alergiSnomed).
+// Kartu tetap memutuskan dari KODE (AlergiSnomed::adalahTidakAdaAlergi), bukan dari
+// `adaAlergi`: kode itulah yang benar-benar masuk payload. Teks bebas "tidak ada" TIDAK
+// diterjemahkan jadi kode diam-diam — itu akan mengarang pernyataan klinis yang tak
+// pernah dibuat siapa pun; record LAMA yang belum dibuka ulang di anamnesa karenanya
+// masih bisa "teks tidak ada tapi kode kosong" (dijelaskan di pratinjau).
 
 use Livewire\Component;
 use Livewire\Attributes\On;

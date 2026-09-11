@@ -11,6 +11,22 @@ description: Field path & jebakan data pasien (skmst_pasiens / MasterPasienTrait
 - `tglLahir` / `tempatLahir` → flat. `regBirth` → `tglLahir`.
 - Cek `app/Http/Traits/Master/MasterPasien/MasterPasienTrait.php` dulu sebelum menebak path.
 
+## Key riwayat medis di `meta_data_pasien_json` (`pasien.*`)
+Ditulis/dibaca anamnesa RJ (`⚡rm-anamnesa-rj-actions`) — BUKAN kolom tabel:
+`alergi`, `alergiSnomedCode`, `alergiSnomedDisplayEn`, `alergiSnomedDisplayId`,
+`riwayatPenyakitDahulu`.
+
+Aturan alergi (asimetris, disengaja — jangan "dirapikan"):
+- **Prefill** saat anamnesa dibuka: `alergiSnomedCode` HANYA ikut kalau `alergi` (teks) juga
+  ikut dari master. Kalau tidak, kode menempel ke teks alergi lain → salah kode.
+- **Sync balik** saat simpan: kode SELALU ditimpa bersama teksnya, **termasuk jadi kosong**.
+  Tanpa ini, petugas yang mengganti teks jadi "allopurinol" tanpa memilih LOV membawa kode
+  `716186003` (*No known allergy*) → melapor pasien TIDAK punya alergi padahal alergi.
+- Status `adaAlergi` (Ya/Tidak) **tidak** disimpan di master pasien — ia hanya hidup di
+  `anamnesa.alergi` dan selalu bisa diturunkan ulang dari teks lewat
+  `App\Support\Terminologi\AlergiSnomed::normalisasi()`. Menyimpannya = sumber kebenaran
+  kedua yang bisa menyimpang. Rinciannya di `docs/satusehat-api.md` §Allergy.
+
 ## Kolom tabel skmst_pasiens (langsung DB)
 - Prefix `reg_` HANYA di `reg_no`, `reg_name`, `reg_date`.
 - Alamat = `address` (BUKAN `reg_address`).
