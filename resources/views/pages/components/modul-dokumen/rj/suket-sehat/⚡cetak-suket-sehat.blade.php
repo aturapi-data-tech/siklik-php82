@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
+use App\Support\TtdUser;
 
 new class extends Component {
     use EmrRJTrait, MasterPasienTrait;
@@ -42,7 +43,7 @@ new class extends Component {
         // Hitung umur realtime
         if (!empty($pasien['tglLahir'])) {
             $pasien['thn'] = Carbon::createFromFormat('d/m/Y', $pasien['tglLahir'])
-                ->diff(Carbon::now(env('APP_TIMEZONE')))
+                ->diff(Carbon::now(config('app.timezone')))
                 ->format('%y Thn, %m Bln %d Hr');
         }
 
@@ -50,14 +51,10 @@ new class extends Component {
         $drId = $dataRJ['drId'] ?? '';
         $dokter = DB::table('skmst_doctors')->where('dr_id', $drId)->select('dr_name')->first();
 
-        // TTD dokter dari storage (users.myuser_code == skmst_doctors.dr_id)
-        $ttdDokterPath = null;
-        if ($drId) {
-            $ttdPath = DB::table('users')->where('myuser_code', $drId)->value('myuser_ttd_image');
-            if (!empty($ttdPath) && file_exists(public_path('storage/' . $ttdPath))) {
-                $ttdDokterPath = public_path('storage/' . $ttdPath);
-            }
-        }
+        // TTD dokter dari storage (users.myuser_code == skmst_doctors.dr_id).
+        // Wajib lewat TtdUser: kolom myuser_ttd_image punya DUA format
+        // (path relatif & nama berkas saja) — docs/ttd-pattern-pdf-print.md §6.
+        $ttdDokterPath = TtdUser::pathBerkasDariKode($drId);
 
         $data = array_merge($pasien, [
             'keteranganSehat' => $suketSehat['suketSehat'] ?? null,

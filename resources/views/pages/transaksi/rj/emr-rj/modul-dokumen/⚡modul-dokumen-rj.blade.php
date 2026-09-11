@@ -72,6 +72,33 @@ new class extends Component {
         }
     }
 
+    /* ===============================
+     | PENANDA "ADA DATA" PER MODUL (badge di tab)
+     |
+     | Multi-entri → jumlah entri; sekali-entri → tanda centang bila isinya ada.
+     =============================== */
+
+    /** Surat Keterangan (sekali-entri): dianggap berisi bila salah satu keterangan terisi. */
+    public function suketTerisi(): bool
+    {
+        $keteranganSehat = trim((string) data_get($this->dataDaftarPoliRJ, 'suket.suketSehat.suketSehat', ''));
+        $keteranganIstirahat = trim((string) data_get($this->dataDaftarPoliRJ, 'suket.suketIstirahat.suketIstirahat', ''));
+
+        return $keteranganSehat !== '' || $keteranganIstirahat !== '';
+    }
+
+    /** General Consent (sekali-entri): berisi bila TTD pasien/wali sudah ada. */
+    public function generalConsentTerisi(): bool
+    {
+        return !empty($this->dataDaftarPoliRJ['generalConsentPasienRJ']['signature'] ?? '');
+    }
+
+    /** Inform Consent (multi-entri): jumlah entri tersimpan. */
+    public function jumlahInformConsent(): int
+    {
+        return count($this->dataDaftarPoliRJ['informConsentPasienRJ'] ?? []);
+    }
+
     protected function resetForm(): void
     {
         $this->reset(['rjNo', 'dataDaftarPoliRJ']);
@@ -149,6 +176,10 @@ new class extends Component {
                                                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             Surat Keterangan
+                                            @if ($this->suketTerisi())
+                                                <x-badge variant="success"
+                                                    class="text-[10px] px-1.5 py-0">&#10003;</x-badge>
+                                            @endif
                                         </button>
                                     </li>
 
@@ -167,7 +198,7 @@ new class extends Component {
                                                     d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a4 4 0 01-2.828 1.172H7v-2a4 4 0 011.172-2.828z" />
                                             </svg>
                                             General Consent
-                                            @if (!empty($dataDaftarPoliRJ['generalConsentPasienRJ']['signature']))
+                                            @if ($this->generalConsentTerisi())
                                                 <x-badge variant="success"
                                                     class="text-[10px] px-1.5 py-0">&#10003;</x-badge>
                                             @endif
@@ -189,9 +220,9 @@ new class extends Component {
                                                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                             </svg>
                                             Inform Consent
-                                            @if (!empty($dataDaftarPoliRJ['informConsentPasienRJ']) && count($dataDaftarPoliRJ['informConsentPasienRJ']) > 0)
+                                            @if ($this->jumlahInformConsent() > 0)
                                                 <x-badge variant="success"
-                                                    class="text-[10px] px-1.5 py-0">{{ count($dataDaftarPoliRJ['informConsentPasienRJ']) }}</x-badge>
+                                                    class="text-[10px] px-1.5 py-0">{{ $this->jumlahInformConsent() }}</x-badge>
                                             @endif
                                         </button>
                                     </li>

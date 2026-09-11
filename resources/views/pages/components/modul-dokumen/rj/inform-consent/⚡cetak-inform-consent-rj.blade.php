@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
+use App\Support\TtdUser;
 
 new class extends Component {
     use EmrRJTrait, MasterPasienTrait;
@@ -64,26 +65,15 @@ new class extends Component {
             }
         }
 
-        // TTD dokter penjelas dari storage
-        $ttdDokterPath = null;
-        if (!empty($consent['dokterCode'])) {
-            $ttdPath = DB::table('users')->where('myuser_code', $consent['dokterCode'])->value('myuser_ttd_image');
-            if (!empty($ttdPath) && file_exists(public_path('storage/' . $ttdPath))) {
-                $ttdDokterPath = public_path('storage/' . $ttdPath);
-            }
-        }
+        // TTD dokter penjelas dari storage — wajib lewat TtdUser (kolom
+        // myuser_ttd_image punya DUA format; lihat docs/ttd-pattern-pdf-print.md §6)
+        $ttdDokterPath = TtdUser::pathBerkasDariKode($consent['dokterCode'] ?? null);
 
-        // TTD dokter tindakan dari storage (myuser_code == dr_id)
-        $ttdDokterTindakanPath = null;
+        // TTD dokter tindakan / PPA dari storage (myuser_code == dr_id)
+        $ttdDokterTindakanPath = TtdUser::pathBerkasDariKode($consent['petugasPemeriksaCode'] ?? null);
         $dokterTindakanName = null;
         if (!empty($consent['petugasPemeriksaCode'])) {
-            $userRow = DB::table('users')->where('myuser_code', $consent['petugasPemeriksaCode'])->first(['myuser_ttd_image', 'myuser_name']);
-            if ($userRow) {
-                $dokterTindakanName = $userRow->myuser_name ?? null;
-                if (!empty($userRow->myuser_ttd_image) && file_exists(public_path('storage/' . $userRow->myuser_ttd_image))) {
-                    $ttdDokterTindakanPath = public_path('storage/' . $userRow->myuser_ttd_image);
-                }
-            }
+            $dokterTindakanName = DB::table('users')->where('myuser_code', $consent['petugasPemeriksaCode'])->value('myuser_name');
             if (empty($dokterTindakanName)) {
                 $dokterTindakanName = DB::table('skmst_doctors')->where('dr_id', $consent['petugasPemeriksaCode'])->value('dr_name');
             }

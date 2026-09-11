@@ -59,16 +59,12 @@ new class extends Component {
 
         $pasien = $this->dvPasien($dataRJ['regNo'] ?? '');
 
-        $ttdDokterTindakanPath = null;
+        // Path TTD PPA lewat TtdUser (dua format kolom myuser_ttd_image); dvTtdPath pun
+        // sudah mendelegasikan ke sana — docs/ttd-pattern-pdf-print.md §6.
+        $ttdDokterTindakanPath = $this->dvTtdPath($consent['petugasPemeriksaCode'] ?? null);
         $dokterTindakanName = null;
         if (!empty($consent['petugasPemeriksaCode'])) {
-            $userRow = DB::table('users')->where('myuser_code', $consent['petugasPemeriksaCode'])->first(['myuser_ttd_image', 'myuser_name']);
-            if ($userRow) {
-                $dokterTindakanName = $userRow->myuser_name ?? null;
-                if (!empty($userRow->myuser_ttd_image) && file_exists(public_path('storage/' . $userRow->myuser_ttd_image))) {
-                    $ttdDokterTindakanPath = public_path('storage/' . $userRow->myuser_ttd_image);
-                }
-            }
+            $dokterTindakanName = DB::table('users')->where('myuser_code', $consent['petugasPemeriksaCode'])->value('myuser_name');
             if (empty($dokterTindakanName)) {
                 $dokterTindakanName = DB::table('skmst_doctors')->where('dr_id', $consent['petugasPemeriksaCode'])->value('dr_name');
             }

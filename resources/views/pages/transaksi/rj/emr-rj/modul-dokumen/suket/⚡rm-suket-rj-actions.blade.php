@@ -221,6 +221,19 @@ new class extends Component {
     }
 
     /* ===============================
+     | STATUS ISI
+     =============================== */
+
+    /** Dianggap berisi bila salah satu keterangan (sehat/istirahat) sudah diisi. */
+    public function suketTerisi(): bool
+    {
+        $keteranganSehat = trim((string) data_get($this->dataDaftarPoliRJ, 'suket.suketSehat.suketSehat', ''));
+        $keteranganIstirahat = trim((string) data_get($this->dataDaftarPoliRJ, 'suket.suketIstirahat.suketIstirahat', ''));
+
+        return $keteranganSehat !== '' || $keteranganIstirahat !== '';
+    }
+
+    /* ===============================
      | HELPERS
      =============================== */
     private function afterSave(string $message): void
@@ -248,6 +261,24 @@ new class extends Component {
         <div class="w-full mx-auto">
             <div
                 class="w-full p-4 space-y-6 bg-white border border-gray-200 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-700">
+
+                {{-- Baris judul kartu: judul · badge · deskripsi (min-w-0 wajib agar truncate menggigit) --}}
+                <div class="flex items-baseline flex-1 gap-2 min-w-0">
+                    <h3 class="text-base font-semibold truncate shrink-0 text-gray-800 dark:text-gray-200">
+                        Surat Keterangan
+                    </h3>
+                    @if ($this->suketTerisi())
+                        <x-badge variant="success" class="shrink-0 whitespace-nowrap">Ada data</x-badge>
+                    @else
+                        <x-badge variant="warning" class="shrink-0 whitespace-nowrap">Belum diisi</x-badge>
+                    @endif
+
+                    <x-deskripsi-ringkas>
+                        Surat keterangan sehat dan surat keterangan istirahat (sakit) untuk pasien rawat jalan.
+                        Keterangan yang diisi di sini langsung dipakai pada cetakan; tanda tangan pada cetakan
+                        memakai TTD dokter pemeriksa kunjungan ini.
+                    </x-deskripsi-ringkas>
+                </div>
 
                 @if (isset($dataDaftarPoliRJ['suket']))
                     <div class="w-full">

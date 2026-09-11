@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
+use App\Support\TtdUser;
 
 new class extends Component {
     use EmrRJTrait, MasterPasienTrait;
@@ -56,14 +57,9 @@ new class extends Component {
         $identitasRs = DB::table('skmst_identitases')->select('int_name', 'int_phone1', 'int_phone2', 'int_fax', 'int_address', 'int_city')->first();
 
         // ── 4. TTD Petugas ──
-        $ttdPetugasPath = null;
-        $petugasCode = $consent['petugasPemeriksaCode'] ?? null;
-        if ($petugasCode) {
-            $ttdPath = DB::table('users')->where('myuser_code', $petugasCode)->value('myuser_ttd_image');
-            if (!empty($ttdPath) && file_exists(public_path('storage/' . $ttdPath))) {
-                $ttdPetugasPath = public_path('storage/' . $ttdPath);
-            }
-        }
+        // Wajib lewat TtdUser: kolom myuser_ttd_image punya DUA format
+        // (path relatif & nama berkas saja) — lihat docs/ttd-pattern-pdf-print.md §6.
+        $ttdPetugasPath = TtdUser::pathBerkasDariKode($consent['petugasPemeriksaCode'] ?? null);
 
         $data = array_merge($pasien, [
             'dataRJ' => $dataRJ,

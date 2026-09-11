@@ -43,21 +43,9 @@
         <x-input-error :messages="$errors->get('dataDaftarPoliRJ.suket.suketIstirahat.suketIstirahat')" class="mt-1" />
     </div>
 
-    {{-- TOMBOL CETAK --}}
+    {{-- TOMBOL CETAK — komponen baku x-cetak-button (40px, spinner otomatis) --}}
     <div class="flex justify-end mt-3">
-        <x-secondary-button wire:click="cetakSuketSakit" wire:loading.attr="disabled" wire:target="cetakSuketSakit">
-            <span wire:loading.remove wire:target="cetakSuketSakit" class="flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Cetak Surat Sakit
-            </span>
-            <span wire:loading wire:target="cetakSuketSakit" class="flex items-center gap-1">
-                <x-loading />
-                Mencetak...
-            </span>
-        </x-secondary-button>
+        <x-cetak-button wire:click="cetakSuketSakit" label="Cetak Surat Sakit" />
     </div>
 
 </div>

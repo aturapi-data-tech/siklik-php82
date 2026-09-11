@@ -112,8 +112,8 @@ new class extends Component {
 
             // ── Kasir / Cetak ──
             'kasirName' => $kasirName,
-            'tglCetak' => Carbon::now(env('APP_TIMEZONE'))->translatedFormat('d/m/Y'),
-            'jamCetak' => Carbon::now(env('APP_TIMEZONE'))->format('H:i'),
+            'tglCetak' => Carbon::now(config('app.timezone'))->translatedFormat('d/m/Y'),
+            'jamCetak' => Carbon::now(config('app.timezone'))->format('H:i'),
             'cetakOleh' => auth()->user()->myuser_name ?? '-',
         ];
 
