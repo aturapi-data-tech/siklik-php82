@@ -2,6 +2,8 @@
 
 namespace App\Http\Traits\Txn\Rj;
 
+use App\Support\PenilaianLegacy;
+
 /**
  * Hitung persentase kelengkapan EMR RJ dari JSON datadaftarpolirj_json.
  *
@@ -140,8 +142,10 @@ trait EmrCompletenessRJTrait
             return 0;
         }
 
-        $hasNyeri = !empty($p['nyeri']);
-        $hasResikoJatuh = !empty($p['resikoJatuh']);
+        // Bentuk legacy siklik-lite (objek assoc boilerplate) TIDAK dihitung — dulu !empty() menganggap
+        // 13.761 kunjungan "lengkap" padahal 13.749 di antaranya kosong total.
+        $hasNyeri = PenilaianLegacy::jumlahEntri($p['nyeri'] ?? null) > 0;
+        $hasResikoJatuh = PenilaianLegacy::jumlahEntri($p['resikoJatuh'] ?? null) > 0;
 
         $score = ($hasNyeri ? 1 : 0) + ($hasResikoJatuh ? 1 : 0);
         return (int) round(($score / 2) * 100);
@@ -214,8 +218,8 @@ trait EmrCompletenessRJTrait
                 'label' => 'Penilaian',
                 'weight' => 10,
                 'items' => [
-                    ['label' => 'Penilaian nyeri (min 1 entry)', 'filled' => !empty($n['nyeri'])],
-                    ['label' => 'Risiko jatuh (min 1 entry)', 'filled' => !empty($n['resikoJatuh'])],
+                    ['label' => 'Penilaian nyeri (min 1 entry)', 'filled' => PenilaianLegacy::jumlahEntri($n['nyeri'] ?? null) > 0],
+                    ['label' => 'Risiko jatuh (min 1 entry)', 'filled' => PenilaianLegacy::jumlahEntri($n['resikoJatuh'] ?? null) > 0],
                 ],
             ],
         ];

@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Component;
+use App\Support\PenilaianLegacy;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,15 @@ new class extends Component {
     {
         $default = $this->getDefaultPenilaian();
         $current = $this->dataDaftarPoliRJ['penilaian'] ?? [];
+        // Record lama siklik-lite (objek assoc per skala): konversi ke list entri lewat aturan yang sama
+        // dengan siklik:migrasi-json-emr, supaya membuka lalu menyimpan tidak menulis balik bentuk legacy
+        // dan @foreach tab tidak mengiterasi skalaMorse/skalaHumptyDumpty sebagai "entri".
+        if (is_array($current) && PenilaianLegacy::adalahLegacy($current)) {
+            $current = PenilaianLegacy::konversi($current, [
+                'tgl' => (string) ($this->dataDaftarPoliRJ['rjDate'] ?? now()->format('d/m/Y H:i:s')),
+                'petugas' => (string) ($this->dataDaftarPoliRJ['userLogs'][0]['userLog'] ?? 'Migrasi Data'),
+            ])['penilaian'];
+        }
         $this->dataDaftarPoliRJ['penilaian'] = array_replace_recursive($default, $current);
     }
 

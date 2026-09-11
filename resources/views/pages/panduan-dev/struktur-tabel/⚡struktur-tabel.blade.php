@@ -4,6 +4,8 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Support\Skema\KamusData;
 use App\Support\Skema\ModulTabel;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 // Panduan dev: STRUKTUR TABEL siklik — peta rename prefix (11 Sep 2026), pengelompokan
 // modul, relasi antar tabel (FK terdeklarasi + relasi implisit), dan rincian kolom.
@@ -108,6 +110,18 @@ new class extends Component {
         return $this->tabelDipilih === '' ? '' : ModulTabel::dari($this->tabelDipilih);
     }
 
+    /** docs/migrasi-skema-data.md → HTML (Str::markdown, commonmark bawaan Laravel); dirawat di repo, bukan di DB. */
+    #[Computed]
+    public function riwayatMigrasiHtml(): string
+    {
+        $berkas = base_path('docs/migrasi-skema-data.md');
+        if (! File::exists($berkas)) {
+            return '<p class="text-muted">Berkas docs/migrasi-skema-data.md belum ada.</p>';
+        }
+
+        return (string) Str::markdown(File::get($berkas), ['html_input' => 'strip', 'allow_unsafe_links' => false]);
+    }
+
     #[Computed]
     public function ringkasan(): array
     {
@@ -162,6 +176,7 @@ new class extends Component {
             'Operasional' => [
                 'eksekusi' => 'Cara Eksekusi Rename',
                 'konvensi' => 'Konvensi Tabel Baru',
+                'migrasi' => 'Riwayat Migrasi Skema & Data',
             ],
         ];
         $labels = array_merge(...array_values($menuGroups));
@@ -234,6 +249,9 @@ new class extends Component {
                     </section>
                     <section x-show="section === 'konvensi'" x-cloak>
                         @include('pages::panduan-dev.struktur-tabel.struktur-tabel-konvensi')
+                    </section>
+                    <section x-show="section === 'migrasi'" x-cloak>
+                        @include('pages::panduan-dev.struktur-tabel.struktur-tabel-migrasi')
                     </section>
                 </main>
             </div>

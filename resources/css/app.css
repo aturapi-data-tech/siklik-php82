@@ -152,3 +152,19 @@
 .ds-toggle-tumpuk > div { flex-direction:column; }
 .ds-toggle-tumpuk > div > :not(:first-child) { margin-left:0; margin-top:2px; }
 .ds-toggle-tumpuk > div > span { text-align:center; }
+
+/* Dokumen markdown yang dirender di panduan-dev (Str::markdown) — tanpa plugin typography. */
+.md-doc { @apply text-sm text-gray-700 dark:text-gray-200; }
+.md-doc h1 { @apply mt-2 mb-3 text-xl font-bold text-gray-900 dark:text-white; }
+.md-doc h2 { @apply mt-8 mb-2 text-lg font-semibold text-gray-900 dark:text-white; }
+.md-doc h3 { @apply mt-5 mb-2 text-base font-semibold text-gray-900 dark:text-white; }
+.md-doc p, .md-doc ul, .md-doc ol { @apply my-2 leading-relaxed; }
+.md-doc ul { @apply pl-5 list-disc; }
+.md-doc ol { @apply pl-5 list-decimal; }
+.md-doc code { @apply px-1 py-0.5 text-xs font-mono rounded bg-gray-100 dark:bg-gray-800; }
+.md-doc pre { @apply p-3 my-3 overflow-x-auto text-xs text-gray-100 bg-gray-900 rounded-lg; }
+.md-doc pre code { @apply p-0 bg-transparent; }
+.md-doc table { @apply w-full my-3 text-xs border border-gray-200 dark:border-gray-700; border-collapse: collapse; }
+.md-doc th { @apply px-3 py-2 font-semibold text-left bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700; }
+.md-doc td { @apply px-3 py-2 align-top border-b border-gray-100 dark:border-gray-800; }
+.md-doc em { @apply text-gray-500 dark:text-gray-400; }
