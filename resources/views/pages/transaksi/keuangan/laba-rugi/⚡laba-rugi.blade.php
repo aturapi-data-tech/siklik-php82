@@ -1,19 +1,37 @@
 <?php
 
-use Livewire\Component;
-use Livewire\Attributes\Computed;
+use App\Support\Keuangan\Hpp;
+use App\Support\Keuangan\Jurnal;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
 
-new class extends Component {
+/**
+ * Laporan Laba Rugi — susunan pos dari template L1 (skacc_temlabarugineracahdrs →
+ * skacc_temlabarugineracadtls → skacc_temaccountes), nilai per akun dari
+ * App\Support\Keuangan\Jurnal (jurnal dibaca LANGSUNG dari tabel transaksi, bukan skview_accounts).
+ *
+ * Tanda tiap pos mengikuti dk_status GRUP AKUN baris template (skacc_gr_accountses),
+ * bukan acc_dk_status master: K → kredit − debit, D → debit − kredit. Pos Harga Pokok
+ * Penjualan dikecualikan — akun HPP (skacc_confacctxns conf_id 9) hanya mendapat cabang semu
+ * dari App\Support\Keuangan\Hpp pada 1 Desember, jadi arus jurnalnya nol untuk bulan sebelum
+ * Desember. Halaman memakai HPP TAHUNAN (Hpp::nilai) + rincian rumusnya, dan menyediakan
+ * override manual (state komponen saja, tidak ditulis ke DB) karena stock opname belum rutin.
+ * Laba kotor = Σ pendapatan − HPP; laba bersih = laba kotor − Σ beban.
+ */
+new class extends Component
+{
     /** Format internal: 'YYYY-MM' */
-    public string $periode      = '';
+    public string $periode = '';
+
     /** Format input user: 'MM/YYYY' */
     public string $periodeInput = '';
 
-    /** Override HPP manual — kalau enabled, bypass hitungan auto dari section 2 */
-    public bool   $hppManualEnabled = false;
-    public string $hppManualBulan   = '';
-    public string $hppManualYtd     = '';
+    /** Override HPP manual — hidup hanya selama sesi komponen, tidak disimpan ke DB. */
+    public bool $hppManualAktif = false;
+    public string $hppManualBulan = '';
+    public string $hppManualYtd = '';
 
     public function mount(): void
     {
@@ -22,31 +40,39 @@ new class extends Component {
 
     public function updatedPeriodeInput(string $value): void
     {
-        $value = trim($value);
-        if (!preg_match('/^(0[1-9]|1[0-2])\/(\d{4})$/', $value, $m)) {
+        if (! preg_match('/^(0[1-9]|1[0-2])\/(\d{4})$/', trim($value), $cocok)) {
             $this->periode = '';
+
             return;
         }
-        [$_, $bulan, $tahun] = $m;
+        [, $bulan, $tahun] = $cocok;
         $this->periode = "{$tahun}-{$bulan}";
     }
 
-    private function setPeriode(string $ym): void
+    private function setPeriode(string $tahunBulan): void
     {
-        $this->periode      = $ym;
-        $this->periodeInput = \Carbon\Carbon::parse("{$ym}-01")->format('m/Y');
+        $this->periode = $tahunBulan;
+        $this->periodeInput = Carbon::parse("{$tahunBulan}-01")->format('m/Y');
     }
 
     public function prevMonth(): void
     {
-        if ($this->periode === '') return;
-        $this->setPeriode(\Carbon\Carbon::parse("{$this->periode}-01")->subMonth()->format('Y-m'));
+        if ($this->periode !== '') {
+            $this->setPeriode(Carbon::parse("{$this->periode}-01")->subMonth()->format('Y-m'));
+        }
     }
 
     public function nextMonth(): void
     {
-        if ($this->periode === '') return;
-        $this->setPeriode(\Carbon\Carbon::parse("{$this->periode}-01")->addMonth()->format('Y-m'));
+        if ($this->periode !== '') {
+            $this->setPeriode(Carbon::parse("{$this->periode}-01")->addMonth()->format('Y-m'));
+        }
+    }
+
+    #[Computed]
+    public function tahun(): int
+    {
+        return $this->periode === '' ? (int) now()->format('Y') : (int) substr($this->periode, 0, 4);
     }
 
     #[Computed]
@@ -58,261 +84,217 @@ new class extends Component {
     #[Computed]
     public function bulanEnd(): string
     {
-        if ($this->periode === '') return '';
-        return \Carbon\Carbon::parse("{$this->periode}-01")->endOfMonth()->toDateString();
+        return $this->periode === '' ? '' : Carbon::parse("{$this->periode}-01")->endOfMonth()->toDateString();
     }
 
     #[Computed]
     public function ytdStart(): string
     {
-        if ($this->periode === '') return '';
-        return substr($this->periode, 0, 4) . '-01-01';
+        return $this->periode === '' ? '' : sprintf('%04d-01-01', $this->tahun);
     }
 
-    /**
-     * Hitung mutasi (natural sign per account) dlm rentang tanggal.
-     * D-acc → return D−K (positif kalau didebit dominan)
-     * K-acc → return K−D (positif kalau dikredit dominan)
-     */
-    private function arusAkun(string $accId, string $dkStatus, string $dari, string $sampai): float
+    #[Computed]
+    public function labelRentang(): string
     {
-        $expr = $dkStatus === 'K'
-            ? 'NVL(txn_k,0) - NVL(txn_d,0)'
-            : 'NVL(txn_d,0) - NVL(txn_k,0)';
+        if ($this->periode === '') {
+            return '';
+        }
+        $akhir = Carbon::parse($this->bulanEnd)->format('d/m/Y');
 
-        return (float) DB::table('skview_accounts')
-            ->where('txn_acc', $accId)
-            ->whereBetween(DB::raw("TO_CHAR(txn_date,'YYYY-MM-DD')"), [$dari, $sampai])
-            ->sum(DB::raw($expr));
+        return 'Bulan: '.Carbon::parse($this->bulanStart)->format('d/m/Y')." — {$akhir}"
+            .' · YTD: '.Carbon::parse($this->ytdStart)->format('d/m/Y')." — {$akhir}";
     }
 
     /**
-     * Susun report L1: tiap section + akun-akun di dalamnya, dgn nilai bulan & YTD.
-     * Format:
-     *   [
-     *     ['temp_dtl' => 1, 'desc' => 'PENJUALAN', 'gra_id' => '4',
-     *      'accounts' => [['acc_id'=>..., 'acc_desc'=>..., 'dk'=>'K', 'bulan'=>..., 'ytd'=>...]],
-     *      'total_bulan' => ..., 'total_ytd' => ...,
-     *     ], ...
-     *   ]
+     * Pos template L1 urut temp_dtl_seq + daftar akunnya, tanpa nilai.
+     * peran: 'pendapatan' (K), 'beban' (D), 'hpp' (pos yang memuat akun HPP conf 9).
      */
     #[Computed]
-    public function sections(): array
+    public function struktur(): array
     {
-        if ($this->periode === '') return [];
+        $grupAkunList = DB::table('skacc_gr_accountses')->get()->keyBy('gra_id');
+        $akunHpp = Jurnal::akunKonfigurasiId(Hpp::CONF_HPP);
 
-        $sections = DB::table('skacc_temlabarugineracadtls')
+        $posList = [];
+        $posRows = DB::table('skacc_temlabarugineracadtls')
             ->where('temp_id', 'L1')
-            ->orderBy('temp_dtl_seq')
-            ->get()
-            ->map(fn($s) => [
-                'temp_dtl'      => (string) $s->temp_dtl,
-                'temp_dtl_seq'  => (int) ($s->temp_dtl_seq ?? 0),
-                'desc'          => (string) $s->temp_dtl_desc,
-                'gra_id'        => (string) ($s->gra_id ?? ''),
-            ])->all();
+            ->orderByRaw("to_number(nvl(temp_dtl_seq,'999')), temp_dtl")
+            ->get();
 
-        $result = [];
-        foreach ($sections as $sec) {
-            // Ambil akun-akun di section
-            $accounts = DB::table('skacc_temaccountes as t')
-                ->leftJoin('skacc_accountses as a', 'a.acc_id', '=', 't.acc_id')
-                ->where('t.temp_dtl', $sec['temp_dtl'])
-                ->select('t.acc_id', 'a.acc_desc', 'a.acc_dk_status')
-                ->orderBy('t.acc_id')
-                ->get();
+        foreach ($posRows as $pos) {
+            $accIdList = DB::table('skacc_temaccountes')
+                ->where('temp_dtl', $pos->temp_dtl)
+                ->orderByRaw("to_number(nvl(temacc_seq,'999')), acc_id")
+                ->pluck('acc_id')
+                ->map(fn ($accId) => (string) $accId)
+                ->all();
 
-            $items = [];
-            $totalBulan = 0.0;
-            $totalYtd   = 0.0;
+            $grupAkun = $grupAkunList[(string) $pos->gra_id] ?? null;
+            $dkStatus = (string) ($grupAkun->dk_status ?? 'D');
+            $isHpp = $akunHpp !== null && in_array($akunHpp, $accIdList, true);
 
-            foreach ($accounts as $acc) {
-                $dk    = (string) ($acc->acc_dk_status ?? 'D');
-                $bulan = $this->arusAkun($acc->acc_id, $dk, $this->bulanStart, $this->bulanEnd);
-                $ytd   = $this->arusAkun($acc->acc_id, $dk, $this->ytdStart,   $this->bulanEnd);
-
-                $items[] = [
-                    'acc_id'    => (string) $acc->acc_id,
-                    'acc_desc'  => (string) ($acc->acc_desc ?? ''),
-                    'dk'        => $dk,
-                    'bulan'     => $bulan,
-                    'ytd'       => $ytd,
-                ];
-
-                $totalBulan += $bulan;
-                $totalYtd   += $ytd;
-            }
-
-            $sec['accounts']    = $items;
-            $sec['total_bulan'] = $totalBulan;
-            $sec['total_ytd']   = $totalYtd;
-            $result[] = $sec;
+            $posList[] = [
+                'id' => (string) $pos->temp_dtl,
+                'desc' => (string) $pos->temp_dtl_desc,
+                'graId' => (string) $pos->gra_id,
+                'graDesc' => (string) ($grupAkun->gra_desc ?? ''),
+                'dkStatus' => $dkStatus,
+                'peran' => $isHpp ? 'hpp' : ($dkStatus === 'K' ? 'pendapatan' : 'beban'),
+                'accIdList' => $accIdList,
+            ];
         }
 
-        return $result;
+        return $posList;
     }
 
     /**
-     * Helper: ambil total section by temp_dtl id.
+     * Pos bernilai + subtotal pendapatan/beban/HPP jurnal.
+     * Dua pemindaian jurnal saja (bulan & YTD) lewat Jurnal::arusPerAkun — bukan per akun.
      */
-    private function totalSection(string $tempDtl, string $kolom): float
+    #[Computed]
+    public function laporan(): array
     {
-        foreach ($this->sections as $sec) {
-            if ($sec['temp_dtl'] === $tempDtl) return (float) $sec[$kolom];
+        $kosong = ['posList' => [], 'pendapatanBulan' => 0.0, 'pendapatanYtd' => 0.0,
+            'bebanBulan' => 0.0, 'bebanYtd' => 0.0];
+        if ($this->periode === '') {
+            return $kosong;
         }
-        return 0;
+
+        $struktur = $this->struktur;
+        $semuaAkun = [];
+        foreach ($struktur as $pos) {
+            array_push($semuaAkun, ...$pos['accIdList']);
+        }
+        $semuaAkun = array_values(array_unique($semuaAkun));
+
+        // denganHpp=false: HPP ditangani di tingkat halaman (nilai tahunan + override), bukan lewat
+        // cabang semu 1 Desember — supaya tidak dobel dan tidak kena ORA-01790 (lihat catatan bawah).
+        $arusBulan = Jurnal::arusPerAkun($semuaAkun, $this->bulanStart, $this->bulanEnd, false);
+        $arusYtd = Jurnal::arusPerAkun($semuaAkun, $this->ytdStart, $this->bulanEnd, false);
+        $namaAkun = Jurnal::namaAkun($semuaAkun);
+        $nol = ['debit' => 0.0, 'kredit' => 0.0];
+        // Pos pendapatan bertanda kredit; pos beban dan pos HPP bertanda debit.
+        $hitung = fn (array $arus, bool $sisiKredit) => $sisiKredit
+            ? $arus['kredit'] - $arus['debit']
+            : $arus['debit'] - $arus['kredit'];
+
+        $laporan = $kosong;
+        foreach ($struktur as $pos) {
+            $sisiKredit = $pos['peran'] === 'pendapatan';
+            $bulan = 0.0;
+            $ytd = 0.0;
+            $akunList = [];
+            foreach ($pos['accIdList'] as $accId) {
+                $nilaiBulan = $hitung($arusBulan[$accId] ?? $nol, $sisiKredit);
+                $nilaiYtd = $hitung($arusYtd[$accId] ?? $nol, $sisiKredit);
+                $bulan += $nilaiBulan;
+                $ytd += $nilaiYtd;
+                $akunList[] = ['accId' => $accId, 'nama' => (string) ($namaAkun[$accId] ?? ''),
+                    'bulan' => $nilaiBulan, 'ytd' => $nilaiYtd];
+            }
+            $pos['akunList'] = $akunList;
+            $pos['bulan'] = $bulan;
+            $pos['ytd'] = $ytd;
+            $laporan['posList'][] = $pos;
+
+            if ($pos['peran'] === 'pendapatan') {
+                $laporan['pendapatanBulan'] += $bulan;
+                $laporan['pendapatanYtd'] += $ytd;
+            }
+            if ($pos['peran'] === 'beban') {
+                $laporan['bebanBulan'] += $bulan;
+                $laporan['bebanYtd'] += $ytd;
+            }
+        }
+
+        return $laporan;
+    }
+
+    /** Rincian rumus HPP tahunan (saldo awal persediaan + arus − stok akhir). */
+    #[Computed]
+    public function rincianHpp(): array
+    {
+        return Hpp::rincian($this->tahun);
+    }
+
+    #[Computed]
+    public function hppTahunan(): float
+    {
+        return (float) $this->rincianHpp['hpp'];
+    }
+
+    /** HPP negatif mustahil — tanda stok akhir / saldo awal persediaan masih kacau. */
+    #[Computed]
+    public function hppWajar(): bool
+    {
+        return $this->hppTahunan > 0;
     }
 
     #[Computed]
     public function hppBulan(): float
     {
-        return $this->hppManualEnabled
-            ? (float) ($this->hppManualBulan === '' ? 0 : $this->hppManualBulan)
-            : $this->totalSection('2', 'total_bulan');
+        return $this->hppManualAktif
+            ? (float) ($this->hppManualBulan ?: 0)
+            : ($this->hppWajar ? $this->hppTahunan : 0.0);
     }
 
     #[Computed]
     public function hppYtd(): float
     {
-        return $this->hppManualEnabled
-            ? (float) ($this->hppManualYtd === '' ? 0 : $this->hppManualYtd)
-            : $this->totalSection('2', 'total_ytd');
+        return $this->hppManualAktif
+            ? (float) ($this->hppManualYtd ?: 0)
+            : ($this->hppWajar ? $this->hppTahunan : 0.0);
     }
 
     #[Computed]
     public function labaKotorBulan(): float
     {
-        // Penjualan (1) - HPP (2 atau manual)
-        return $this->totalSection('1', 'total_bulan') - $this->hppBulan;
+        return (float) $this->laporan['pendapatanBulan'] - $this->hppBulan;
     }
 
     #[Computed]
     public function labaKotorYtd(): float
     {
-        return $this->totalSection('1', 'total_ytd') - $this->hppYtd;
+        return (float) $this->laporan['pendapatanYtd'] - $this->hppYtd;
     }
 
     #[Computed]
     public function labaBersihBulan(): float
     {
-        // Laba Kotor - Biaya (3)
-        return $this->labaKotorBulan - $this->totalSection('3', 'total_bulan');
+        return $this->labaKotorBulan - (float) $this->laporan['bebanBulan'];
     }
 
     #[Computed]
     public function labaBersihYtd(): float
     {
-        return $this->labaKotorYtd - $this->totalSection('3', 'total_ytd');
+        return $this->labaKotorYtd - (float) $this->laporan['bebanYtd'];
     }
 };
 ?>
 
-<div>
+{{-- tampilkanAkun & rincian HPP dipegang Alpine — baris tetap dirender, tidak memicu hitung ulang server --}}
+<div x-data="{ tampilkanAkun: false, tampilkanHpp: false, caraPakai: false }">
     <x-page-title
-        title="Laporan Laba Rugi (Beta)"
-        subtitle="Penjualan dikurangi HPP &amp; Biaya per bulan terpilih, plus akumulasi tahun berjalan (YTD). Susunan section mengikuti template L1." />
+        title="Laporan Laba Rugi"
+        subtitle="Pendapatan, harga pokok penjualan, dan beban untuk bulan terpilih plus akumulasi tahun berjalan. Nilai dibaca langsung dari tabel transaksi." />
 
     <div class="w-full h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-gray-800">
         <div class="flex flex-col flex-1 min-h-0 px-6 pt-4 pb-6">
-            {{-- Notice masa pengembangan --}}
-            <div class="p-4 mb-4 border rounded-lg border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700">
-                <div class="flex items-start gap-3">
-                    <span class="text-xl leading-none">⚠️</span>
-                    <div class="flex-1 text-sm text-amber-900 dark:text-amber-100">
-                        <p class="font-semibold">Laporan ini masih dalam masa pengembangan — verifikasi manual sebelum dipakai.</p>
-                        <ul class="mt-2 ml-5 space-y-0.5 text-xs list-disc">
-                            <li><strong>HPP otomatis dari pergerakan stok belum reliabel</strong> — stock opname belum rutin & ada potensi selisih input barang masuk/keluar (penamaan produk mirip). Pakai <em>toggle "Override HPP Manual"</em> di bawah kalau tahu HPP fisik yang benar.</li>
-                            <li><strong>Saldo awal akun 2026</strong> di <span class="font-mono">sktxn_saldoawalakuns</span> belum lengkap — belum mempengaruhi LR (LR cuma pakai arus periode), tapi mempengaruhi Neraca.</li>
-                            <li>Penjualan &amp; Biaya non-stok (gaji, listrik, dll) sudah benar; yang perlu kehati-hatian adalah HPP dan akun yang berasal dari movement persediaan.</li>
-                            <li>Sumber data: <span class="font-mono">skview_accounts_labarugi</span>. Section &amp; mapping akun: template <span class="font-mono">L1</span> di <span class="font-mono">skacc_temaccountes</span>.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
 
-            <div class="sticky z-30 px-4 py-3 bg-white border-b border-gray-200 top-20 dark:bg-gray-900 dark:border-gray-700">
-                <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <x-input-label for="periodeInput" value="Periode (mm/yyyy)" class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400" />
-                        <div class="flex items-stretch gap-1">
-                            <x-secondary-button type="button" wire:click="prevMonth" class="px-3" title="Bulan sebelumnya">◀</x-secondary-button>
-                            <x-text-input id="periodeInput" type="text"
-                                wire:model.live.debounce.500ms="periodeInput"
-                                placeholder="01/2026" maxlength="7"
-                                class="w-28 text-center font-mono" />
-                            <x-secondary-button type="button" wire:click="nextMonth" class="px-3" title="Bulan berikutnya">▶</x-secondary-button>
-                        </div>
-                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                            @if ($periode !== '')
-                                Bulan: {{ \Carbon\Carbon::parse($this->bulanStart)->format('d/m/Y') }} — {{ \Carbon\Carbon::parse($this->bulanEnd)->format('d/m/Y') }}
-                                · YTD: {{ \Carbon\Carbon::parse($this->ytdStart)->format('d/m/Y') }} — {{ \Carbon\Carbon::parse($this->bulanEnd)->format('d/m/Y') }}
-                            @else
-                                <span class="text-rose-600">Format: mm/yyyy</span>
-                            @endif
-                        </p>
-                    </div>
+            @include('pages::transaksi.keuangan.laba-rugi.laba-rugi-catatan', [
+                'tahun' => $this->tahun,
+                'rincianHpp' => $this->rincianHpp,
+                'hppWajar' => $this->hppWajar,
+            ])
 
-                    @if ($periode !== '')
-                        <div class="grid grid-cols-2 gap-3 text-right">
-                            <div class="px-4 py-2 border rounded-lg bg-gray-50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700">
-                                <div class="text-[10px] tracking-wider text-gray-500 uppercase">Laba Bersih · Bulan</div>
-                                <div class="font-mono text-lg font-bold {{ $this->labaBersihBulan < 0 ? 'text-red-600' : 'text-emerald-700 dark:text-emerald-300' }}">
-                                    Rp {{ number_format($this->labaBersihBulan, 0, ',', '.') }}
-                                </div>
-                            </div>
-                            <div class="px-4 py-2 border rounded-lg bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">
-                                <div class="text-[10px] tracking-wider text-emerald-700 uppercase dark:text-emerald-300">Laba Bersih · YTD</div>
-                                <div class="font-mono text-lg font-bold {{ $this->labaBersihYtd < 0 ? 'text-red-600' : 'text-emerald-800 dark:text-emerald-200' }}">
-                                    Rp {{ number_format($this->labaBersihYtd, 0, ',', '.') }}
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                </div>
+            @include('pages::transaksi.keuangan.laba-rugi.laba-rugi-toolbar', [
+                'labelRentang' => $this->labelRentang,
+                'labaBersihBulan' => $this->labaBersihBulan,
+                'labaBersihYtd' => $this->labaBersihYtd,
+            ])
 
-                {{-- Override HPP Manual --}}
-                @if ($periode !== '')
-                    <div class="mt-3 pt-3 border-t border-dashed border-gray-300 dark:border-gray-600">
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div class="flex items-start gap-3">
-                                <x-toggle wire:model.live="hppManualEnabled" trueValue="1" falseValue="0" />
-                                <div>
-                                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                        Override HPP Manual
-                                    </div>
-                                    <p class="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 max-w-md">
-                                        Aktifkan kalau HPP otomatis dari stok belum reliabel
-                                        (stock-opname belum rutin / ada selisih barang masuk-keluar).
-                                        Nilai di bawah akan menggantikan total section HPP.
-                                    </p>
-                                </div>
-                            </div>
-
-                            @if ($hppManualEnabled)
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <x-input-label for="hppManualBulan" value="HPP Bulan Ini" class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400" />
-                                        <x-text-input id="hppManualBulan" type="number" step="0.01" min="0"
-                                            wire:model.live.debounce.500ms="hppManualBulan"
-                                            placeholder="0"
-                                            class="w-40 text-right font-mono" />
-                                    </div>
-                                    <div>
-                                        <x-input-label for="hppManualYtd" value="HPP YTD" class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400" />
-                                        <x-text-input id="hppManualYtd" type="number" step="0.01" min="0"
-                                            wire:model.live.debounce.500ms="hppManualYtd"
-                                            placeholder="0"
-                                            class="w-40 text-right font-mono" />
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-            </div>
-
-            <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
-                <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
+            <div class="flex flex-col flex-1 min-h-0 mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
+                <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl" wire:loading.class="opacity-50">
                     <table class="ds-table">
                         <thead class="sticky top-0 z-10">
                             <tr>
@@ -324,99 +306,94 @@ new class extends Component {
                         </thead>
                         <tbody>
                             @if ($periode === '')
-                                <tr><td colspan="4" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <tr><td colspan="4" class="px-4 py-16 text-center text-gray-500 dark:text-gray-400">
                                     Atur periode untuk menampilkan laporan.
                                 </td></tr>
                             @else
-                                @foreach ($this->sections as $sec)
-                                    @php
-                                        $isHpp = $sec['temp_dtl'] === '2';
-                                        $hppOverridden = $isHpp && $hppManualEnabled;
-                                    @endphp
-                                    <tr wire:key="laba-rugi-sec-{{ $sec['temp_dtl'] ?? $loop->index }}" class="bg-gray-100 dark:bg-gray-800">
-                                        <td colspan="2" class="px-3 py-2 text-xs font-bold tracking-wider uppercase">
-                                            {{ $sec['desc'] }}
-                                            @if ($hppOverridden)
-                                                <span class="ml-2 px-1.5 text-[9px] rounded bg-amber-200 text-amber-800 normal-case">manual override</span>
+                                @forelse ($this->laporan['posList'] as $pos)
+                                    <tr wire:key="lr-pos-{{ $pos['id'] }}" class="bg-gray-100 dark:bg-gray-800">
+                                        <td class="ds-td-token">{{ $pos['id'] }}</td>
+                                        <td class="text-xs font-bold tracking-wider uppercase">
+                                            {{ $pos['desc'] }}
+                                            <span class="px-1 ml-1 text-[9px] rounded {{ $pos['dkStatus'] === 'K' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}"
+                                                title="grup akun {{ $pos['graId'] }} {{ $pos['graDesc'] }}">{{ $pos['dkStatus'] }}</span>
+                                            @if ($pos['peran'] === 'hpp')
+                                                <span class="px-1 ml-1 text-[9px] normal-case rounded bg-amber-200 text-amber-800">HPP tahunan</span>
                                             @endif
                                         </td>
                                         <td></td>
                                         <td></td>
                                     </tr>
-                                    @if ($hppOverridden)
-                                        <tr class="italic bg-amber-50/50 dark:bg-amber-900/10">
-                                            <td colspan="4" class="px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-300">
-                                                ⚠ Akun-akun di section ini di-bypass; pakai nilai HPP manual yang di-input di atas.
+                                    @foreach ($pos['akunList'] as $akun)
+                                        <tr wire:key="lr-acc-{{ $pos['id'] }}-{{ $akun['accId'] }}" x-show="tampilkanAkun" class="text-xs text-gray-500 dark:text-gray-400">
+                                            <td class="ds-td-token">{{ $akun['accId'] }}</td>
+                                            <td class="pl-8">{{ $akun['nama'] ?: '—' }}</td>
+                                            <td class="text-right ds-td-token">{{ number_format($akun['bulan'], 0, ',', '.') }}</td>
+                                            <td class="text-right ds-td-token">{{ number_format($akun['ytd'], 0, ',', '.') }}</td>
+                                        </tr>
+                                    @endforeach
+
+                                    @if ($pos['peran'] === 'hpp')
+                                        <tr wire:key="lr-hpp-rincian" x-show="tampilkanHpp" class="text-xs italic text-gray-500 dark:text-gray-400">
+                                            <td></td>
+                                            <td class="pl-8" colspan="3">
+                                                HPP tahunan {{ $this->tahun }} = saldo awal persediaan
+                                                {{ number_format($this->rincianHpp['saldoAwal'], 0, ',', '.') }}
+                                                + arus persediaan {{ number_format($this->rincianHpp['arus'], 0, ',', '.') }}
+                                                − stok akhir {{ number_format($this->rincianHpp['stokAkhir'], 0, ',', '.') }}
+                                                = <span class="font-semibold">{{ number_format($this->hppTahunan, 0, ',', '.') }}</span>
+                                                (akun persediaan {{ $this->rincianHpp['akunPersediaan'] ?? '—' }})
                                             </td>
                                         </tr>
-                                    @else
-                                        @forelse ($sec['accounts'] as $acc)
-                                            <tr wire:key="laba-rugi-acc-{{ $sec['temp_dtl'] ?? '' }}-{{ $acc['acc_id'] ?? $loop->index }}" class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                                <td class="ds-td-token">{{ $acc['acc_id'] }}</td>
-                                                <td class="text-xs">
-                                                    {{ $acc['acc_desc'] ?: '—' }}
-                                                    @if ($acc['dk'] === 'D')
-                                                        <span class="px-1 ml-1 text-[9px] rounded bg-blue-100 text-blue-700">D</span>
-                                                    @elseif ($acc['dk'] === 'K')
-                                                        <span class="px-1 ml-1 text-[9px] rounded bg-purple-100 text-purple-700">K</span>
-                                                    @endif
-                                                </td>
-                                                <td class="ds-td-token text-right">
-                                                    @if (abs($acc['bulan']) > 0.001)
-                                                        {{ number_format($acc['bulan'], 0, ',', '.') }}
-                                                    @else
-                                                        <span class="text-gray-300">—</span>
-                                                    @endif
-                                                </td>
-                                                <td class="ds-td-token text-right">
-                                                    @if (abs($acc['ytd']) > 0.001)
-                                                        {{ number_format($acc['ytd'], 0, ',', '.') }}
-                                                    @else
-                                                        <span class="text-gray-300">—</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="px-3 py-2 text-xs italic text-gray-400">
-                                                    (Tidak ada akun di section ini)
-                                                </td>
-                                            </tr>
-                                        @endforelse
                                     @endif
-                                    <tr class="font-semibold {{ $hppOverridden ? 'bg-amber-100 dark:bg-amber-900/20' : 'bg-gray-50 dark:bg-gray-800/40' }}">
-                                        <td colspan="2" class="px-3 py-1.5 text-xs uppercase">
-                                            Subtotal {{ $sec['desc'] }}
-                                            @if ($hppOverridden)
-                                                <span class="text-[10px] text-amber-700 dark:text-amber-300 normal-case ml-1">(manual)</span>
+
+                                    <tr wire:key="lr-sub-{{ $pos['id'] }}" class="font-semibold {{ $pos['peran'] === 'hpp' && $hppManualAktif ? 'bg-amber-100 dark:bg-amber-900/20' : 'bg-gray-50 dark:bg-gray-800/40' }}">
+                                        <td></td>
+                                        <td class="text-xs uppercase">
+                                            Subtotal {{ $pos['desc'] }}
+                                            @if ($pos['peran'] === 'hpp')
+                                                <span class="ml-1 text-[10px] normal-case text-amber-700 dark:text-amber-300">
+                                                    @if ($hppManualAktif)
+                                                        (override manual)
+                                                    @elseif ($this->hppWajar)
+                                                        (HPP tahunan {{ $this->tahun }})
+                                                    @else
+                                                        (HPP tahunan {{ $this->tahun }} negatif — dianggap 0, isi override manual)
+                                                    @endif
+                                                </span>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-1.5 font-mono text-sm text-right {{ $hppOverridden ? 'text-amber-800 dark:text-amber-200' : '' }}">
-                                            {{ number_format($isHpp ? $this->hppBulan : $sec['total_bulan'], 0, ',', '.') }}
+                                        <td class="text-right ds-td-token">
+                                            {{ number_format($pos['peran'] === 'hpp' ? $this->hppBulan : $pos['bulan'], 0, ',', '.') }}
                                         </td>
-                                        <td class="px-3 py-1.5 font-mono text-sm text-right {{ $hppOverridden ? 'text-amber-800 dark:text-amber-200' : '' }}">
-                                            {{ number_format($isHpp ? $this->hppYtd : $sec['total_ytd'], 0, ',', '.') }}
+                                        <td class="text-right ds-td-token">
+                                            {{ number_format($pos['peran'] === 'hpp' ? $this->hppYtd : $pos['ytd'], 0, ',', '.') }}
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr><td colspan="4" class="px-4 py-16 text-center text-gray-500 dark:text-gray-400">
+                                        Template L1 belum punya susunan pos.
+                                    </td></tr>
+                                @endforelse
 
-                                {{-- Laba Kotor (sec1 - sec2) --}}
                                 <tr class="font-bold bg-blue-50 dark:bg-blue-900/20">
-                                    <td colspan="2" class="px-3 py-2 text-sm uppercase">
-                                        Laba Kotor (Penjualan − HPP)
+                                    <td></td>
+                                    <td class="text-sm uppercase">
+                                        Laba Kotor (Pendapatan − HPP)
+                                        <span class="ml-1 text-[10px] font-normal normal-case text-gray-500 dark:text-gray-400">
+                                            pendapatan {{ number_format($this->laporan['pendapatanYtd'], 0, ',', '.') }} − HPP {{ number_format($this->hppYtd, 0, ',', '.') }} (YTD)
+                                        </span>
                                     </td>
-                                    <td class="ds-td-token text-right text-blue-800 dark:text-blue-200">
-                                        {{ number_format($this->labaKotorBulan, 0, ',', '.') }}
-                                    </td>
-                                    <td class="ds-td-token text-right text-blue-800 dark:text-blue-200">
-                                        {{ number_format($this->labaKotorYtd, 0, ',', '.') }}
-                                    </td>
+                                    <td class="text-right ds-td-token text-blue-800 dark:text-blue-200">{{ number_format($this->labaKotorBulan, 0, ',', '.') }}</td>
+                                    <td class="text-right ds-td-token text-blue-800 dark:text-blue-200">{{ number_format($this->labaKotorYtd, 0, ',', '.') }}</td>
                                 </tr>
-
-                                {{-- Laba Bersih --}}
                                 <tr class="font-bold {{ $this->labaBersihBulan < 0 ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20' }}">
-                                    <td colspan="2" class="px-3 py-2 text-sm uppercase">
-                                        Laba Bersih (Laba Kotor − Biaya)
+                                    <td></td>
+                                    <td class="text-sm uppercase">
+                                        Laba (Rugi) Bersih
+                                        <span class="ml-1 text-[10px] font-normal normal-case text-gray-500 dark:text-gray-400">
+                                            laba kotor − beban {{ number_format($this->laporan['bebanYtd'], 0, ',', '.') }} (YTD)
+                                        </span>
                                     </td>
                                     <td class="px-3 py-2 font-mono text-base text-right {{ $this->labaBersihBulan < 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-800 dark:text-emerald-200' }}">
                                         {{ number_format($this->labaBersihBulan, 0, ',', '.') }}

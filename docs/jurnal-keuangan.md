@@ -40,6 +40,20 @@ Asimetri warisan view yang **dipertahankan apa adanya** (tinjau bila ingin diser
 kedua RCV DISKON TOTAL / MATERAI / PPN memfilter nilai `> 0` sedangkan cabang pertama tidak; BAYAR
 (cash in/out) tidak memfilter status dokumen; kedua cabang SLS DISKON ITEM berlabel sama.
 
+## Pemakai (halaman web, sejak 11 Sep 2026)
+
+| Halaman | Cara pakai |
+|---|---|
+| Buku Besar | `Jurnal::query($acc, SISI_ACC, …)` per akun; saldo awal periode = `saldoAwalPerAkun` + `arusPerAkun` 1 Jan s/d H-1; nama lawan `namaAkun()`; paginasi PHP; rekap per jenis dari 2 kata pertama `txn_name`; banner HPP bila periode memuat 1 Des & akun conf 9/2 |
+| Cek Saldo Kas + Edit Saldo Awal + History | `SaldoKas::hitung`, `arusTahun` (back-calc), `SaldoKas::query()` sisi 6i + saldo berjalan; cetak history PDF (detail ≤ 400 baris, di atasnya rekap harian — DomPDF kehabisan memori); pemilih shift tersembunyi selama `daftarShift()` kosong |
+| Laba Rugi | template datar L1: DTLS → TEMACCOUNTES; nilai `arusPerAkun` bulan & YTD (2 pemindaian); tanda = `dk_status` grup; pos HPP dikenali dari akun conf 9 → `Hpp::nilai(tahun)` + rincian + **override manual** (state komponen); bila `Hpp::wajar()` false HPP dianggap 0 + badge merah |
+| Neraca | grup akun master 1/2/3 + semua akun aktif; saldo = `saldoAwalPerAkun` + `arusPerAkun` YTD; Laba (Rugi) Tahun Berjalan = Σ(K − D) arus gra 4/5 YTD (memuat cabang semu HPP bila 1 Des ≤ cutoff); toggle estimasi HPP menjurnal dua sisi (laba −HPP, persediaan −HPP) agar tetap seimbang |
+
+Jebakan yang sudah dibayar: bind di select-list `UNION ALL` harus `to_number(?)` (oci8 mem-bind semua sebagai VARCHAR2 → ORA-01790);
+`skacc_temlabarugineracahdrs.temp_status` terbalik di data (L1 = 'N') → filter `temp_id` langsung; pos HPP di template ber-gra 4
+(K) padahal beban → dikenali data-driven. Backlog: `Jurnal::queryDenganSaldoBerjalan` (SUM OVER) untuk paginasi SQL,
+`Jurnal::arusPerAkunPerBulan`, `Hpp::nilaiBulan`; beban template L1 nol sepanjang 2026 di dev = belum ada transaksi kas TU, bukan cabang hilang.
+
 ## Konvensi sisi
 
 Baris `txn_acc = akun` adalah baris MILIK akun itu (`txn_d`/`txn_k` = debit/kredit akun itu sendiri);

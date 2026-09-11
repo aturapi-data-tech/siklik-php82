@@ -47,6 +47,15 @@ final class Hpp
         return self::$cache[$tahun] = ($saldoAwal['debit'] - $saldoAwal['kredit']) + ($arus['debit'] - $arus['kredit']) - $stokAkhir;
     }
 
+    /**
+     * Kewajaran HPP: stok akhir tidak boleh melebihi saldo awal + arus persediaan (HPP negatif berarti
+     * data stock opname / hpp_product rusak). Halaman memakai ini untuk mengganti HPP dengan 0 + override manual.
+     */
+    public static function wajar(int $tahun): bool
+    {
+        return self::nilai($tahun) >= 0;
+    }
+
     /** Rincian komponen rumus untuk ditampilkan di laporan. */
     public static function rincian(int $tahun): array
     {
@@ -103,7 +112,9 @@ final class Hpp
                 }
                 $nilai ??= self::nilai($tahun);
                 $hasil[] = [
-                    "select 'HPP' txn_name, ? txn_acc, ? txn_acc_k, '1' shift, TO_DATE(?,'YYYY-MM-DD') txn_date, ? txn_d, ? txn_k from dual",
+                    // to_number(?): driver oci8 mem-bind semua placeholder sebagai VARCHAR2; tanpa cast, UNION ALL
+                    // dengan cabang lain yang txn_d/txn_k-nya NUMBER melempar ORA-01790.
+                    "select 'HPP' txn_name, ? txn_acc, ? txn_acc_k, '1' shift, TO_DATE(?,'YYYY-MM-DD') txn_date, to_number(?) txn_d, to_number(?) txn_k from dual",
                     [$akun, $lawan, $tanggal, $debit ? $nilai : 0, $kredit ? $nilai : 0],
                 ];
             }
