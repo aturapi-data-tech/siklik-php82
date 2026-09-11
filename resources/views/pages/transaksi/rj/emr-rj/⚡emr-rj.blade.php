@@ -449,4 +449,7 @@ new class extends Component {
 
     {{-- Cetak E-Resep PDF (headless: listen event cetak-eresep-rj.open) --}}
     <livewire:pages::components.rekam-medis.rj.cetak-eresep.cetak-eresep wire:key="cetak-eresep-rj-emr" />
+
+    {{-- Cetak Surat Rujukan PDF (headless: listen event cetak-surat-rujukan-rj.open) --}}
+    <livewire:pages::components.modul-dokumen.rj.surat-rujukan.cetak-surat-rujukan-rj wire:key="cetak-surat-rujukan-rj-emr" />
 </div>

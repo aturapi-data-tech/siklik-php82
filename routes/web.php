@@ -264,6 +264,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('transaksi.penunjang.laborat');
 
     // ===========================================
+    // RUJUKAN - PEMANTAUAN RUJUKAN KELUAR (SRBK FKTP)
+    // ===========================================
+    Route::livewire('/rujukan/keluar', 'pages::transaksi.rujukan.rujukan-keluar.rujukan-keluar')
+        ->name('rujukan.keluar');
+
+    // ===========================================
     // DATABASE MONITOR - MONITORING DASHBOARD
     // ===========================================
     Route::livewire('/database-monitor/monitoring-dashboard', 'pages::database-monitor.monitoring-dashboard.monitoring-dashboard')
@@ -298,6 +304,9 @@ Route::middleware(['auth'])->group(function () {
     // ===========================================
     Route::livewire('/panduan-dev/struktur-tabel', 'pages::panduan-dev.struktur-tabel.struktur-tabel')
         ->name('panduan-dev.struktur-tabel');
+
+    Route::livewire('/panduan-dev/rujukan-kompetensi', 'pages::panduan-dev.rujukan-kompetensi.rujukan-kompetensi')
+        ->name('panduan-dev.rujukan-kompetensi');
 
 });
 
