@@ -136,6 +136,20 @@ Livewire\Livewire::test('pages::transaksi.rj.emr-rj.modul-dokumen.inform-consent
     ['rjNo' => (int) $rjNo])->set('consentList', $entriPalsu)->html();   // uji tabel tanpa menyentuh DB
 ```
 
+Bila alur simpan/kunci memang harus diuji (saveDraft, setDokterPenjelas, bukaKunci, hapus), bungkus dalam
+transaksi luar yang di-rollback — `DB::transaction` di komponen menjadi savepoint Oracle, DB tetap bersih:
+
+```php
+DB::beginTransaction();
+try { $t = Livewire\Livewire::test(...)->call('openModal')->call('tambahEntri')->set('newConsent.tindakan','UJI')->call('saveDraft'); /* … */ }
+finally { DB::rollBack(); }
+```
+
+Login uji untuk stempel TTD: user Admin bawaan **tidak punya `myuser_name`** (stempel kosong → validasi gagal);
+pakai user yang punya nama + `myuser_code` (mis. `App\Models\User::find(26)`). Gate `dokumen.hapus` butuh role Admin/Mr.
+Sesudah memecah/menyunting template, bandingkan `->html()` sebelum vs sesudah (normalisasi spasi & ID acak
+`confirm_<hash>`) — bukti render identik.
+
 Periksa lewat HASIL RENDER, bukan urutan baris: `str_contains($html, 'display-pasien')`,
 badge `Belum TTD` untuk entri draft, dan tombol berisiko **tidak** muncul untuk user tanpa hak.
 

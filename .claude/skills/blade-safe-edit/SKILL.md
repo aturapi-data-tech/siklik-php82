@@ -37,5 +37,11 @@ Blade mengompilasi `@foreach`/`@if`/`@php` dst. **di mana pun** ia muncul, terma
 `<?php` komponen ⚡ — `php artisan view:cache` gagal `Malformed @foreach statement`. Tulis "perulangan" /
 "kondisi", bukan nama directive-nya.
 
+## 3c. Jebakan lain yang pernah lolos review
+- `$this->$rjNo = $rjNo;` (variable-variable, `$` ganda) lolos `php -l` dan Volt, tapi menulis properti bernama
+  angka — bukan `$this->rjNo`. Grep `\$this->\$` sesudah edit bulk.
+- Variabel `@php $x = … @endphp` di satu partial `@include` TIDAK terbaca di partial lain / induk; properti
+  komponen & `$this` yang terbagi. Hitung ulang di partial yang memakainya.
+
 ## 4. Pola UI sudah terdokumentasi — jangan reinvent
 Sebelum bikin komponen, cek `docs/` (lihat skill `ui-pattern-docs`): tombol standar, UI komponen umum, page-frame, dirty-modal, print PDF/TTD, tinymce, stable-lookup. Ikuti pola yang ada agar konsisten.

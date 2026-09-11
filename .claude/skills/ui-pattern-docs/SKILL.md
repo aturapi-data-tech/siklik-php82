@@ -17,6 +17,8 @@ Sebelum membuat komponen baru, cek apakah polanya sudah ada di `docs/`. Ikuti po
 | Tabel ber-tema `.ds-table` (+ `.ds-td-*`, `.ds-c`, `.ds-table-entri/-rapat`, `.ds-toggle-tumpuk`, `.ds-form-title`) | `docs/standar-ui-komponen.md` §"`.ds-table` — tabel ber-tema" |
 | Halaman bertabel full-height (frame, toolbar sticky, pagination, empty state) | `docs/page-frame-pattern.md` |
 | Modal dengan deteksi perubahan (konfirmasi keluar bila dirty) | `docs/dirty-modal-pattern.md` |
+| **Isi modal LAZY** (anak Livewire hanya di-mount saat modal terbuka): guard `@if ($rjNo)`/flag di dalam `<x-modal>`, anak baca prop di `mount()`, `closeModal()` server wajib; BUKAN `#[Lazy]`/`placeholder()` | `docs/standar-ui-komponen.md` §1b |
+| Viewer dokumen di display Rekam Medis (Lihat = render blade cetak ke iframe): `⚡inform-consent-view-rj`, `⚡general-consent-view-rj`, `⚡suket-view-rj` | `docs/dokumen-view-pattern.md` |
 | Cetak PDF + tanda tangan (TTD) | `docs/ttd-pattern-pdf-print.md` |
 | Struktur folder & penamaan berkas (⚡ SFC vs partial, suffix -rj, Trait vs Support, batas ukuran) | `docs/standar-struktur-folder.md` |
 | Modul master CRUD (kontrak LIST/FORM, event, LOV, delete dua lapis ORA-02292) | `docs/standar-master-module.md` |
@@ -39,6 +41,8 @@ Sebelum membuat komponen baru, cek apakah polanya sudah ada di `docs/`. Ikuti po
 - **Tombol aksi baris tabel**: cetak/hapus/lihat WAJIB `x-cetak-button` / `x-hapus-button` / `x-lihat-button` (tinggi 40px = `p-2.5` + ikon `w-5 h-5`). JANGAN tambah `px-2 py-1 text-xs` / `!py-1`. `x-hapus-button` punya 2 mode: `confirm="…"` (dialog browser) dan `:action="…"` (dialog modal lewat `x-confirm-button` varian `danger-soft`).
 - **`.ds-table`**: kelas CSS di `resources/css/app.css`, bukan komponen — token warnanya ikut ber-swap di mode gelap tanpa `dark:`. `ds-c`/`ds-td-*` hanya berefek DI DALAM `<table class="ds-table">`.
 - **Stable lookup list**: list HANYA depend tanggal; decouple dari filterStatus/filter lain.
+- **Lazy modal**: induk JANGAN lagi `dispatch('open-rm-*-rj')` sesudah `open-modal` (anak sudah memuat dari prop); modal dengan mode create tanpa nomor pakai flag `$modalTerbuka`; tutup hanya lewat Alpine TIDAK menggugurkan guard → tombol Tutup/X `wire:click="closeModal"`. Sub-tab di dalam modal tetap Alpine `x-show`.
+- **Alergi makanan PCare**: dua key (`alergiMakanan` legacy 20.787 kunjungan, `alergiMakan` baru) — baca lewat `App\Support\Terminologi\AlergiPcare::kodeMakan()`, JANGAN `$alergi['alergiMakan'] ?? '00'` langsung. Tanpa migrasi massal selama siklik-lite hidup.
 - **Trait API eksternal**: ikuti pola trait sirus — event split per concern, suffix per-modul. Acuan lokal: `PcareTrait`.
 
 Lihat juga skill terkait: `blade-safe-edit`, `livewire-input-patterns`.
