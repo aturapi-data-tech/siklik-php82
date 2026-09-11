@@ -48,6 +48,58 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | SISRUTE FKTP — Rujukan Berbasis Kompetensi Layanan (SRBK), outbound
+    |----------------------------------------------------------------------
+    | Dipakai App\Http\Traits\BPJS\PcareSisruteTrait (Sisrute/GetKriteriaRujukan,
+    | Sisrute/GetFaskesRujukan, Sisrute/postKunjungan, Sisrute/deleteKunjungan).
+    |
+    | PRASYARAT ADMINISTRATIF (jangan diisi asal — lihat docs/rujukan-kompetensi.md):
+    |  1. Cons ID DEV untuk service `pcare-sisrute-rest` DIAJUKAN TERPISAH dari cons ID
+    |     PCare biasa. Pengajuan dari faskes ke KC BPJS setempat — untuk klinik ini
+    |     KC Tulungagung (wilayah piloting SRBK). Cons ID PCare produksi yang sudah
+    |     ada TIDAK otomatis berlaku: balasannya
+    |     "Unauthorized! You are not registered for this service!".
+    |  2. IP publik pemanggil harus di-whitelist lewat ITSM BPJS (Formulir Pengajuan
+    |     Akses Bridging SIM). Belum di-whitelist = "Connection timed out/refused",
+    |     bukan pesan error yang menjelaskan.
+    |  3. Cons ID dev punya masa berlaku: "Unauthorized! Consumer ID is expired!"
+    |     → perpanjangan lewat IT Wilayah BPJS.
+    |
+    | Bila SISRUTE_* dibiarkan kosong, nilainya JATUH KE `bpjs.pcare.*`. Itu memang
+    | disengaja supaya lingkungan yang belum punya kredensial khusus tetap bisa
+    | menjalankan halaman (dan gagal dengan pesan BPJS yang jelas), BUKAN tanda
+    | bahwa kredensial PCare boleh dipakai untuk SRBK.
+    */
+    'sisrute' => [
+        // Base URL TANPA garis miring penutup; trait menyambung "/Sisrute/<endpoint>".
+        // Dev BPJS: https://dvlp.bpjs-kesehatan.go.id/pcare-sisrute-rest/api/v1.0
+        'url'        => env('SISRUTE_URL', 'https://dvlp.bpjs-kesehatan.go.id/pcare-sisrute-rest/api/v1.0'),
+        'cons_id'    => env('SISRUTE_CONS_ID', env('PCARE_CONS_ID')),
+        'secret_key' => env('SISRUTE_SECRET_KEY', env('PCARE_SECRET_KEY')),
+        'user_key'   => env('SISRUTE_USER_KEY', env('PCARE_USER_KEY')),
+        'username'   => env('SISRUTE_USERNAME', env('PCARE_USERNAME')),
+        'password'   => env('SISRUTE_PASSWORD', env('PCARE_PASSWORD')),
+
+        // Mode latihan/simulasi: true = jawaban diambil dari database/fixtures/sisrute/*.json
+        // TANPA memanggil jaringan. Tetap dicatat ke web_log_status dengan penanda [SIMULASI].
+        'simulasi'   => filter_var(env('SISRUTE_SIMULASI', false), FILTER_VALIDATE_BOOL),
+
+        // Header Content-Type. Server DEV (dvlp) MENOLAK permintaan bila Content-Type
+        // dikirim (info BPJS 11 Jun 2026); produksi tetap "application/json".
+        // Kosong = header tidak dikirim sama sekali.
+        'content_type' => env('SISRUTE_CONTENT_TYPE', ''),
+
+        // Kode aplikasi pada X-authorization "Basic base64(user:pass:kdAplikasi)".
+        // PCare FKTP memakai 095 — pcare-sisrute mewarisi aturan header PCare.
+        'kd_aplikasi' => env('SISRUTE_KD_APLIKASI', '095'),
+
+        // SATUSEHAT/Sisrute kerap lambat (ada pengalaman 408 "timeout akses ke API
+        // Sisrute/Satu Sehat"). Batas waktu sendiri supaya tidak menyeret timeout PCare.
+        'timeout'    => (int) env('SISRUTE_HTTP_TIMEOUT', 20),
+    ],
+
+    /*
+    |----------------------------------------------------------------------
     | Antrean — outbound (klinik → server BPJS), dipakai AntrianTrait
     |----------------------------------------------------------------------
     */

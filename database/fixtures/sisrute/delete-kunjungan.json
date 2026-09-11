@@ -1,0 +1,8 @@
+{
+    "_catatan": "FIXTURE MODE SIMULASI. Endpoint aslinya menghapus SAMPAI pendaftaran PCare, bukan hanya rujukannya — di mode simulasi tidak ada yang benar-benar dihapus.",
+    "metaData": {
+        "code": 200,
+        "message": "Kunjungan berhasil dihapus"
+    },
+    "response": null
+}

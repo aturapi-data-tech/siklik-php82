@@ -1,0 +1,12 @@
+{
+    "_catatan": "FIXTURE MODE SIMULASI — nomor DUMMY, bukan rujukan nyata. Bentuk mengikuti response sukses asli Sisrute/postKunjungan yang dilaporkan faskes piloting (21 Agu 2026): {noKunjungan, serviceRequestId, noRujukanSatuSehat}. No. Rujukan PCare = noKunjungan (BPJS memakai nomor yang sama).",
+    "metaData": {
+        "code": 200,
+        "message": "OK"
+    },
+    "response": {
+        "noKunjungan": "350400010926Y000001",
+        "serviceRequestId": "00000000-0000-4000-8000-000000000001",
+        "noRujukanSatuSehat": "99999999909110001"
+    }
+}
