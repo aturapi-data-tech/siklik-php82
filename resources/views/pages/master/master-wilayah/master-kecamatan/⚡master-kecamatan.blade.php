@@ -50,7 +50,7 @@ new class extends Component {
     #[Computed]
     public function parents()
     {
-        return DB::table('skmst_kecamatans')
+        return DB::table('skmst_kabupatens')
             ->select('kab_id', 'kab_name')
             ->orderBy('kab_name')
             ->get();
@@ -60,7 +60,7 @@ new class extends Component {
     public function rows()
     {
         $q = DB::table('skmst_kecamatans AS k')
-            ->leftJoin('skmst_kecamatans AS p', 'p.kab_id', '=', 'k.kab_id')
+            ->leftJoin('skmst_kabupatens AS p', 'p.kab_id', '=', 'k.kab_id')
             ->select('k.kec_id', 'k.kec_name', 'k.kab_id', 'p.kab_name')
             ->orderBy('p.kab_name')
             ->orderBy('k.kec_name');

@@ -30,7 +30,7 @@ new class extends Component {
     #[Computed]
     public function parents()
     {
-        return DB::table('skmst_kecamatans')
+        return DB::table('skmst_kabupatens')
             ->select('kab_id', 'kab_name')
             ->orderBy('kab_name')
             ->get();
