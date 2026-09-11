@@ -36,5 +36,19 @@
             <x-input-error :messages="$errors->get('dataDaftarPoliRJ.perencanaan.tindakLanjut.keteranganTindakLanjut')" class="mt-1" />
         </div>
 
+        {{-- Panel Rujukan Berbasis Kompetensi — HANYA untuk status pulang "4"
+             (Rujuk Vertikal, terverifikasi di ref_bpjs_table kategori "Status
+             Pulang RJ"). Kunjungan berstatus ini TIDAK dikirim lewat endpoint
+             `kunjungan` biasa di Daftar Kunjungan RJ, melainkan lewat panel ini
+             (Sisrute/postKunjungan yang membawa rujukLanjut + satuSehatRujukan).
+
+             Di-mount SEKALI dengan wire:key tetap per kunjungan: tab ini dipakai
+             satu pasien saja, jadi tidak ada risiko TooManyComponents. --}}
+        @if (($dataDaftarPoliRJ['perencanaan']['kdStatusPulang'] ?? '') === \App\Support\Rujukan\RujukanKompetensiOptions::STATUS_PULANG_RUJUK)
+            <livewire:pages::transaksi.rj.emr-rj.rujukan-kompetensi.rm-rujukan-kompetensi-rj-actions
+                :rjNo="$rjNo"
+                wire:key="rujukan-kompetensi-rj-{{ $rjNo ?? 'init' }}" />
+        @endif
+
     </div>
 </x-border-form>
