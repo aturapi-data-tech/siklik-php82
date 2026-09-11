@@ -2,6 +2,7 @@
 
 namespace App\Http\Traits\Txn\Rj;
 
+use App\Support\Terminologi\AlergiPcare;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -82,7 +83,8 @@ trait KunjunganPcarePayloadTrait
             'kdTacc' => -1,
             'alasanTacc' => '',
             'anamnesa' => $anamnesa['anamnesa'] ?? ($anamnesa['keluhanUtama'] ?? '-'),
-            'alergiMakan' => $anamnesa['alergi']['alergiMakan'] ?? ($anamnesa['alergiMakan'] ?? '00'),
+            // Terima key legacy siklik-lite `alergiMakanan` (App\Support\Terminologi\AlergiPcare)
+            'alergiMakan' => isset($anamnesa['alergi']) && is_array($anamnesa['alergi']) ? AlergiPcare::kodeMakan($anamnesa['alergi']) : ($anamnesa['alergiMakan'] ?? '00'),
             'alergiUdara' => $anamnesa['alergi']['alergiUdara'] ?? ($anamnesa['alergiUdara'] ?? '00'),
             'alergiObat' => $anamnesa['alergi']['alergiObat'] ?? ($anamnesa['alergiObat'] ?? '00'),
             'kdPrognosa' => $perencanaan['kdPrognosa'] ?? '01',
