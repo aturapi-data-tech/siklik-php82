@@ -470,25 +470,25 @@ new class extends Component {
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="ds-table">
                 <thead
                     class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="px-4 py-3">Kode</th>
-                        <th class="px-4 py-3">Jasa Medis</th>
-                        <th class="px-4 py-3 text-right">Tarif</th>
+                        <th>Kode</th>
+                        <th>Jasa Medis</th>
+                        <th class="text-right">Tarif</th>
                         @if (!$isFormLocked)
-                            <th class="w-20 px-4 py-3 text-center">Hapus</th>
+                            <th class="w-20 ds-c">Hapus</th>
                         @endif
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @forelse ($dataDaftarPoliRJ['JasaMedis'] ?? [] as $item)
                         <tr class="transition group hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                            <td class="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="ds-td-meta whitespace-nowrap">
                                 {{ $item['JasaMedisId'] }}
                             </td>
-                            <td class="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 {{ $item['JasaMedisDesc'] }}
                             </td>
                             <td
@@ -496,17 +496,9 @@ new class extends Component {
                                 Rp {{ number_format($item['JasaMedisPrice']) }}
                             </td>
                             @if (!$isFormLocked)
-                                <td class="px-4 py-3 text-center">
-                                    <x-outline-button type="button"
-                                        wire:click.prevent="removeJasaMedis({{ $item['rjpactDtl'] }})"
-                                        wire:confirm="Hapus jasa medis ini?" wire:loading.attr="disabled"
-                                        wire:target="removeJasaMedis({{ $item['rjpactDtl'] }})"
-                                        class="!text-red-600 !bg-red-50 !border-red-200 hover:!bg-red-100 hover:!text-red-700 hover:!border-red-300 dark:!text-red-400 dark:!bg-red-900/20 dark:!border-red-800/30 dark:hover:!bg-red-900/30 dark:hover:!text-red-300" title="Hapus">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </x-outline-button>
+                                <td class="ds-c">
+                                    <x-hapus-button :action="'removeJasaMedis(' . $item['rjpactDtl'] . ')'"
+                                        title="Hapus Jasa Medis" message="Hapus jasa medis ini?" />
                                 </td>
                             @endif
                         </tr>
@@ -530,7 +522,7 @@ new class extends Component {
                         <tr>
                             <td colspan="2"
                                 class="px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Total</td>
-                            <td class="px-4 py-3 text-sm font-bold text-right text-gray-900 dark:text-white">
+                            <td class="ds-td-strong text-right">
                                 Rp {{ number_format(collect($dataDaftarPoliRJ['JasaMedis'])->sum('JasaMedisPrice')) }}
                             </td>
                             @if (!$isFormLocked)

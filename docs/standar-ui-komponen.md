@@ -325,6 +325,63 @@ Rincian varian tombol: `docs/standar-komponen-tombol.md`.
 
 ---
 
+## `<x-combobox>` — combobox ketik-saring baku
+
+Semua combobox ketik-saring memakai **satu** basis:
+`resources/views/components/combobox.blade.php` (diporting dari sirus). Pemakai tidak
+memanggilnya langsung, melainkan lewat pembungkus yang membawa sumber datanya:
+
+| Pembungkus | Sumber | Yang disimpan |
+|---|---|---|
+| `<x-catatan-signa-combobox>` | `skmst_signa_catatans` (dikirim induk) | teks |
+| `<x-ppa-combobox>` | `users.myuser_name` (cache 5 mnt) | teks |
+
+Pembungkus baru = file tipis berisi `@props` + query daftarnya, lalu meneruskan ke
+`<x-combobox>`. Jangan menyalin ulang markup/Alpine-nya.
+
+### Aturan pokok: yang diketik ADALAH nilainya
+
+Daftar itu bantuan ketik, **bukan pagar**. Isian di luar daftar tetap sah dan tersimpan apa
+adanya — catatan signa tak baku, nama PPA yang belum punya akun. Komponen **tidak pernah**
+mengubah, mengembalikan, atau menghapus ketikan petugas; nilainya diikat `wire:model`
+langsung di input.
+
+`wire-model-id` menambah satu hal saja: selama teks di kotak **cocok persis** dengan salah
+satu baris daftar, id-nya ikut disimpan; begitu teksnya menyimpang, id dikosongkan. Jadi id
+itu **bonus** (tautan ke master kalau kebetulan cocok), bukan syarat — dan tak pernah ada id
+basi yang menunjuk baris lain dari yang tertulis. (`wire-model-jenis` WAJIB diisi bila satu
+daftar mencampur dua master.)
+
+> **Konsekuensi untuk induk:** yang diwajibkan di `rules()` harus **teksnya**, bukan id-nya.
+> Mewajibkan id sama saja diam-diam melarang isian di luar master. Kalau butuh id yang
+> **dijamin** ada (mis. memesan stok/kamar), itu pekerjaan komponen **LOV**
+> (`<livewire:lov.…>`), bukan combobox ini.
+
+### Enter & Tab
+
+Enter **tidak** memilih baris kecuali ada yang tersorot lewat panah/hover — ia menjalankan
+`enter-action`, karena yang diketik sudah jadi nilainya. Tab mengambil baris yang tersorot
+(kalau ada) lalu fokus tetap lanjut ke isian berikutnya.
+
+**JANGAN menyalakan sorot-otomatis pada baris teratas** — ia merebut Enter dari
+`enter-action` di form yang memakai Enter untuk menambah baris (e-resep).
+
+```blade
+{{-- baris entri e-resep: Enter = tambah baris --}}
+<x-catatan-signa-combobox wire-model="formEresep.catatanKhusus" :options="$signaCatatans"
+    enter-action="$wire.addItemResep()" :error="$errors->has('formEresep.catatanKhusus')" />
+```
+
+### Lain-lain
+
+- Dropdown wajib tetap `wire:ignore` + `<template x-if="open">` — lihat komentar di komponennya
+  (mencegah `<li>` x-for tercabut morph Livewire dan membatalkan sisa batch `initTree`).
+- Daftar dibekukan ke `x-data` saat render → pembungkus bertanggung jawab men-**cache** query
+  masternya supaya tak di-query ulang tiap render Livewire.
+- `pick()` mengembalikan fokus ke kotak; jangan menambah pemanggilan `pick()` dari `blur`.
+
+---
+
 ## `<x-stepper>` & `<x-step-number>`
 
 Penanda langkah untuk alur berurutan (mis. rujukan, pendaftaran bertahap).

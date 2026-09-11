@@ -565,16 +565,16 @@ SQL
 {{-- ════ LOCKS ════ --}}
                                     @if ($tab === 'locks')
                                         <table class="min-w-full text-base border-separate border-spacing-y-3">
-                                            <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                                            <thead class="sticky top-0 z-10">
                                                 <tr class="text-base font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                                    <th class="px-6 py-3">Waiter</th>
-                                                    <th class="px-6 py-3">Waiter User / Program</th>
-                                                    <th class="px-6 py-3">Wait Event</th>
-                                                    <th class="px-6 py-3">Wait (s)</th>
-                                                    <th class="px-6 py-3">Blocker</th>
-                                                    <th class="px-6 py-3">Blocker User / Program</th>
-                                                    <th class="px-6 py-3">Locked Object</th>
-                                                    <th class="px-6 py-3 text-center">Action</th>
+                                                    <th>Waiter</th>
+                                                    <th>Waiter User / Program</th>
+                                                    <th>Wait Event</th>
+                                                    <th>Wait (s)</th>
+                                                    <th>Blocker</th>
+                                                    <th>Blocker User / Program</th>
+                                                    <th>Locked Object</th>
+                                                    <th class="ds-c">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -590,7 +590,7 @@ SQL
                                                     <tr class="transition bg-white dark:bg-gray-900 hover:shadow-lg hover:bg-red-50 dark:hover:bg-gray-800 rounded-2xl">
 
                                                         {{-- Waiter SID --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-2xl font-bold text-gray-700 dark:text-gray-200 font-mono">
                                                                 {{ $r['waiter_sid'] ?? '-' }}
                                                             </div>
@@ -600,7 +600,7 @@ SQL
                                                         </td>
 
                                                         {{-- Waiter User / Program --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top">
+                                                        <td class="space-y-1 align-top">
                                                             <div class="font-semibold text-brand dark:text-white">
                                                                 {{ $r['waiter_user'] ?? '-' }}
                                                             </div>
@@ -613,21 +613,21 @@ SQL
                                                         </td>
 
                                                         {{-- Wait Event --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-sm text-gray-700 dark:text-gray-300">
                                                                 {{ $r['waiter_event'] ?? '-' }}
                                                             </div>
                                                         </td>
 
                                                         {{-- Wait seconds --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-xl font-bold text-rose-600 dark:text-rose-400">
                                                                 {{ $r['waiter_seconds_wait'] ?? 0 }}
                                                             </div>
                                                         </td>
 
                                                         {{-- Blocker SID --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-2xl font-bold text-gray-700 dark:text-gray-200 font-mono">
                                                                 {{ $r['blocker_sid'] ?? '-' }}
                                                             </div>
@@ -637,7 +637,7 @@ SQL
                                                         </td>
 
                                                         {{-- Blocker User / Program --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top">
+                                                        <td class="space-y-1 align-top">
                                                             <div class="font-semibold text-brand dark:text-white">
                                                                 {{ $r['blocker_user'] ?? '-' }}
                                                             </div>
@@ -654,7 +654,7 @@ SQL
                                                         </td>
 
                                                         {{-- Locked Object --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-sm font-mono text-gray-700 dark:text-gray-300">
                                                                 {{ $r['locked_object'] ?? '-' }}
                                                             </div>
@@ -664,7 +664,7 @@ SQL
                                                         </td>
 
                                                         {{-- Action --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="flex flex-col gap-2">
                                                                 @if ($bOk)
                                                                     <x-confirm-button
@@ -715,15 +715,15 @@ SQL
                                     {{-- ════ HEAVY ════ --}}
                                     @if ($tab === 'heavy')
                                         <table class="min-w-full text-base border-separate border-spacing-y-3">
-                                            <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                                            <thead class="sticky top-0 z-10">
                                                 <tr class="text-base font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                                    <th class="px-6 py-3">Session</th>
-                                                    <th class="px-6 py-3">User / Program</th>
-                                                    <th class="px-6 py-3">Wait Class / Event</th>
-                                                    <th class="px-6 py-3">Active (s)</th>
-                                                    <th class="px-6 py-3">SQL Info</th>
-                                                    <th class="px-6 py-3">Stats</th>
-                                                    <th class="px-6 py-3 text-center">Action</th>
+                                                    <th>Session</th>
+                                                    <th>User / Program</th>
+                                                    <th>Wait Class / Event</th>
+                                                    <th>Active (s)</th>
+                                                    <th>SQL Info</th>
+                                                    <th>Stats</th>
+                                                    <th class="ds-c">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -736,7 +736,7 @@ SQL
                                                     <tr class="transition bg-white dark:bg-gray-900 hover:shadow-lg hover:bg-amber-50 dark:hover:bg-gray-800 rounded-2xl">
 
                                                         {{-- Session SID --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-2xl font-bold text-gray-700 dark:text-gray-200 font-mono">
                                                                 {{ $r['sid'] ?? '-' }}
                                                             </div>
@@ -749,7 +749,7 @@ SQL
                                                         </td>
 
                                                         {{-- User / Program --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top">
+                                                        <td class="space-y-1 align-top">
                                                             <div class="font-semibold text-brand dark:text-white">
                                                                 {{ $r['username'] ?? '-' }}
                                                             </div>
@@ -762,7 +762,7 @@ SQL
                                                         </td>
 
                                                         {{-- Wait Class / Event --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="font-medium text-gray-700 dark:text-gray-300">
                                                                 {{ $r['wait_class'] ?? '-' }}
                                                             </div>
@@ -772,7 +772,7 @@ SQL
                                                         </td>
 
                                                         {{-- Active seconds --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">
                                                                 {{ $r['seconds_active'] ?? 0 }}
                                                             </div>
@@ -780,7 +780,7 @@ SQL
                                                         </td>
 
                                                         {{-- SQL Info --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top">
+                                                        <td class="space-y-1 align-top">
                                                             <div class="font-mono text-xs text-gray-700 dark:text-gray-300">
                                                                 {{ $r['sql_id'] ?? '-' }}
                                                             </div>
@@ -790,7 +790,7 @@ SQL
                                                         </td>
 
                                                         {{-- Stats --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top text-sm text-gray-700 dark:text-gray-300">
+                                                        <td class="text-muted dark:text-gray-400 space-y-1 align-top">
                                                             <div>Elapsed: <span class="font-semibold">{{ number_format((float) ($r['elapsed_sec'] ?? 0), 2) }}s</span></div>
                                                             <div>CPU: <span class="font-semibold">{{ number_format((float) ($r['cpu_sec'] ?? 0), 2) }}s</span></div>
                                                             <div>Buffers: <span class="font-semibold">{{ $r['buffer_gets'] ?? 0 }}</span></div>
@@ -798,7 +798,7 @@ SQL
                                                         </td>
 
                                                         {{-- Action --}}
-                                                        <td class="px-6 py-4 align-top text-center">
+                                                        <td class="ds-c align-top">
                                                             @if ($ok)
                                                                 <x-confirm-button
                                                                     variant="danger"
@@ -831,15 +831,15 @@ SQL
                                     {{-- ════ LONGOPS ════ --}}
                                     @if ($tab === 'longops')
                                         <table class="min-w-full text-base border-separate border-spacing-y-3">
-                                            <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                                            <thead class="sticky top-0 z-10">
                                                 <tr class="text-base font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                                    <th class="px-6 py-3">Session</th>
-                                                    <th class="px-6 py-3">User / Program</th>
-                                                    <th class="px-6 py-3">Opname / Target</th>
-                                                    <th class="px-6 py-3">Progress</th>
-                                                    <th class="px-6 py-3">Elapsed (s)</th>
-                                                    <th class="px-6 py-3">ETA (s)</th>
-                                                    <th class="px-6 py-3 text-center">Action</th>
+                                                    <th>Session</th>
+                                                    <th>User / Program</th>
+                                                    <th>Opname / Target</th>
+                                                    <th>Progress</th>
+                                                    <th>Elapsed (s)</th>
+                                                    <th>ETA (s)</th>
+                                                    <th class="ds-c">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -858,7 +858,7 @@ SQL
                                                     <tr class="transition bg-white dark:bg-gray-900 hover:shadow-lg hover:bg-green-50 dark:hover:bg-gray-800 rounded-2xl">
 
                                                         {{-- Session SID --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-2xl font-bold text-gray-700 dark:text-gray-200 font-mono">
                                                                 {{ $r['sid'] ?? '-' }}
                                                             </div>
@@ -871,7 +871,7 @@ SQL
                                                         </td>
 
                                                         {{-- User / Program --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top">
+                                                        <td class="space-y-1 align-top">
                                                             <div class="font-semibold text-brand dark:text-white">
                                                                 {{ $r['username'] ?? '-' }}
                                                             </div>
@@ -884,7 +884,7 @@ SQL
                                                         </td>
 
                                                         {{-- Opname / Target --}}
-                                                        <td class="px-6 py-4 space-y-1 align-top">
+                                                        <td class="space-y-1 align-top">
                                                             <div class="font-medium text-gray-700 dark:text-gray-300">
                                                                 {{ $r['opname'] ?? '-' }}
                                                             </div>
@@ -897,7 +897,7 @@ SQL
                                                         </td>
 
                                                         {{-- Progress --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-xl font-bold text-gray-700 dark:text-gray-200">
                                                                 {{ $pct }}%
                                                             </div>
@@ -908,21 +908,21 @@ SQL
                                                         </td>
 
                                                         {{-- Elapsed --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-xl font-bold text-amber-600 dark:text-amber-400">
                                                                 {{ $r['elapsed_seconds'] ?? 0 }}
                                                             </div>
                                                         </td>
 
                                                         {{-- ETA --}}
-                                                        <td class="px-6 py-4 align-top">
+                                                        <td class="align-top">
                                                             <div class="text-xl font-bold text-gray-700 dark:text-gray-300">
                                                                 {{ $r['time_remaining'] ?? 0 }}
                                                             </div>
                                                         </td>
 
                                                         {{-- Action --}}
-                                                        <td class="px-6 py-4 align-top text-center">
+                                                        <td class="ds-c align-top">
                                                             @if ($ok)
                                                                 <x-confirm-button
                                                                     variant="danger"

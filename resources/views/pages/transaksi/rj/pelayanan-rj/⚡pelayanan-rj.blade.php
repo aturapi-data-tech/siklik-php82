@@ -457,14 +457,14 @@ new class extends Component {
                     class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="w-full min-w-full text-base border-separate border-spacing-y-3 table-fixed">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-sm font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-6 py-3 w-[24%]">Pasien</th>
-                                <th class="px-6 py-3 w-[20%]">Poli</th>
-                                <th class="px-6 py-3 w-[16%]">Status Layanan</th>
-                                <th class="px-6 py-3 w-[18%]">Tindak Lanjut</th>
-                                <th class="px-6 py-3 w-[22%] text-center">Action</th>
+                                <th class="w-[24%]">Pasien</th>
+                                <th class="w-[20%]">Poli</th>
+                                <th class="w-[16%]">Status Layanan</th>
+                                <th class="w-[18%]">Tindak Lanjut</th>
+                                <th class="w-[22%] ds-c">Action</th>
                             </tr>
                         </thead>
 
@@ -482,7 +482,7 @@ new class extends Component {
                                                 : 'bg-white dark:bg-gray-900 hover:shadow-lg hover:bg-green-50 dark:hover:bg-gray-800')) }}">
 
                                     {{-- PASIEN --}}
-                                    <td class="px-6 py-6 space-y-3 align-middle">
+                                    <td class="space-y-3 align-middle">
                                         {{-- Toggle Detail chevron — absolute, bottom-center row (di dalam card) --}}
                                         <button type="button" x-on:click="expanded = !expanded"
                                             class="absolute z-10 inline-flex items-center justify-center w-7 h-7 text-gray-500 transition bg-white border border-gray-200 rounded-full shadow-sm hover:text-emerald-600 hover:bg-emerald-50 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300"
@@ -506,48 +506,23 @@ new class extends Component {
                                                     antrian
                                                 </span>
                                             </div>
-                                            <div class="space-y-0 leading-tight">
-                                                <div class="text-base font-medium text-gray-700 dark:text-gray-300">
-                                                    {{ $row->reg_no ?? '-' }}
-                                                </div>
-                                                <div class="text-lg font-semibold text-brand dark:text-white">
-                                                    {{ $row->reg_name ?? '-' }} /
-                                                    ({{ $row->sex === 'L' ? 'Laki-Laki' : ($row->sex === 'P' ? 'Perempuan' : '-') }})
-                                                </div>
-                                                <div x-show="expanded" x-collapse
-                                                    class="text-sm text-gray-700 dark:text-gray-400">
-                                                    {{ $row->birth_date ?? '-' }}
-                                                    @if (!empty($row->umur_format) && $row->umur_format !== '-')
-                                                        <span class="text-gray-500">({{ $row->umur_format }})</span>
-                                                    @endif
-                                                </div>
-                                                <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                    {{ $row->address ?? '-' }}
-                                                </div>
-                                            </div>
+                                            <x-list.identitas-pasien :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                :tglLahir="$row->birth_date" :alamat="$row->address" :collapseUmur="true" />
                                         </div>
                                     </td>
 
                                     {{-- POLI --}}
-                                    <td class="px-6 py-6 space-y-0.5 align-middle">
+                                    <td class="space-y-0.5 align-middle">
                                         <div class="font-semibold text-brand dark:text-emerald-400 leading-tight">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
-                                        @php
-                                            $isBpjs = $row->klaim_status === 'BPJS' || $row->klaim_id === 'JM';
-                                        @endphp
                                         <div
                                             class="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 leading-tight">
                                             <span>{{ $row->dr_name ?? '-' }}</span>
-                                            @if ($isBpjs)
-                                                <x-badge :variant="$isBpjs ? 'info' : 'alternative'">
-                                                    {{ $isBpjs ? 'BPJS' : 'UMUM' }}
-                                                </x-badge>
-                                            @endif
                                         </div>
-                                        <div><span class="text-gray-600 dark:text-gray-400 leading-tight text-xs">Klaim
-                                                : {{ $row->klaim_desc ?? '-' }}</span>
-
+                                        <div>
+                                            <x-list.klaim-badge :status="$row->klaim_status" :desc="$row->klaim_desc" :id="$row->klaim_id"
+                                                prefix="Klaim: " />
                                         </div>
                                         {{-- No Booking — hanya untuk pasien BPJS (klaim_status=BPJS atau klaim_id=JM/JKN Mobile) --}}
                                         @if ($row->klaim_status === 'BPJS' || $row->klaim_id === 'JM')
@@ -571,7 +546,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS LAYANAN --}}
-                                    <td class="px-6 py-6 space-y-2 align-middle">
+                                    <td class="space-y-2 align-middle">
                                         <x-badge :variant="$row->status_variant">
                                             {{ $row->status_text }}
                                         </x-badge>
@@ -625,7 +600,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- TINDAK LANJUT --}}
-                                    <td class="px-6 py-6 space-y-2 align-middle">
+                                    <td class="space-y-2 align-middle">
                                         <div class="text-xs space-y-1">
                                             <div class="flex items-center gap-1.5">
                                                 <span
@@ -719,7 +694,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- ACTION --}}
-                                    <td class="px-6 py-6 align-middle">
+                                    <td class="align-middle">
                                         @if ($row->is_booking_pending)
                                             {{-- Pending: hanya info, belum bisa diakses --}}
                                             <div class="flex flex-col items-center gap-2 text-center">
@@ -781,7 +756,7 @@ new class extends Component {
                                                 {{-- Dropdown Aksi --}}
                                                 <x-dropdown position="left" width="w-[500px]">
                                                     <x-slot name="trigger">
-                                                        <x-secondary-button type="button" class="p-2">
+                                                        <x-secondary-button type="button" class="p-2.5">
                                                             <svg class="w-5 h-5" fill="currentColor"
                                                                 viewBox="0 0 20 20">
                                                                 <path
@@ -793,8 +768,12 @@ new class extends Component {
                                                     <x-slot name="content">
                                                         <div class="p-2 space-y-2">
 
+                                                            {{-- Kepala menu: pasien yang dituju aksi-aksi di bawah ini --}}
+                                                            <x-list.identitas-aksi :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                                jalur="Rawat Jalan" />
+
                                                             {{-- Task ID 4/5 + Get — Perawat saja (Admin otomatis via super-user) --}}
-                                                            @hasanyrole('Perawat|Admin')
+                                                            @can('antrean.taskId')
                                                                 {{-- Tombol Blade (BUKAN komponen Livewire per baris). wire:click="$dispatch(...)"
                                                                      = aksi Livewire → host task-id-poli-actions tangkap via #[On]. Redup dari $row->task_id4/5. --}}
                                                                 <div class="flex space-x-1">
@@ -816,7 +795,7 @@ new class extends Component {
                                                                         TaskId Antrean
                                                                     </x-primary-button>
                                                                 </div>
-                                                            @endhasanyrole
+                                                            @endcan
 
                                                             {{-- GRID 2 KOLOM --}}
                                                             <div class="grid grid-cols-2 gap-1">
@@ -912,7 +891,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
 
@@ -921,10 +900,10 @@ new class extends Component {
             {{-- Sibling components — pelayanan-only: EMR + Modul Dokumen + Administrasi + Cetak Etiket --}}
             {{-- Host aksi Task ID poli (T4/T5/Antrean) — mount 1×. Tombol tiap baris
                  dispatch 'task-id-poli-proses-rj' ke sini via wire:click. --}}
-            @hasanyrole('Perawat|Admin')
+            @can('antrean.taskId')
                 <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
                     wire:key="task-id-poli-actions-rj-host" />
-            @endhasanyrole
+            @endcan
 
             <livewire:pages::transaksi.rj.emr-rj.emr-rj wire:key="rm-perawat-rj-actions" />
             <livewire:pages::transaksi.rj.emr-rj.modul-dokumen.modul-dokumen-rj wire:key="modul-dokumen-rj" />

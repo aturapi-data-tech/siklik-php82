@@ -140,14 +140,14 @@ new class extends Component {
                                 <span class="text-xs text-gray-500 dark:text-gray-400">(info — tidak masuk ke %)</span>
                             </div>
                         </div>
-                        <table class="w-full text-sm">
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <table class="ds-table">
+                            <tbody>
                                 @foreach ($snomed as $item)
                                     <tr>
-                                        <td class="px-4 py-2 text-gray-700 dark:text-gray-300 w-1/3">
+                                        <td class="text-muted dark:text-gray-400 w-1/3">
                                             <strong>{{ $item['label'] }}</strong>
                                         </td>
-                                        <td class="px-4 py-2 text-gray-600 dark:text-gray-400">
+                                        <td class="text-muted dark:text-gray-400">
                                             @if (filled($item['code']))
                                                 <div class="flex items-center gap-2">
                                                     <x-badge variant="success">✓ Coded</x-badge>

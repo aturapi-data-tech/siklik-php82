@@ -213,19 +213,19 @@ new class extends Component {
             <div
                 class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">NO</th>
-                                <th class="px-4 py-3 font-semibold">TANGGAL</th>
-                                <th class="px-4 py-3 font-semibold">SUPPLIER</th>
-                                <th class="px-4 py-3 font-semibold">KETERANGAN</th>
-                                <th class="px-4 py-3 font-semibold text-right">TOTAL</th>
-                                <th class="px-4 py-3 font-semibold">INFO</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>NO</th>
+                                <th>TANGGAL</th>
+                                <th>SUPPLIER</th>
+                                <th>KETERANGAN</th>
+                                <th class="text-right">TOTAL</th>
+                                <th>INFO</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
                                 @php
                                     $totalDetail = $row->total_detail ?? 0;
@@ -237,10 +237,9 @@ new class extends Component {
                                     }
                                     $grandTotal = $setelahDiskon + $ppn + ($row->rcv_materai ?? 0);
                                 @endphp
-                                <tr wire:key="rcv-row-{{ $row->rcv_no }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono whitespace-nowrap">{{ $row->rcv_no }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap">
+                                <tr wire:key="rcv-row-{{ $row->rcv_no }}">
+                                    <td class="ds-td-token whitespace-nowrap">{{ $row->rcv_no }}</td>
+                                    <td class="whitespace-nowrap">
                                         <div>{{ $row->rcv_date_display ?? '-' }}</div>
                                         @if (($row->rcv_status ?? '') === 'H' && !empty($row->due_date_display))
                                             <div class="text-xs text-amber-700 dark:text-amber-400">
@@ -248,14 +247,14 @@ new class extends Component {
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="font-semibold">{{ $row->supp_name ?? '-' }}</div>
                                         <div class="text-gray-400">{{ $row->supp_id }}</div>
                                     </td>
-                                    <td class="px-4 py-3">{{ $row->rcv_desc ?? '-' }}</td>
-                                    <td class="px-4 py-3 font-mono text-right whitespace-nowrap">Rp
+                                    <td>{{ $row->rcv_desc ?? '-' }}</td>
+                                    <td class="ds-td-token text-right whitespace-nowrap">Rp
                                         {{ number_format($grandTotal) }}</td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div>{{ $row->kasir_name ?? ($row->kasir_id ?? '-') }}</div>
                                         @php
                                             $st = (string) ($row->rcv_status ?? '');
@@ -269,7 +268,7 @@ new class extends Component {
                                         @endphp
                                         <x-badge :variant="$stVariant" class="mt-1">{{ $stLabel }}</x-badge>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         @php
                                             $editable = $st === 'A';
                                             $canDelete = in_array($st, ['A', 'F'], true);
@@ -277,14 +276,12 @@ new class extends Component {
                                         <div class="flex flex-wrap gap-2">
                                             @if ($editable)
                                                 <x-outline-button type="button"
-                                                    wire:click="openEdit('{{ $row->rcv_no }}')"
-                                                    class="px-2 py-1 text-xs">
+                                                    wire:click="openEdit('{{ $row->rcv_no }}')">
                                                     Ubah Data
                                                 </x-outline-button>
                                             @else
                                                 <x-secondary-button type="button"
-                                                    wire:click="openEdit('{{ $row->rcv_no }}')"
-                                                    class="px-2 py-1 text-xs">
+                                                    wire:click="openEdit('{{ $row->rcv_no }}')">
                                                     Lihat Data
                                                 </x-secondary-button>
                                             @endif
@@ -304,7 +301,7 @@ new class extends Component {
                 </div>
 
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

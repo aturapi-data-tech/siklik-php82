@@ -343,7 +343,7 @@ new class extends Component {
                                                     </div>
 
                                                     {{-- Actions --}}
-                                                    @role(['Dokter', 'Admin', 'Perawat'])
+                                                    @can('penunjang.lihatBerkas')
                                                         <div class="flex items-center gap-2 mt-3">
                                                             <x-info-button type="button"
                                                                 wire:click="openViewPDF('{{ $item['file'] }}')"
@@ -378,7 +378,7 @@ new class extends Component {
                                                                 </span>
                                                             </x-info-button>
                                                         </div>
-                                                    @endrole
+                                                    @endcan
 
                                                 </td>
                                             </tr>

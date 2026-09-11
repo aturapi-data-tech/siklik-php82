@@ -313,16 +313,16 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-3 py-2 font-semibold w-28">KODE</th>
-                                <th class="px-3 py-2 font-semibold">URAIAN</th>
-                                <th class="px-3 py-2 font-semibold w-40 text-right">BULAN INI</th>
-                                <th class="px-3 py-2 font-semibold w-40 text-right">YTD</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th class="w-28">KODE</th>
+                                <th>URAIAN</th>
+                                <th class="w-40 text-right">BULAN INI</th>
+                                <th class="w-40 text-right">YTD</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @if ($periode === '')
                                 <tr><td colspan="4" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                                     Atur periode untuk menampilkan laporan.
@@ -340,8 +340,8 @@ new class extends Component {
                                                 <span class="ml-2 px-1.5 text-[9px] rounded bg-amber-200 text-amber-800 normal-case">manual override</span>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-2"></td>
-                                        <td class="px-3 py-2"></td>
+                                        <td></td>
+                                        <td></td>
                                     </tr>
                                     @if ($hppOverridden)
                                         <tr class="italic bg-amber-50/50 dark:bg-amber-900/10">
@@ -352,8 +352,8 @@ new class extends Component {
                                     @else
                                         @forelse ($sec['accounts'] as $acc)
                                             <tr wire:key="laba-rugi-acc-{{ $sec['temp_dtl'] ?? '' }}-{{ $acc['acc_id'] ?? $loop->index }}" class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                                <td class="px-3 py-1.5 font-mono text-xs">{{ $acc['acc_id'] }}</td>
-                                                <td class="px-3 py-1.5 text-xs">
+                                                <td class="ds-td-token">{{ $acc['acc_id'] }}</td>
+                                                <td class="text-xs">
                                                     {{ $acc['acc_desc'] ?: '—' }}
                                                     @if ($acc['dk'] === 'D')
                                                         <span class="px-1 ml-1 text-[9px] rounded bg-blue-100 text-blue-700">D</span>
@@ -361,14 +361,14 @@ new class extends Component {
                                                         <span class="px-1 ml-1 text-[9px] rounded bg-purple-100 text-purple-700">K</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-3 py-1.5 font-mono text-sm text-right">
+                                                <td class="ds-td-token text-right">
                                                     @if (abs($acc['bulan']) > 0.001)
                                                         {{ number_format($acc['bulan'], 0, ',', '.') }}
                                                     @else
                                                         <span class="text-gray-300">—</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-3 py-1.5 font-mono text-sm text-right">
+                                                <td class="ds-td-token text-right">
                                                     @if (abs($acc['ytd']) > 0.001)
                                                         {{ number_format($acc['ytd'], 0, ',', '.') }}
                                                     @else
@@ -405,10 +405,10 @@ new class extends Component {
                                     <td colspan="2" class="px-3 py-2 text-sm uppercase">
                                         Laba Kotor (Penjualan − HPP)
                                     </td>
-                                    <td class="px-3 py-2 font-mono text-sm text-right text-blue-800 dark:text-blue-200">
+                                    <td class="ds-td-token text-right text-blue-800 dark:text-blue-200">
                                         {{ number_format($this->labaKotorBulan, 0, ',', '.') }}
                                     </td>
-                                    <td class="px-3 py-2 font-mono text-sm text-right text-blue-800 dark:text-blue-200">
+                                    <td class="ds-td-token text-right text-blue-800 dark:text-blue-200">
                                         {{ number_format($this->labaKotorYtd, 0, ',', '.') }}
                                     </td>
                                 </tr>

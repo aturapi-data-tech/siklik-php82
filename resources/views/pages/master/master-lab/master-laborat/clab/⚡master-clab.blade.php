@@ -213,15 +213,15 @@ new class extends Component {
                     {{-- Tabel CLAB --}}
                     <div class="flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                         <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                            <table class="min-w-full text-sm">
-                                <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                                    <tr class="text-left">
-                                        <th class="px-5 py-3 font-semibold">KATEGORI LAB</th>
-                                        <th class="px-5 py-3 font-semibold text-center">ITEM</th>
-                                        <th class="px-5 py-3 font-semibold">AKSI</th>
+                            <table class="ds-table">
+                                <thead class="sticky top-0 z-10">
+                                    <tr>
+                                        <th>KATEGORI LAB</th>
+                                        <th class="ds-c">ITEM</th>
+                                        <th>AKSI</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                                <tbody>
                                     @forelse ($this->clabs as $clab)
                                         @php $isActive = $selectedClabId === $clab->clab_id; @endphp
                                         <tr wire:key="clab-{{ $clab->clab_id }}"
@@ -232,7 +232,7 @@ new class extends Component {
                                                : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/60' }}">
 
                                             {{-- KATEGORI --}}
-                                            <td class="px-5 py-4 align-top space-y-1">
+                                            <td class="align-top space-y-1">
                                                 <div class="flex items-center gap-2">
                                                     @if ($isActive)
                                                         <svg class="w-3.5 h-3.5 text-brand shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -254,7 +254,7 @@ new class extends Component {
                                             </td>
 
                                             {{-- JUMLAH ITEM --}}
-                                            <td class="px-5 py-4 align-top text-center">
+                                            <td class="ds-c align-top">
                                                 <x-badge variant="info">{{ $clab->jumlah_item }} Item</x-badge>
                                             </td>
 
@@ -279,7 +279,7 @@ new class extends Component {
                                 </tbody>
                             </table>
                         </div>
-                        <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                        <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                             {{ $this->clabs->links() }}
                         </div>
                     </div>

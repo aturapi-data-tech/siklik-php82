@@ -164,22 +164,21 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold w-20">CB ID</th>
-                                <th class="px-4 py-3 font-semibold">CARA BAYAR / AKUN</th>
-                                <th class="px-4 py-3 font-semibold w-24 text-center">D/K</th>
-                                <th class="px-4 py-3 font-semibold w-60 text-right">SALDO PER {{ \Carbon\Carbon::parse($tanggal)->format('d/m/Y') }}</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th class="w-20">CB ID</th>
+                                <th>CARA BAYAR / AKUN</th>
+                                <th class="w-24 ds-c">D/K</th>
+                                <th class="w-60 text-right">SALDO PER {{ \Carbon\Carbon::parse($tanggal)->format('d/m/Y') }}</th>
                                 <th class="px-4 py-3 font-semibold {{ $this->isAdmin() ? 'w-56' : 'w-32' }}">AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="saldo-{{ $row->cb_id }}-{{ $tanggal }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono text-xs align-middle">{{ $row->cb_id }}</td>
-                                    <td class="px-4 py-3 align-middle">
+                                <tr wire:key="saldo-{{ $row->cb_id }}-{{ $tanggal }}">
+                                    <td class="ds-td-token align-middle">{{ $row->cb_id }}</td>
+                                    <td class="align-middle">
                                         <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                             {{ $row->cb_desc }}
                                         </div>
@@ -190,7 +189,7 @@ new class extends Component {
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-center align-middle">
+                                    <td class="ds-c align-middle">
                                         @if ((string) $row->acc_dk_status === 'D')
                                             <span class="px-3 py-1 text-sm font-bold rounded bg-blue-100 text-blue-700">D</span>
                                         @elseif ((string) $row->acc_dk_status === 'K')
@@ -199,12 +198,12 @@ new class extends Component {
                                             <span class="text-sm text-gray-400">—</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 font-mono text-right align-middle">
+                                    <td class="ds-td-token text-right align-middle">
                                         <span class="text-lg font-bold {{ $row->saldo < 0 ? 'text-red-600' : 'text-gray-900 dark:text-gray-100' }}">
                                             Rp {{ number_format($row->saldo, 0, ',', '.') }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 align-middle">
+                                    <td class="align-middle">
                                         <div class="flex items-center gap-2 flex-nowrap">
                                             <x-secondary-button type="button"
                                                 wire:click="openHistory('{{ $row->cb_id }}')"

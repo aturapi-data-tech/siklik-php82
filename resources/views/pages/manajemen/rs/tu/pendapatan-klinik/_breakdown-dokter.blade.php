@@ -25,26 +25,26 @@
             </svg>
         </button>
         <div x-show="open" x-cloak class="overflow-auto border-t border-emerald-200 dark:border-emerald-800">
-            <table class="w-full text-xs text-left text-gray-700 dark:text-gray-300 table-auto">
+            <table class="ds-table">
                 <thead class="text-[10px] text-emerald-900 uppercase bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200">
                     <tr>
-                        <th class="px-3 py-2 text-left">Dokter</th>
-                        <th class="px-3 py-2 text-left">Poli</th>
-                        <th class="px-3 py-2 text-right">Pasien</th>
-                        <th class="px-3 py-2 text-right">BPJS</th>
-                        <th class="px-3 py-2 text-right">UMUM</th>
-                        <th class="px-3 py-2 text-right">Total</th>
+                        <th>Dokter</th>
+                        <th>Poli</th>
+                        <th class="text-right">Pasien</th>
+                        <th class="text-right">BPJS</th>
+                        <th class="text-right">UMUM</th>
+                        <th class="text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($dokterRj as $row)
                         <tr class="border-t border-gray-200 dark:border-gray-700 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10">
-                            <td class="px-3 py-1.5">{{ $row['dr_name'] }} <span class="text-gray-400 text-[10px]">({{ $row['dr_id'] }})</span></td>
-                            <td class="px-3 py-1.5">{{ $row['poli_desc'] }}</td>
-                            <td class="px-3 py-1.5 text-right font-mono">{{ number_format($row['jumlah'], 0, ',', '.') }}</td>
-                            <td class="px-3 py-1.5 text-right font-mono">{{ number_format($row['bpjs'], 0, ',', '.') }}</td>
-                            <td class="px-3 py-1.5 text-right font-mono text-gray-500">{{ number_format($row['umum'], 0, ',', '.') }}</td>
-                            <td class="px-3 py-1.5 text-right font-mono font-bold">{{ number_format($row['total'], 0, ',', '.') }}</td>
+                            <td>{{ $row['dr_name'] }} <span class="text-gray-400 text-[10px]">({{ $row['dr_id'] }})</span></td>
+                            <td>{{ $row['poli_desc'] }}</td>
+                            <td class="ds-td-token text-right">{{ number_format($row['jumlah'], 0, ',', '.') }}</td>
+                            <td class="ds-td-token text-right">{{ number_format($row['bpjs'], 0, ',', '.') }}</td>
+                            <td class="ds-td-meta text-right">{{ number_format($row['umum'], 0, ',', '.') }}</td>
+                            <td class="ds-td-strong ds-td-token text-right">{{ number_format($row['total'], 0, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="6" class="px-3 py-3 text-center text-gray-500 italic">Tidak ada data Rawat Jalan pada periode ini.</td></tr>

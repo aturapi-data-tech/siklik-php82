@@ -249,21 +249,21 @@
     @if (!empty($dataDaftarPoliRJ['penilaian']['nyeri']))
         <x-border-form :title="__('Riwayat Penilaian Nyeri')" :align="__('start')" :bgcolor="__('bg-white')">
             <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="w-full text-xs text-left text-gray-600 dark:text-gray-300">
-                    <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                <table class="ds-table ds-table-entri">
+                    <thead>
                         <tr>
-                            <th class="px-3 py-2 font-medium">Tgl Penilaian</th>
-                            <th class="px-3 py-2 font-medium">Petugas</th>
-                            <th class="px-3 py-2 font-medium">Nyeri</th>
-                            <th class="px-3 py-2 font-medium">Metode</th>
-                            <th class="px-3 py-2 font-medium">Skor</th>
-                            <th class="px-3 py-2 font-medium">Keterangan</th>
+                            <th>Tgl Penilaian</th>
+                            <th>Petugas</th>
+                            <th>Nyeri</th>
+                            <th>Metode</th>
+                            <th>Skor</th>
+                            <th>Keterangan</th>
                             @if (!$isFormLocked)
-                                <th class="px-3 py-2 font-medium"></th>
+                                <th></th>
                             @endif
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody>
                         @foreach (array_reverse($dataDaftarPoliRJ['penilaian']['nyeri'] ?? [], true) as $i => $row)
                             @php
                                 $ket = $row['nyeri']['nyeriKet'] ?? '-';
@@ -279,19 +279,19 @@
                                 };
                             @endphp
                             <tr class="{{ $rowBg }}">
-                                <td class="px-3 py-2 whitespace-nowrap">{{ $row['tglPenilaian'] ?? '-' }}</td>
-                                <td class="px-3 py-2">{{ $row['petugasPenilai'] ?? '-' }}</td>
-                                <td class="px-3 py-2">
+                                <td class="whitespace-nowrap">{{ $row['tglPenilaian'] ?? '-' }}</td>
+                                <td>{{ $row['petugasPenilai'] ?? '-' }}</td>
+                                <td>
                                     <span
                                         class="px-2 py-0.5 rounded-full text-xs font-medium
                                         {{ ($row['nyeri']['nyeri'] ?? '') === 'Ya' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700' }}">
                                         {{ $row['nyeri']['nyeri'] ?? '-' }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-2">{{ $row['nyeri']['nyeriMetode']['nyeriMetode'] ?? '-' }}</td>
-                                <td class="px-3 py-2 font-bold">
+                                <td>{{ $row['nyeri']['nyeriMetode']['nyeriMetode'] ?? '-' }}</td>
+                                <td class="ds-td-strong">
                                     {{ $row['nyeri']['nyeriMetode']['nyeriMetodeScore'] ?? '-' }}</td>
-                                <td class="px-3 py-2">
+                                <td>
                                     @if ($ket !== '-')
                                         <span
                                             class="px-2 py-0.5 rounded-full text-xs font-medium
@@ -309,16 +309,9 @@
                                     @endif
                                 </td>
                                 @if (!$isFormLocked)
-                                    <td class="px-3 py-2">
-                                        <x-icon-button variant="danger"
-                                            wire:click="removeAssessmentNyeri({{ $i }})"
-                                            wire:confirm="Hapus data nyeri ini?" tooltip="Hapus">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </x-icon-button>
+                                    <td>
+                                        <x-hapus-button :action="'removeAssessmentNyeri(' . $i . ')'"
+                                            title="Hapus Penilaian Nyeri" message="Hapus data nyeri ini?" />
                                     </td>
                                 @endif
                             </tr>

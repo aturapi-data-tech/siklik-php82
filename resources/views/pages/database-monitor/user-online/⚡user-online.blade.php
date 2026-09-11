@@ -220,34 +220,33 @@ new class extends Component {
 
                 {{-- TABLE SCROLL AREA --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">KODE</th>
-                                <th class="px-4 py-3 font-semibold">NAMA</th>
-                                <th class="px-4 py-3 font-semibold">EMAIL</th>
-                                <th class="px-4 py-3 font-semibold">PROFESI</th>
-                                <th class="px-4 py-3 font-semibold">ROLES</th>
-                                <th class="px-4 py-3 font-semibold">SEDANG DI</th>
-                                <th class="px-4 py-3 font-semibold">LAST SEEN</th>
-                                <th class="px-4 py-3 font-semibold text-right">IDLE</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>KODE</th>
+                                <th>NAMA</th>
+                                <th>EMAIL</th>
+                                <th>PROFESI</th>
+                                <th>ROLES</th>
+                                <th>SEDANG DI</th>
+                                <th>LAST SEEN</th>
+                                <th class="text-right">IDLE</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($rows as $r)
-                                <tr wire:key="user-online-{{ $r['id'] }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono">{{ $r['kode'] ?? '-' }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $r['name'] ?? '-' }}</td>
-                                    <td class="px-4 py-3">{{ $r['email'] ?? '-' }}</td>
+                                <tr wire:key="user-online-{{ $r['id'] }}">
+                                    <td class="ds-td-token">{{ $r['kode'] ?? '-' }}</td>
+                                    <td class="ds-td-strong">{{ $r['name'] ?? '-' }}</td>
+                                    <td>{{ $r['email'] ?? '-' }}</td>
                                     <td class="px-4 py-3 capitalize">{{ $r['profesi'] }}</td>
-                                    <td class="px-4 py-3">{{ $r['roles'] }}</td>
-                                    <td class="px-4 py-3">
+                                    <td>{{ $r['roles'] }}</td>
+                                    <td>
                                         <div class="text-sm">{{ $r['sedang_di'] }}</div>
                                         <div class="text-xs font-mono text-gray-500 dark:text-gray-400">{{ $r['last_seen_route'] }}</div>
                                     </td>
-                                    <td class="px-4 py-3 font-mono whitespace-nowrap">{{ $r['last_seen_at'] }}</td>
-                                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                                    <td class="ds-td-token whitespace-nowrap">{{ $r['last_seen_at'] }}</td>
+                                    <td class="text-right whitespace-nowrap">
                                         @php $idle = (int) $r['idle_sec']; @endphp
                                         @if ($idle <= 60)
                                             <span class="px-2 py-0.5 text-sm font-semibold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">{{ $idle }}s</span>

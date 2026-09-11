@@ -242,18 +242,18 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-3 py-2 font-semibold w-28">TANGGAL</th>
-                                <th class="px-3 py-2 font-semibold">DESKRIPSI</th>
-                                <th class="px-3 py-2 font-semibold w-56">LAWAN AKUN</th>
-                                <th class="px-3 py-2 font-semibold w-28 text-right">DEBIT</th>
-                                <th class="px-3 py-2 font-semibold w-28 text-right">KREDIT</th>
-                                <th class="px-3 py-2 font-semibold w-36 text-right">SALDO</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th class="w-28">TANGGAL</th>
+                                <th>DESKRIPSI</th>
+                                <th class="w-56">LAWAN AKUN</th>
+                                <th class="w-28 text-right">DEBIT</th>
+                                <th class="w-28 text-right">KREDIT</th>
+                                <th class="w-36 text-right">SALDO</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @if ($accId === '' || $periode === '')
                                 <tr>
                                     <td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
@@ -265,33 +265,32 @@ new class extends Component {
                                     <td colspan="5" class="px-3 py-2 text-xs italic text-gray-500">
                                         Saldo per {{ \Carbon\Carbon::parse($this->dariTanggal)->subDay()->format('d/m/Y') }}
                                     </td>
-                                    <td class="px-3 py-2 font-mono text-sm font-semibold text-right">
+                                    <td class="ds-td-strong ds-td-token text-right">
                                         {{ number_format($this->saldoAwalPeriode, 0, ',', '.') }}
                                     </td>
                                 </tr>
 
                                 @forelse ($this->rows as $i => $row)
-                                    <tr wire:key="bb-{{ $accId }}-{{ $i }}-{{ $row->txn_date }}"
-                                        class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                    <tr wire:key="bb-{{ $accId }}-{{ $i }}-{{ $row->txn_date }}">
                                         <td class="px-3 py-2 font-mono text-xs leading-tight align-top">
                                             <div>{{ \Carbon\Carbon::parse($row->txn_date)->format('d/m/Y') }}</div>
                                             <div class="text-[10px] text-gray-400">{{ \Carbon\Carbon::parse($row->txn_date)->format('H:i') }}</div>
                                         </td>
-                                        <td class="px-3 py-2 text-xs align-top">{{ $row->txn_name }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-500 align-top dark:text-gray-400">
+                                        <td class="text-xs align-top">{{ $row->txn_name }}</td>
+                                        <td class="text-xs text-muted dark:text-gray-400 align-top">
                                             <div class="font-mono">{{ $row->lawan_acc_id }}</div>
                                             @if (!empty($row->lawan_acc_desc))
                                                 <div class="text-[10px] truncate">{{ $row->lawan_acc_desc }}</div>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-2 font-mono text-sm text-right align-top text-blue-700 dark:text-blue-300">
+                                        <td class="ds-td-token text-right align-top text-blue-700 dark:text-blue-300">
                                             @if ((float) $row->debit > 0)
                                                 {{ number_format((float) $row->debit, 0, ',', '.') }}
                                             @else
                                                 <span class="text-gray-300">—</span>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-2 font-mono text-sm text-right align-top text-rose-700 dark:text-rose-300">
+                                        <td class="ds-td-token text-right align-top text-rose-700 dark:text-rose-300">
                                             @if ((float) $row->kredit > 0)
                                                 {{ number_format((float) $row->kredit, 0, ',', '.') }}
                                             @else
@@ -315,10 +314,10 @@ new class extends Component {
                                         <td colspan="3" class="px-3 py-2 text-xs uppercase">
                                             Saldo per {{ \Carbon\Carbon::parse($this->sampaiTanggal)->format('d/m/Y') }}
                                         </td>
-                                        <td class="px-3 py-2 font-mono text-sm text-right text-blue-700 dark:text-blue-300">
+                                        <td class="ds-td-token text-right text-blue-700 dark:text-blue-300">
                                             {{ number_format($this->totalDebit, 0, ',', '.') }}
                                         </td>
-                                        <td class="px-3 py-2 font-mono text-sm text-right text-rose-700 dark:text-rose-300">
+                                        <td class="ds-td-token text-right text-rose-700 dark:text-rose-300">
                                             {{ number_format($this->totalKredit, 0, ',', '.') }}
                                         </td>
                                         <td class="px-3 py-2 font-mono text-base text-right text-emerald-700 dark:text-emerald-300">

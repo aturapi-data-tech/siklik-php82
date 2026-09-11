@@ -255,27 +255,26 @@ new class extends Component {
 
             {{-- Selected Items Chips --}}
             @if (!empty($selectedItems))
-                <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-brand-blue/5">
-                    <p class="mb-2 text-xs font-semibold text-brand-blue">
+                <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-info-tint/40 dark:bg-blue-900/10">
+                    <p class="mb-2 text-xs font-semibold text-info-deep dark:text-blue-300">
                         {{ count($selectedItems) }} item dipilih:
                     </p>
                     <div class="flex flex-wrap gap-1.5">
                         @foreach ($selectedItems as $id => $sel)
-                            <span
-                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-full bg-brand-blue/10 text-brand-blue border-brand-blue/20">
+                            <x-badge variant="info" class="gap-1 !rounded-full border border-info/20">
                                 {{ $sel['rad_desc'] }}
                                 @if ($sel['rad_price'])
-                                    <span class="text-brand-blue/60">· {{ number_format($sel['rad_price']) }}</span>
+                                    <span class="text-info-deep/60 dark:text-blue-300">· {{ number_format($sel['rad_price']) }}</span>
                                 @endif
                                 <button type="button" wire:click="removeSelected('{{ $id }}')"
-                                    class="ml-0.5 hover:text-red-500 transition-colors">
+                                    class="ml-0.5 hover:text-red-500 transition-colors" title="Hapus item">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
                                             clip-rule="evenodd" />
                                     </svg>
                                 </button>
-                            </span>
+                            </x-badge>
                         @endforeach
                     </div>
                 </div>

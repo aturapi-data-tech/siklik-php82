@@ -38,31 +38,26 @@
 
         {{-- LIST --}}
         <div class="overflow-x-auto bg-white border border-gray-200 rounded-lg dark:border-gray-700 dark:bg-gray-900">
-            <table class="min-w-full text-sm">
-                <thead class="text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                    <tr class="text-left">
-                        <th class="px-4 py-2 font-semibold">Nama Obat</th>
-                        <th class="px-4 py-2 font-semibold">Dosis</th>
-                        <th class="px-4 py-2 font-semibold">Rute</th>
-                        <th class="px-4 py-2 font-semibold w-24 text-center">Aksi</th>
+            <table class="ds-table ds-table-entri">
+                <thead>
+                    <tr>
+                        <th>Nama Obat</th>
+                        <th>Dosis</th>
+                        <th>Rute</th>
+                        <th class="w-24 ds-c">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody>
                     @forelse ($dataDaftarPoliRJ['anamnesa']['rekonsiliasiObat'] ?? [] as $i => $obat)
                         <tr wire:key="rekon-obat-{{ $i }}-{{ $obat['namaObat'] }}">
-                            <td class="px-4 py-2 font-medium">{{ $obat['namaObat'] ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ $obat['dosis'] ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ $obat['rute'] ?? '-' }}</td>
-                            <td class="px-4 py-2 text-center">
-                                <x-confirm-button variant="danger"
-                                    :action="'removeRekonsiliasiObat(\'' . addslashes($obat['namaObat']) . '\')'"
+                            <td class="ds-td-strong">{{ $obat['namaObat'] ?? '-' }}</td>
+                            <td>{{ $obat['dosis'] ?? '-' }}</td>
+                            <td>{{ $obat['rute'] ?? '-' }}</td>
+                            <td class="ds-c">
+                                <x-hapus-button :action="'removeRekonsiliasiObat(\'' . addslashes($obat['namaObat']) . '\')'"
                                     title="Hapus Obat"
                                     message="Yakin hapus '{{ $obat['namaObat'] }}'?"
-                                    confirmText="Ya, hapus" cancelText="Batal"
-                                    class="px-2 py-1 text-xs"
-                                    :disabled="$isFormLocked">
-                                    Hapus
-                                </x-confirm-button>
+                                    confirmText="Ya, hapus" :disabled="$isFormLocked" />
                             </td>
                         </tr>
                     @empty

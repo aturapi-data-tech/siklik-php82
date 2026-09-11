@@ -145,55 +145,50 @@ new class extends Component {
             {{-- TABLE --}}
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">NO</th>
-                                <th class="px-4 py-3 font-semibold">TANGGAL</th>
-                                <th class="px-4 py-3 font-semibold">KETERANGAN</th>
-                                <th class="px-4 py-3 font-semibold text-right">NOMINAL</th>
-                                <th class="px-4 py-3 font-semibold">KATEGORI (TUCICO)</th>
-                                <th class="px-4 py-3 font-semibold">CARA BAYAR</th>
-                                <th class="px-4 py-3 font-semibold">KASIR</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>NO</th>
+                                <th>TANGGAL</th>
+                                <th>KETERANGAN</th>
+                                <th class="text-right">NOMINAL</th>
+                                <th>KATEGORI (TUCICO)</th>
+                                <th>CARA BAYAR</th>
+                                <th>KASIR</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
                                 <tr wire:key="co-row-{{ $row->co_no }}" class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono text-sm whitespace-nowrap">{{ $row->co_no }}</td>
-                                    <td class="px-4 py-3 text-sm whitespace-nowrap">
+                                    <td class="ds-td-token whitespace-nowrap">{{ $row->co_no }}</td>
+                                    <td class="whitespace-nowrap">
                                         {{ $row->co_date_display ?? '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm">
+                                    <td>
                                         {{ $row->co_desc ?? '-' }}
                                     </td>
-                                    <td class="px-4 py-3 font-mono text-right whitespace-nowrap">Rp {{ number_format($row->co_nominal ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-sm">
+                                    <td class="ds-td-token text-right whitespace-nowrap">Rp {{ number_format($row->co_nominal ?? 0) }}</td>
+                                    <td>
                                         <div>{{ $row->tucico_desc ?? '-' }}</div>
                                         <div class="text-xs text-gray-400 font-mono">{{ $row->tucico_id }}</div>
                                     </td>
-                                    <td class="px-4 py-3 text-sm">
+                                    <td>
                                         <div>{{ $row->cb_desc ?? '-' }}</div>
                                         <div class="text-xs text-gray-400 font-mono">{{ $row->cb_id }}</div>
                                     </td>
-                                    <td class="px-4 py-3 text-sm">
+                                    <td>
                                         {{ $row->kasir_name ?? $row->kasir_id ?? '-' }}
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-secondary-button type="button"
-                                                wire:click="openEdit('{{ $row->co_no }}')" class="px-2 py-1 text-xs">
+                                                wire:click="openEdit('{{ $row->co_no }}')">
                                                 Edit
                                             </x-secondary-button>
-                                            @hasanyrole('Admin|Tu')
-                                                <x-confirm-button variant="danger" :action="'requestDelete(\'' . $row->co_no . '\')'"
-                                                    title="Hapus Transaksi" message="Yakin ingin menghapus transaksi #{{ $row->co_no }}?"
-                                                    confirmText="Ya, hapus" cancelText="Batal"
-                                                    class="px-2 py-1 text-xs">
-                                                    Hapus
-                                                </x-confirm-button>
-                                            @endhasanyrole
+                                            @can('kas.hapusTransaksi')
+                                                <x-hapus-button :action="'requestDelete(\'' . $row->co_no . '\')'" title="Hapus Transaksi" message="Yakin ingin menghapus transaksi #{{ $row->co_no }}?" />
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>
@@ -208,7 +203,7 @@ new class extends Component {
                     </table>
                 </div>
 
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

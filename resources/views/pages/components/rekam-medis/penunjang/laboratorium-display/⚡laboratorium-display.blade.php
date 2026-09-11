@@ -542,7 +542,7 @@ new class extends Component {
                                                     </div>
 
                                                     {{-- Actions — hanya tampil jika status Selesai (H) --}}
-                                                    @role(['Dokter', 'Admin', 'Perawat', 'Laboratorium'])
+                                                    @can('lab.lihatHasil')
                                                         @if ($isSelesai)
                                                             <div class="flex items-center gap-2 mt-3">
                                                                 {{-- Tombol Hasil Laboratorium --}}
@@ -596,7 +596,7 @@ new class extends Component {
                                                                 </x-primary-button>
                                                             </div>
                                                         @endif
-                                                    @endrole
+                                                    @endcan
 
                                                 </td>
                                             </tr>
@@ -1009,7 +1009,7 @@ new class extends Component {
                             </x-info-button>
                         @endif
 
-                        @role(['Dokter', 'Admin', 'Laboratorium'])
+                        @can('lab.cetak')
                             @if (!empty($selectedCheckupNo))
                                 <x-primary-button type="button" wire:click="cetakLaborat('{{ $selectedCheckupNo }}')"
                                     wire:loading.attr="disabled">
@@ -1025,7 +1025,7 @@ new class extends Component {
                                     </span>
                                 </x-primary-button>
                             @endif
-                        @endrole
+                        @endcan
                     </div>
                 </div>
             </div>

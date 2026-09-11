@@ -401,7 +401,7 @@ new class extends Component {
             <div wire:key="{{ $this->renderKey('eresep-non-racikan-rj', [$rjNo ?? 'new']) }}">
                 <x-input-label for="" :value="__('Non Racikan')" :required="false" class="pt-2 sm:text-xl" />
 
-                @role(['Dokter', 'Admin'])
+                @can('eresep.tulis')
                     <div x-data x-ref="nonRacikanSection">
 
                         {{-- LOV Obat --}}
@@ -505,38 +505,38 @@ new class extends Component {
                         @endif
 
                     </div>
-                @endrole
+                @endcan
 
                 {{-- Tabel Resep --}}
                 <div class="flex flex-col my-2">
                     <div class="overflow-x-auto rounded-lg">
                         <div class="inline-block min-w-full align-middle">
                             <div class="overflow-hidden shadow sm:rounded-lg">
-                                <table class="w-full text-sm text-left text-gray-500 table-auto dark:text-gray-400">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <table class="ds-table">
+                                    <thead>
                                         <tr>
-                                            <th class="w-24 px-4 py-3">NonRacikan</th>
-                                            <th class="px-4 py-3">Obat</th>
-                                            <th class="w-20 px-4 py-3">Jumlah</th>
-                                            <th class="px-4 py-3">Signa</th>
-                                            <th class="w-8 px-4 py-3 text-center">Action</th>
+                                            <th class="w-24">NonRacikan</th>
+                                            <th>Obat</th>
+                                            <th class="w-20">Jumlah</th>
+                                            <th>Signa</th>
+                                            <th class="w-8 ds-c">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="bg-white">
+                                    <tbody>
                                         @foreach ($dataDaftarPoliRJ['eresep'] ?? [] as $key => $eresep)
                                             <tr class="border-b group" x-data>
-                                                <td class="w-24 px-4 py-3 whitespace-nowrap">
+                                                <td class="w-24 whitespace-nowrap">
                                                     {{ $eresep['jenisKeterangan'] }}
                                                 </td>
-                                                <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
-                                                <td class="w-20 px-4 py-3">
+                                                <td>{{ $eresep['productName'] }}</td>
+                                                <td class="w-20">
                                                     <x-text-input placeholder="Jml" :disabled="$isFormLocked"
                                                         id="eresep-rj-qty-{{ $key }}"
                                                         wire:model="dataDaftarPoliRJ.eresep.{{ $key }}.qty"
                                                         x-ref="qty{{ $key }}"
                                                         x-on:keydown.enter.prevent="$refs.signaX{{ $key }}.focus()" />
                                                 </td>
-                                                <td class="px-4 py-3">
+                                                <td>
                                                     <div class="flex items-center gap-1">
                                                         <div class="w-16 shrink-0">
                                                             <x-text-input placeholder="Signa1" :disabled="$isFormLocked"
@@ -570,21 +570,11 @@ new class extends Component {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="w-8 px-4 py-3 text-center">
-                                                    @role(['Dokter', 'Admin'])
-                                                        <x-outline-button type="button"
-                                                            wire:click.prevent="removeProduct('{{ $eresep['rjObatDtl'] }}')"
-                                                            wire:confirm="Hapus obat ini?"
-                                                            wire:loading.attr="disabled"
-                                                            :disabled="$isFormLocked"
-                                                            class="!text-red-600 !bg-red-50 !border-red-200 hover:!bg-red-100 hover:!text-red-700 hover:!border-red-300 dark:!text-red-400 dark:!bg-red-900/20 dark:!border-red-800/30 dark:hover:!bg-red-900/30 dark:hover:!text-red-300"
-                                                            title="Hapus obat">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </x-outline-button>
-                                                    @endrole
+                                                <td class="ds-c w-8">
+                                                    @can('eresep.tulis')
+                                                        <x-hapus-button wire:click.prevent="removeProduct('{{ $eresep['rjObatDtl'] }}')"
+                                                            confirm="Hapus obat ini?" :disabled="$isFormLocked" title="Hapus obat" />
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @endforeach

@@ -16,20 +16,20 @@
         <table class="text-gray-700 dark:text-gray-200">
             <tbody class="align-top">
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">No. Rujukan PCare</td>
-                    <td class="py-0.5 font-mono font-semibold">{{ $hasilRujukan['noRujukanPcare'] ?: '-' }}</td>
+                    <td class="whitespace-nowrap">No. Rujukan PCare</td>
+                    <td class="ds-td-strong ds-td-token">{{ $hasilRujukan['noRujukanPcare'] ?: '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">No. Rujukan SATUSEHAT</td>
-                    <td class="py-0.5 font-mono font-semibold">{{ $hasilRujukan['noRujukanSatuSehat'] ?? '-' }}</td>
+                    <td class="whitespace-nowrap">No. Rujukan SATUSEHAT</td>
+                    <td class="ds-td-strong ds-td-token">{{ $hasilRujukan['noRujukanSatuSehat'] ?? '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">No. Kunjungan PCare</td>
-                    <td class="py-0.5 font-mono">{{ $hasilRujukan['noKunjunganPcare'] ?: '-' }}</td>
+                    <td class="whitespace-nowrap">No. Kunjungan PCare</td>
+                    <td class="ds-td-token">{{ $hasilRujukan['noKunjunganPcare'] ?: '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">Faskes Tujuan</td>
-                    <td class="py-0.5">
+                    <td class="whitespace-nowrap">Faskes Tujuan</td>
+                    <td>
                         {{ $hasilRujukan['tujuanNama'] ?? '-' }}
                         <span class="text-muted dark:text-gray-400">
                             (PPK {{ $hasilRujukan['tujuanPpk'] ?? '-' }} &middot; Org ID {{ $hasilRujukan['tujuanSatuSehat'] ?? '-' }})
@@ -37,15 +37,15 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">Diagnosa</td>
-                    <td class="py-0.5">
+                    <td class="whitespace-nowrap">Diagnosa</td>
+                    <td>
                         <span class="font-mono">{{ $formRujukan['kodeDiagnosa'] ?: '-' }}</span>
                         {{ $formRujukan['diagnosaDesc'] }}
                     </td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">Subspesialis</td>
-                    <td class="py-0.5">
+                    <td class="whitespace-nowrap">Subspesialis</td>
+                    <td>
                         {{ $formRujukan['kodeSubSpesialis'] ?: '-' }} {{ $formRujukan['namaSubSpesialis'] }}
                         @if (filled($formRujukan['namaSarana'] ?? ''))
                             &middot; sarana {{ $formRujukan['namaSarana'] }}
@@ -53,24 +53,24 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">Estimasi Tgl. Rujuk</td>
-                    <td class="py-0.5">{{ $formRujukan['estimasiRujuk'] ?: '-' }}</td>
+                    <td class="whitespace-nowrap">Estimasi Tgl. Rujuk</td>
+                    <td>{{ $formRujukan['estimasiRujuk'] ?: '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="py-0.5 pr-4 whitespace-nowrap">Dikirim</td>
-                    <td class="py-0.5">
+                    <td class="whitespace-nowrap">Dikirim</td>
+                    <td>
                         {{ $hasilRujukan['dikirimPada'] ?? '-' }} oleh {{ $hasilRujukan['dikirimOleh'] ?? '-' }}
                     </td>
                 </tr>
                 @if (filled($hasilRujukan['serviceRequestId'] ?? ''))
                     <tr>
-                        <td class="py-0.5 pr-4 whitespace-nowrap">ServiceRequest</td>
+                        <td class="whitespace-nowrap">ServiceRequest</td>
                         <td class="py-0.5 font-mono break-all">{{ $hasilRujukan['serviceRequestId'] }}</td>
                     </tr>
                 @endif
                 @if (filled($hasilRujukan['traceId'] ?? ''))
                     <tr>
-                        <td class="py-0.5 pr-4 whitespace-nowrap">Trace ID</td>
+                        <td class="whitespace-nowrap">Trace ID</td>
                         <td class="py-0.5 font-mono break-all">{{ $hasilRujukan['traceId'] }}</td>
                     </tr>
                 @endif

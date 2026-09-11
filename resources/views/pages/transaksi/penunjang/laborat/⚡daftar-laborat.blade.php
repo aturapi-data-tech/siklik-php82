@@ -253,15 +253,15 @@ new class extends Component {
                 <div class="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-320px)] rounded-t-2xl">
                     <table class="min-w-full text-base border-separate border-spacing-y-3">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-base font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-6 py-3">No</th>
-                                <th class="px-6 py-3">Pasien</th>
-                                <th class="px-6 py-3">Tanggal / Layanan</th>
-                                <th class="px-6 py-3">Item Pemeriksaan</th>
-                                <th class="px-6 py-3">Status</th>
-                                <th class="px-6 py-3 text-center">Aksi</th>
+                                <th>No</th>
+                                <th>Pasien</th>
+                                <th>Tanggal / Layanan</th>
+                                <th>Item Pemeriksaan</th>
+                                <th>Status</th>
+                                <th class="ds-c">Aksi</th>
                             </tr>
                         </thead>
 
@@ -299,14 +299,14 @@ new class extends Component {
                                     class="transition bg-white rounded-2xl dark:bg-gray-900 hover:shadow-lg hover:bg-green-50 dark:hover:bg-gray-800">
 
                                     {{-- NO --}}
-                                    <td class="px-6 py-4 align-top">
+                                    <td class="align-top">
                                         <div class="text-sm font-mono text-gray-500">
                                             {{ $this->rows->firstItem() + $idx }}
                                         </div>
                                     </td>
 
                                     {{-- PASIEN --}}
-                                    <td class="px-6 py-4 space-y-1 align-top">
+                                    <td class="space-y-1 align-top">
                                         <div class="text-base font-medium text-gray-700 dark:text-gray-300">
                                             {{ $row->reg_no ?? '-' }}
                                         </div>
@@ -330,7 +330,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- TANGGAL / LAYANAN --}}
-                                    <td class="px-6 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="font-mono text-sm text-gray-700 dark:text-gray-300">
                                             {{ $row->checkup_date_display ?? '-' }}
                                         </div>
@@ -344,7 +344,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- ITEM PEMERIKSAAN --}}
-                                    <td class="px-6 py-4 align-top">
+                                    <td class="align-top">
                                         <div class="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate"
                                             title="{{ $row->checkup_dtl_pasien ?? '' }}">
                                             {{ $row->checkup_dtl_pasien ?? '-' }}
@@ -352,14 +352,14 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS --}}
-                                    <td class="px-6 py-4 align-top">
+                                    <td class="align-top">
                                         <x-badge :variant="$statusVariant">
                                             {{ $statusText }}
                                         </x-badge>
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-6 py-4 text-center align-top">
+                                    <td class="ds-c align-top">
                                         <x-primary-button type="button"
                                             wire:click="openDetail('{{ $row->checkup_no }}')"
                                             wire:loading.attr="disabled"

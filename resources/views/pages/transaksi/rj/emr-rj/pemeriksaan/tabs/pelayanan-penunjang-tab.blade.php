@@ -8,8 +8,8 @@
                     wire:key="laborat-actions-{{ $dataDaftarPoliRJ['rjNo'] ?? 'new' }}" />
             </div>
 
-            <table class="w-full text-sm text-left text-gray-500 table-auto">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+            <table class="ds-table ds-table-entri">
+                <thead>
                     <tr>
                         <th scope="col"
                             class="px-4 py-3 text-xs font-medium text-gray-500 uppercase dark:text-gray-400">
@@ -29,7 +29,7 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white">
+                <tbody>
                     @isset($dataDaftarPoliRJ['pemeriksaan']['pemeriksaanPenunjang']['lab'])
                         @foreach ($dataDaftarPoliRJ['pemeriksaan']['pemeriksaanPenunjang']['lab'] as $key => $pemeriksaanPenunjangLab)
                             <tr class="border-b group">
@@ -64,8 +64,8 @@
                     wire:key="radiologi-actions-{{ $dataDaftarPoliRJ['rjNo'] ?? 'new' }}" />
             </div>
 
-            <table class="w-full text-sm text-left text-gray-500 table-auto">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+            <table class="ds-table ds-table-entri">
+                <thead>
                     <tr>
                         <th scope="col"
                             class="px-4 py-3 text-xs font-medium text-gray-500 uppercase dark:text-gray-400">
@@ -85,7 +85,7 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white">
+                <tbody>
                     @isset($dataDaftarPoliRJ['pemeriksaan']['pemeriksaanPenunjang']['rad'])
                         @foreach ($dataDaftarPoliRJ['pemeriksaan']['pemeriksaanPenunjang']['rad'] as $key => $pemeriksaanPenunjangRad)
                             <tr class="border-b group">

@@ -256,15 +256,15 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-3 py-2 font-semibold w-28">KODE</th>
-                                <th class="px-3 py-2 font-semibold">URAIAN</th>
-                                <th class="px-3 py-2 font-semibold w-48 text-right">SALDO</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th class="w-28">KODE</th>
+                                <th>URAIAN</th>
+                                <th class="w-48 text-right">SALDO</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @if ($tanggal === '')
                                 <tr><td colspan="3" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                                     Atur tanggal cutoff untuk menampilkan neraca.
@@ -283,12 +283,12 @@ new class extends Component {
                                         <td colspan="2" class="px-3 py-2 text-xs font-bold tracking-wider uppercase">
                                             {{ $sec['desc'] }}
                                         </td>
-                                        <td class="px-3 py-2"></td>
+                                        <td></td>
                                     </tr>
                                     @forelse ($sec['accounts'] as $acc)
                                         <tr wire:key="neraca-acc-{{ $sec['temp_dtl'] ?? '' }}-{{ $acc['acc_id'] ?? $loop->index }}" class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                            <td class="px-3 py-1.5 font-mono text-xs">{{ $acc['acc_id'] }}</td>
-                                            <td class="px-3 py-1.5 text-xs">
+                                            <td class="ds-td-token">{{ $acc['acc_id'] }}</td>
+                                            <td class="text-xs">
                                                 {{ $acc['acc_desc'] ?: '—' }}
                                                 @if ($acc['dk'] === 'D')
                                                     <span class="px-1 ml-1 text-[9px] rounded bg-blue-100 text-blue-700">D</span>
@@ -315,13 +315,13 @@ new class extends Component {
                                         <td colspan="2" class="px-3 py-1.5 text-xs uppercase">
                                             Subtotal {{ $sec['desc'] }}
                                         </td>
-                                        <td class="px-3 py-1.5 font-mono text-sm text-right">
+                                        <td class="ds-td-token text-right">
                                             {{ number_format($sec['total'], 0, ',', '.') }}
                                         </td>
                                     </tr>
 
                                     @if ($isEkuitas)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                        <tr>
                                             <td class="px-3 py-1.5 text-xs italic text-gray-500"></td>
                                             <td class="px-3 py-1.5 text-xs italic text-gray-600 dark:text-gray-300">
                                                 Laba Tahun Berjalan
@@ -335,7 +335,7 @@ new class extends Component {
                                             <td colspan="2" class="px-3 py-1.5 text-sm uppercase">
                                                 Total Ekuitas (incl. Laba Tahun Berjalan)
                                             </td>
-                                            <td class="px-3 py-1.5 font-mono text-sm text-right text-purple-800 dark:text-purple-200">
+                                            <td class="ds-td-token text-right text-purple-800 dark:text-purple-200">
                                                 {{ number_format($this->totalEkuitas, 0, ',', '.') }}
                                             </td>
                                         </tr>

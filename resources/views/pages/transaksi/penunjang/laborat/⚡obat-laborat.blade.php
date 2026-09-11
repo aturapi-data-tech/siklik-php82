@@ -211,19 +211,19 @@ new class extends Component {
 
         {{-- OBAT TABLE --}}
         <div class="overflow-x-auto border rounded-lg border-gray-200 dark:border-gray-700">
-            <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-800">
+            <table class="ds-table">
+                <thead>
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">No</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Kode Obat</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Nama Obat</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Qty</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Harga</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Subtotal</th>
-                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Aksi</th>
+                        <th>No</th>
+                        <th>Kode Obat</th>
+                        <th>Nama Obat</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Harga</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="ds-c">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+                <tbody>
                     @php $totalObat = 0; @endphp
                     @forelse ($obatRows as $idx => $ob)
                         @php
@@ -231,25 +231,16 @@ new class extends Component {
                             $totalObat += $subtotal;
                         @endphp
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <td class="px-3 py-2 text-gray-500">{{ $idx + 1 }}</td>
-                            <td class="px-3 py-2 font-mono text-gray-500">{{ $ob['product_id'] ?? '-' }}</td>
-                            <td class="px-3 py-2 text-gray-900 dark:text-gray-100">{{ $ob['product_name'] ?? '-' }}</td>
-                            <td class="px-3 py-2 text-right">{{ number_format($ob['qty'] ?? 0, 2) }}</td>
-                            <td class="px-3 py-2 text-right">{{ number_format($ob['price'] ?? 0) }}</td>
-                            <td class="px-3 py-2 text-right font-medium">{{ number_format($subtotal) }}</td>
-                            <td class="px-3 py-2 text-center">
+                            <td class="text-muted dark:text-gray-400">{{ $idx + 1 }}</td>
+                            <td class="ds-td-meta">{{ $ob['product_id'] ?? '-' }}</td>
+                            <td>{{ $ob['product_name'] ?? '-' }}</td>
+                            <td class="text-right">{{ number_format($ob['qty'] ?? 0, 2) }}</td>
+                            <td class="text-right">{{ number_format($ob['price'] ?? 0) }}</td>
+                            <td class="ds-td-strong text-right">{{ number_format($subtotal) }}</td>
+                            <td class="ds-c">
                                 @if ($labStatus === 'P')
-                                    <button type="button"
-                                        wire:click="deleteObatRow({{ $ob['id'] }})"
-                                        wire:confirm="Yakin hapus obat ini?"
-                                        class="text-red-500 hover:text-red-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                                    <x-hapus-button :action="'deleteObatRow(' . $ob['id'] . ')'" title="Hapus Obat"
+                                        message="Yakin hapus obat ini?" />
                                 @endif
                             </td>
                         </tr>
@@ -267,7 +258,7 @@ new class extends Component {
                             <td colspan="5"
                                 class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 Total:</td>
-                            <td class="px-3 py-2 text-right text-sm font-bold text-brand">
+                            <td class="ds-td-strong text-right text-brand">
                                 {{ number_format($totalObat) }}</td>
                             <td></td>
                         </tr>

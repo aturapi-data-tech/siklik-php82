@@ -541,7 +541,7 @@ new class extends Component {
             {{-- ═══════════ TABLE ═══════════ --}}
             <div class="mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-320px)] rounded-t-2xl">
-                    <table class="min-w-full text-sm border-collapse">
+                    <table class="ds-table">
 
                         <thead>
                             <tr class="text-xs font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
@@ -608,14 +608,14 @@ new class extends Component {
                                 <tr class="transition bg-white dark:bg-gray-900 hover:bg-green-50 dark:hover:bg-gray-800">
 
                                     {{-- NO ANTREAN --}}
-                                    <td class="px-3 py-1.5 text-center align-middle">
+                                    <td class="ds-c align-middle">
                                         <div class="text-xl font-bold text-gray-700 dark:text-gray-200">
                                             {{ $row->angkaantrean ?? '-' }}
                                         </div>
                                     </td>
 
                                     {{-- PASIEN --}}
-                                    <td class="px-3 py-1.5 align-middle">
+                                    <td class="align-middle">
                                         <div class="font-semibold text-brand dark:text-white truncate">
                                             {{ $row->reg_name }}
                                         </div>
@@ -634,12 +634,12 @@ new class extends Component {
                                     </td>
 
                                     {{-- JAM --}}
-                                    <td class="px-3 py-1.5 align-middle text-xs text-gray-700 dark:text-gray-300">
+                                    <td class="text-xs text-muted dark:text-gray-400 align-middle">
                                         {{ $row->jampraktek }}
                                     </td>
 
                                     {{-- BOOKING --}}
-                                    <td class="px-3 py-1.5 align-middle">
+                                    <td class="align-middle">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ $row->nobooking }}</span>
                                             <x-badge :variant="$statusVariant">{{ $row->status }}</x-badge>
@@ -658,7 +658,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-3 py-1.5 align-middle">
+                                    <td class="align-middle">
                                         <div class="flex items-center justify-center gap-1">
 
                                             @if ($row->status !== 'Belum')
@@ -723,7 +723,7 @@ new class extends Component {
                 </div>
 
                 {{-- Pagination --}}
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->bookingData->links() }}
                 </div>
 

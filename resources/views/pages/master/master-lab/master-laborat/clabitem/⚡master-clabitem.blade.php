@@ -186,21 +186,21 @@ new class extends Component {
             {{-- Tabel CLABITEM --}}
             <div class="flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-5 py-3 font-semibold">
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>
                                     PEMERIKSAAN
                                     <span class="font-normal text-brand dark:text-brand-lime ml-1">&mdash;
                                         {{ $selectedClabDesc }}</span>
                                 </th>
-                                <th class="px-5 py-3 font-semibold">MAPPING</th>
-                                <th class="px-5 py-3 font-semibold text-right">TARIF</th>
-                                <th class="px-5 py-3 font-semibold">NILAI RUJUKAN</th>
-                                <th class="px-5 py-3 font-semibold">AKSI</th>
+                                <th>MAPPING</th>
+                                <th class="text-right">TARIF</th>
+                                <th>NILAI RUJUKAN</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->clabitems as $item)
                                 @php
                                     $isGroup  = $item->is_group === '1' || $item->is_group === 'Y';
@@ -242,7 +242,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- MAPPING --}}
-                                    <td class="px-5 py-3 align-top">
+                                    <td class="align-top">
                                         <div class="space-y-1 text-xs">
                                             @if ($item->item_code)
                                                 <div class="flex items-center gap-1.5">
@@ -260,14 +260,14 @@ new class extends Component {
                                     </td>
 
                                     {{-- TARIF --}}
-                                    <td class="px-5 py-3 align-top text-right">
+                                    <td class="align-top text-right">
                                         <span class="font-mono font-semibold text-gray-700 dark:text-gray-200">
                                             {{ number_format($item->price ?? 0, 0, ',', '.') }}
                                         </span>
                                     </td>
 
                                     {{-- NILAI NORMAL --}}
-                                    <td class="px-5 py-3 align-top">
+                                    <td class="align-top">
                                         <div class="space-y-0.5 text-xs">
                                             @if ($item->lowhigh_status === 'Y' || $item->lowhigh_status === '1')
                                                 {{-- Mode low-high --}}
@@ -306,7 +306,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-5 py-3 align-top">
+                                    <td class="align-top">
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEditClabitem('{{ $item->clabitem_id }}', '{{ $item->clab_id }}', '{{ $item->product_id }}')" />
 
@@ -328,7 +328,7 @@ new class extends Component {
                         </tbody>
                     </table>
                 </div>
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->clabitems->links() }}
                 </div>
             </div>

@@ -1,6 +1,6 @@
 <div class="space-y-4">
 
-    @role(['Perawat', 'Admin'])
+    @can('penunjang.unggah')
         <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-900 dark:border-gray-700">
             <h3 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Upload Hasil Penunjang
@@ -60,38 +60,38 @@
                 <div>{{-- kolom ketiga kosong, placeholder agar grid tetap 3 kolom --}}</div>
             </div>
         </div>
-    @endrole
+    @endcan
 
     {{-- ── TABEL DAFTAR FILE ───────────────────────────────────── --}}
     <div
         class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm
                 dark:bg-gray-900 dark:border-gray-700">
-        <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
-            <thead class="text-xs font-semibold text-gray-700 uppercase bg-gray-100 dark:bg-gray-800">
+        <table class="ds-table ds-table-entri">
+            <thead>
                 <tr>
-                    <th class="px-4 py-3 w-44">Tgl Upload</th>
-                    <th class="px-4 py-3">Keterangan</th>
-                    <th class="px-4 py-3 w-28 text-center">Aksi</th>
+                    <th class="w-44">Tgl Upload</th>
+                    <th>Keterangan</th>
+                    <th class="w-28 ds-c">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody>
                 @forelse ($dataDaftarPoliRJ['pemeriksaan']['uploadHasilPenunjang'] ?? [] as $item)
                     <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition">
 
-                        <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                        <td class="text-muted dark:text-gray-400 whitespace-nowrap">
                             {{ $item['tglUpload'] ?? '-' }}
                         </td>
 
-                        <td class="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        <td class="text-muted dark:text-gray-400">
                             {{ $item['desc'] ?? '-' }}
                         </td>
 
-                        <td class="px-4 py-2">
+                        <td>
                             <div class="flex items-center justify-center gap-2">
 
                                 {{-- Tombol Lihat PDF
                                      x-icon-button: icon only, aksi di row tabel --}}
-                                @role(['Perawat', 'Admin', 'Dokter'])
+                                @can('penunjang.lihatBerkas')
                                     <x-icon-button wire:click="openModalViewPenunjang('{{ $item['file'] ?? '' }}')"
                                         title="Lihat PDF">
                                         <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -105,11 +105,11 @@
                                                 clip-rule="evenodd" />
                                         </svg>
                                     </x-icon-button>
-                                @endrole
+                                @endcan
 
                                 {{-- Tombol Hapus
                                      x-confirm-button: row tabel, trigger confirm, aksi irreversible --}}
-                                @role(['Perawat', 'Admin'])
+                                @can('penunjang.unggah')
                                     <x-confirm-button variant="danger" :action="'deleteHasilPenunjang(\'' . ($item['file'] ?? '') . '\')'" title="Hapus File Penunjang"
                                         message="Yakin ingin menghapus file {{ $item['desc'] ?? '' }}?"
                                         confirmText="Ya, hapus" cancelText="Batal" :disabled="$isFormLocked">
@@ -122,7 +122,7 @@
                                              1 0 0 1 2 0v8Z" />
                                         </svg>
                                     </x-confirm-button>
-                                @endrole
+                                @endcan
 
                             </div>
                         </td>

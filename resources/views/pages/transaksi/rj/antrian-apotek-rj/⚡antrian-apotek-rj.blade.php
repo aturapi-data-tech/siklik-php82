@@ -384,14 +384,14 @@ new class extends Component {
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="min-w-full text-base border-separate border-spacing-y-2">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-xs font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-4 py-3">Antrian & Pasien</th>
-                                <th class="px-4 py-3">Poli / Dokter</th>
-                                <th class="px-4 py-3">Status Layanan</th>
-                                <th class="px-4 py-3">Waktu Apotek</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
+                                <th>Antrian & Pasien</th>
+                                <th>Poli / Dokter</th>
+                                <th>Status Layanan</th>
+                                <th>Waktu Apotek</th>
+                                <th class="ds-c">Aksi</th>
                             </tr>
                         </thead>
 
@@ -402,7 +402,7 @@ new class extends Component {
                                     {{ $row->no_antrian_apotek > 0 ? 'border-l-4 border-l-emerald-500' : '' }}">
 
                                     {{-- ANTRIAN & PASIEN --}}
-                                    <td class="px-4 py-4 align-top">
+                                    <td class="align-top">
                                         <div class="flex items-start gap-3">
                                             {{-- Nomor antrian apotek --}}
                                             <div
@@ -418,22 +418,8 @@ new class extends Component {
                                                 </span>
                                             </div>
 
-                                            <div class="space-y-0.5 min-w-0">
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                    {{ $row->reg_no }}
-                                                </div>
-                                                <div
-                                                    class="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[180px]">
-                                                    {{ $row->reg_name }}
-                                                </div>
-                                                <div class="text-xs text-gray-600 dark:text-gray-400">
-                                                    {{ $row->sex === 'L' ? 'Laki-Laki' : ($row->sex === 'P' ? 'Perempuan' : '-') }}
-                                                    &bull; {{ $row->umur_format }}
-                                                </div>
-                                                <div
-                                                    class="text-xs text-gray-500 dark:text-gray-500 truncate max-w-[200px]">
-                                                    {{ $row->address }}
-                                                </div>
+                                            <x-list.identitas-pasien class="min-w-0 max-w-[220px]" :regNo="$row->reg_no" :nama="$row->reg_name"
+                                                :sex="$row->sex" :tglLahir="$row->birth_date" :alamat="$row->address">
                                                 {{-- Jenis resep badge --}}
                                                 @if ($row->no_antrian_apotek > 0)
                                                     <span
@@ -444,21 +430,19 @@ new class extends Component {
                                                         {{ ucfirst($row->jenis_resep) }}
                                                     </span>
                                                 @endif
-                                            </div>
+                                            </x-list.identitas-pasien>
                                         </div>
                                     </td>
 
                                     {{-- POLI / DOKTER --}}
-                                    <td class="px-4 py-4 space-y-1 align-top">
+                                    <td class="space-y-1 align-top">
                                         <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
                                         <div class="text-sm text-gray-700 dark:text-gray-300">
                                             {{ $row->dr_name ?? '-' }}
                                         </div>
-                                        <x-badge :variant="$row->klaim_variant">
-                                            {{ $row->klaim_label }}
-                                        </x-badge>
+                                        <x-list.klaim-badge :status="$row->klaim_status" :desc="$row->klaim_desc" :id="$row->klaim_id" />
                                         @if ($row->vno_sep)
                                             <div class="font-mono text-xs text-gray-500 dark:text-gray-400">
                                                 {{ $row->vno_sep }}
@@ -470,7 +454,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS LAYANAN --}}
-                                    <td class="px-4 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-xs text-gray-500 dark:text-gray-400">
                                             {{ $row->rj_date_display }} | Shift {{ $row->shift ?? '-' }}
                                         </div>
@@ -541,7 +525,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- WAKTU APOTEK --}}
-                                    <td class="px-4 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-xs space-y-1">
                                             <div class="flex items-center gap-1.5">
                                                 <span
@@ -583,7 +567,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-4 py-4 align-top">
+                                    <td class="align-top">
                                         <div class="flex flex-col gap-2">
 
                                             {{-- Masuk / Keluar Apotek — tombol Blade (BUKAN komponen Livewire per baris).
@@ -604,13 +588,13 @@ new class extends Component {
                                                     class="!px-2 !py-1 text-xs" title="Klik untuk mengambil TaskId Antrean">
                                                     TaskId Antrean
                                                 </x-primary-button>
-                                                @role('Admin')
+                                                @can('antrean.batal')
                                                     <x-danger-button type="button"
                                                         wire:click="$dispatch('task-id-batal-proses-rj', { rjNo: {{ $row->rj_no }} })"
                                                         class="!px-2 !py-1 text-xs" title="Klik untuk membatalkan antrian (hanya bisa sebelum TaskId4/5)">
                                                         Batal
                                                     </x-danger-button>
-                                                @endrole
+                                                @endcan
                                             </div>
 
                                             {{-- Telaah Resep & Obat (unified) --}}
@@ -638,37 +622,72 @@ new class extends Component {
                                                 </x-secondary-button>
                                             @endif
 
-                                            {{-- Administrasi — Admin | Perawat | Apotek --}}
-                                            @hasanyrole('Admin|Perawat|Apotek')
-                                                <x-secondary-button
-                                                    wire:click="openAdministrasiPasien('{{ $row->rj_no }}')"
-                                                    class="text-xs whitespace-nowrap justify-center !bg-purple-50 hover:!bg-purple-100 dark:!bg-purple-900/20">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M2 8h20v12a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 0V6a1 1 0 011-1h18a1 1 0 011 1v2M12 14a2 2 0 100-4 2 2 0 000 4z" />
-                                                    </svg>
-                                                    Administrasi
-                                                </x-secondary-button>
-                                            @endhasanyrole
+                                            {{-- Menu aksi (titik-tiga) — kepala menu menyebut pasiennya sekali --}}
+                                            <x-dropdown position="left" width="w-[320px]">
+                                                <x-slot name="trigger">
+                                                    <x-secondary-button type="button" class="p-2.5"
+                                                        title="Menu aksi">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path
+                                                                d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                        </svg>
+                                                    </x-secondary-button>
+                                                </x-slot>
 
-                                            <x-info-button wire:click="cetakEresep('{{ $row->rj_no }}')"
-                                                wire:loading.attr="disabled" wire:target="cetakEresep"
-                                                class="text-xs whitespace-nowrap justify-center">
-                                                <span wire:loading.remove wire:target="cetakEresep"
-                                                    class="flex items-center">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none"
-                                                        stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                                    </svg>
-                                                    Cetak E-Resep
-                                                </span>
-                                                <span wire:loading wire:target="cetakEresep"
-                                                    class="flex items-center gap-1">
-                                                    <x-loading /> Menyiapkan...
-                                                </span>
-                                            </x-info-button>
+                                                <x-slot name="content">
+                                                    <div class="p-2 space-y-2">
+
+                                                        {{-- Kepala menu: pasien yang dituju aksi-aksi di bawah ini --}}
+                                                        <x-list.identitas-aksi :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                            jalur="Apotek" />
+
+                                                        {{-- Administrasi — Admin | Perawat | Apotek --}}
+                                                        @hasanyrole('Admin|Perawat|Apotek')
+                                                            <x-dropdown-link href="#"
+                                                                wire:click.prevent="openAdministrasiPasien('{{ $row->rj_no }}')"
+                                                                class="px-3 py-2 text-sm rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40">
+                                                                <div class="flex items-start gap-2">
+                                                                    <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24"
+                                                                        stroke-width="2">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round"
+                                                                            d="M2 8h20v12a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 0V6a1 1 0 011-1h18a1 1 0 011 1v2M12 14a2 2 0 100-4 2 2 0 000 4z" />
+                                                                    </svg>
+                                                                    <span class="min-w-0">
+                                                                        <span
+                                                                            class="block font-semibold">Administrasi</span>
+                                                                        <span
+                                                                            class="block text-xs font-normal text-muted dark:text-gray-400">Rincian
+                                                                            biaya & pembayaran</span>
+                                                                    </span>
+                                                                </div>
+                                                            </x-dropdown-link>
+                                                        @endhasanyrole
+
+                                                        <x-dropdown-link href="#"
+                                                            wire:click.prevent="cetakEresep('{{ $row->rj_no }}')"
+                                                            class="px-3 py-2 text-sm rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40">
+                                                            <div class="flex items-start gap-2">
+                                                                <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24"
+                                                                    stroke-width="2">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                                                </svg>
+                                                                <span class="min-w-0">
+                                                                    <span class="block font-semibold">Cetak
+                                                                        E-Resep</span>
+                                                                    <span
+                                                                        class="block text-xs font-normal text-muted dark:text-gray-400">Siapkan
+                                                                        PDF e-resep pasien</span>
+                                                                </span>
+                                                            </div>
+                                                        </x-dropdown-link>
+
+                                                    </div>
+                                                </x-slot>
+                                            </x-dropdown>
 
                                         </div>
                                     </td>
@@ -697,7 +716,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>
@@ -712,10 +731,10 @@ new class extends Component {
             wire:key="task-id-apotek-actions-rj-host" />
 
         {{-- Host aksi Batal antrian (task-id-99) — mount 1×, Admin only. --}}
-        @role('Admin')
+        @can('antrean.batal')
             <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-99
                 wire:key="task-id-99-rj-host" />
-        @endrole
+        @endcan
 
         <livewire:pages::transaksi.rj.antrian-apotek-rj.antrian-apotek-rj-actions
             wire:key="antrian-apotek-rj-actions" />

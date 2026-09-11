@@ -24,7 +24,7 @@ new class extends Component {
         title="Pendapatan Klinik"
         subtitle="Total pendapatan dari Administrasi Rawat Jalan + Penjualan Bebas Apotek — Tahunan (1 tahun, breakdown per bulan) atau Multi-Tahun (rentang tahun, breakdown per tahun). Status final saja: RJ rj_status='L'." />
 
-    @hasanyrole('Admin|Tu')
+    @can('laporan.pendapatan')
     <div class="w-full min-h-[calc(100vh-5rem)] bg-white dark:bg-gray-800">
         <div class="px-6 pt-2 pb-6">
 
@@ -131,5 +131,5 @@ new class extends Component {
     </div>
     @else
         <div class="p-6 text-sm text-rose-600 dark:text-rose-400">Anda tidak memiliki akses ke halaman ini.</div>
-    @endhasanyrole
+    @endcan
 </div>

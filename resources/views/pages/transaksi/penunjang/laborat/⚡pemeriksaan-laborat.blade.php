@@ -635,11 +635,10 @@ new class extends Component {
                     </p>
                     <div class="flex flex-wrap gap-1.5">
                         @foreach ($selectedItems as $id => $sel)
-                            <span
-                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-full bg-brand-green/10 text-brand-green border-brand-green/20">
+                            <x-badge variant="brand" class="gap-1 border rounded-full border-brand-green/20">
                                 {{ $sel['clabitem_desc'] }}
                                 @if ($sel['price'])
-                                    <span class="text-brand-green/60">· {{ number_format($sel['price']) }}</span>
+                                    <span class="opacity-60">· {{ number_format($sel['price']) }}</span>
                                 @endif
                                 <button type="button" wire:click="removeSelected('{{ $id }}')"
                                     class="ml-0.5 hover:text-red-500 transition-colors">
@@ -649,7 +648,7 @@ new class extends Component {
                                             clip-rule="evenodd" />
                                     </svg>
                                 </button>
-                            </span>
+                            </x-badge>
                         @endforeach
                     </div>
 
@@ -757,59 +756,50 @@ new class extends Component {
 
         {{-- DTL TABLE --}}
         <div x-data class="overflow-x-auto border rounded-lg border-gray-200 dark:border-gray-700">
-            <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-800">
+            <table class="ds-table">
+                <thead>
                     @if ($labStatus === 'P')
                         {{-- TABEL ADMINISTRASI: No, Item, Harga, Aksi --}}
                         <tr>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">No</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Item Pemeriksaan</th>
-                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Harga</th>
-                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Aksi</th>
+                            <th>No</th>
+                            <th>Item Pemeriksaan</th>
+                            <th class="text-right">Harga</th>
+                            <th class="ds-c">Aksi</th>
                         </tr>
                     @else
                         {{-- TABEL HASIL: No, Item, Hasil, Satuan, Normal, Status [+Harga saat H] --}}
                         <tr>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">No</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Item Pemeriksaan</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Hasil</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Nilai Normal</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                            <th>No</th>
+                            <th>Item Pemeriksaan</th>
+                            <th>Hasil</th>
+                            <th>Nilai Normal</th>
+                            <th>Status</th>
                             @if ($labStatus === 'H')
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Harga</th>
+                                <th class="text-right">Harga</th>
                             @endif
                         </tr>
                     @endif
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+                <tbody>
                     @if ($labStatus === 'P')
                         {{-- ===== BARIS ADMINISTRASI ===== --}}
                         @php $totalPrice = 0; @endphp
                         @forelse ($dtlRows as $idx => $dtl)
                             @php $totalPrice += (int) ($dtl['price'] ?? 0); @endphp
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <td class="px-3 py-2 text-gray-500">{{ $idx + 1 }}</td>
-                                <td class="px-3 py-2">
+                                <td class="text-muted dark:text-gray-400">{{ $idx + 1 }}</td>
+                                <td>
                                     <div class="font-medium text-gray-900 dark:text-gray-100">
                                         {{ $dtl['clabitem_desc'] ?? '-' }}
                                     </div>
                                     <div class="text-xs text-gray-400">{{ $dtl['clabitem_id'] }}</div>
                                 </td>
-                                <td class="px-3 py-2 text-right font-medium tabular-nums">
+                                <td class="ds-td-strong text-right tabular-nums">
                                     Rp {{ number_format($dtl['price'] ?? 0) }}
                                 </td>
-                                <td class="px-3 py-2 text-center">
-                                    <button type="button"
-                                        wire:click="deleteDtlRow({{ $dtl['checkup_dtl'] }})"
-                                        wire:confirm="Yakin hapus item ini?"
-                                        class="text-red-500 hover:text-red-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                                <td class="ds-c">
+                                    <x-hapus-button :action="'deleteDtlRow(' . $dtl['checkup_dtl'] . ')'" title="Hapus Item"
+                                        message="Yakin hapus item ini?" />
                                 </td>
                             </tr>
                         @empty
@@ -825,7 +815,7 @@ new class extends Component {
                         <tr>
                             <td colspan="2" class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 Total Pemeriksaan:</td>
-                            <td class="px-3 py-2 text-right text-sm font-bold text-brand tabular-nums">
+                            <td class="ds-td-strong text-right text-brand tabular-nums">
                                 Rp {{ number_format($totalPrice) }}</td>
                             <td></td>
                         </tr>
@@ -856,14 +846,14 @@ new class extends Component {
                                 };
                             @endphp
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <td class="px-3 py-2 text-gray-500">{{ $idx + 1 }}</td>
-                                <td class="px-3 py-2">
+                                <td class="text-muted dark:text-gray-400">{{ $idx + 1 }}</td>
+                                <td>
                                     <div class="font-medium text-gray-900 dark:text-gray-100">
                                         {{ $dtl['clabitem_desc'] ?? '-' }}
                                     </div>
                                     <div class="text-xs text-gray-400">{{ $dtl['clabitem_id'] }}</div>
                                 </td>
-                                <td class="px-3 py-2">
+                                <td>
                                     @if ($labStatus === 'C')
                                         <x-text-input type="text"
                                             value="{{ $dtl['lab_result'] ?? '' }}"
@@ -876,10 +866,10 @@ new class extends Component {
                                         <span class="text-gray-700 dark:text-gray-300">{{ $dtl['hasil_display'] ?? '-' }}</span>
                                     @endif
                                 </td>
-                                <td class="px-3 py-2 text-gray-500">{{ $normal }}</td>
+                                <td class="text-muted dark:text-gray-400">{{ $normal }}</td>
                                 <td class="px-3 py-2 {{ $statusColor }}">{{ $statusLabel }}</td>
                                 @if ($labStatus === 'H')
-                                    <td class="px-3 py-2 text-right font-medium tabular-nums">
+                                    <td class="ds-td-strong text-right tabular-nums">
                                         @if ($dtl['price'])
                                             Rp {{ number_format($dtl['price']) }}
                                         @endif
@@ -899,7 +889,7 @@ new class extends Component {
                         <tr>
                             <td colspan="5" class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 Total Pemeriksaan:</td>
-                            <td class="px-3 py-2 text-right text-sm font-bold text-brand tabular-nums">
+                            <td class="ds-td-strong text-right text-brand tabular-nums">
                                 Rp {{ number_format($totalPriceHasil) }}</td>
                         </tr>
                     </tfoot>

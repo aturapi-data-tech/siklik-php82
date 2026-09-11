@@ -338,12 +338,12 @@ new class extends Component {
                     class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="w-full min-w-full text-sm border-separate border-spacing-y-2 table-fixed">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-sm font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-4 py-3 w-[10%]">Service</th>
-                                <th class="px-4 py-3 w-[78%]">Waktu / URL Endpoint</th>
-                                <th class="px-4 py-3 w-[12%] text-center">Status</th>
+                                <th class="w-[10%]">Service</th>
+                                <th class="w-[78%]">Waktu / URL Endpoint</th>
+                                <th class="w-[12%] ds-c">Status</th>
                             </tr>
                         </thead>
 
@@ -400,7 +400,7 @@ new class extends Component {
                                     x-on:click="expanded = !expanded">
 
                                     {{-- SERVICE (kompak, vertikal) --}}
-                                    <td class="px-3 py-2 align-middle">
+                                    <td class="align-middle">
                                         <div
                                             class="flex flex-col items-center justify-center px-2 py-1.5 rounded-lg {{ $svcStyle }}">
                                             <span
@@ -413,7 +413,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- WAKTU + URL (2 baris terpisah) --}}
-                                    <td class="px-3 py-2 align-middle">
+                                    <td class="align-middle">
                                         {{-- Baris 1: tanggal · durasi · pesan metadata (preview) --}}
                                         <div
                                             class="flex flex-wrap items-center mb-1 text-[11px] text-gray-500 dark:text-gray-400 gap-x-3 gap-y-0.5">
@@ -455,7 +455,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS --}}
-                                    <td class="px-3 py-2 text-center align-middle">
+                                    <td class="ds-c align-middle">
                                         <div class="flex flex-col items-center gap-1">
                                             <x-badge :variant="$variant">
                                                 <span class="text-base font-bold">{{ $r->code ?: '-' }}</span>
@@ -598,7 +598,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $rows->links() }}
                 </div>
 
