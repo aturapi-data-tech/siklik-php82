@@ -56,9 +56,9 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('  = SKMST_SIGNA_CATATANS sudah ada — skip');
     END IF;
 
-    SELECT COUNT(*) INTO v_count FROM user_indexes WHERE index_name = 'IDX_TKMST_SIGNA_CATATANS_ACTIVE';
+    SELECT COUNT(*) INTO v_count FROM user_indexes WHERE index_name = 'SIGNA_CATATANS_ACTIVE_IX';
     IF v_count = 0 THEN
-        EXECUTE IMMEDIATE 'CREATE INDEX idx_tkmst_signa_catatans_active ON skmst_signa_catatans (active_status)';
+        EXECUTE IMMEDIATE 'CREATE INDEX signa_catatans_active_ix ON skmst_signa_catatans (active_status)';
         DBMS_OUTPUT.PUT_LINE('  + index active_status dibuat');
     END IF;
 

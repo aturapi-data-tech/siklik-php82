@@ -14,7 +14,7 @@ CREATE TABLE skmst_signa_catatans (
 );
 
 -- Index untuk filter aktif
-CREATE INDEX idx_tkmst_signa_catatans_active ON skmst_signa_catatans (active_status);
+CREATE INDEX signa_catatans_active_ix ON skmst_signa_catatans (active_status);
 
 -- Komentar tabel/kolom
 COMMENT ON TABLE  skmst_signa_catatans               IS 'LOV catatan khusus signa e-resep rawat jalan';

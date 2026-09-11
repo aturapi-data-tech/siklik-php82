@@ -2,6 +2,7 @@
 
 namespace App\Http\Traits\Dokumen;
 
+use App\Support\TtdUser;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -84,16 +85,14 @@ trait DokumenViewSupportTrait
         return $pasien;
     }
 
-    /** Path TTD dari myuser_code (null bila tak ada / file hilang). */
+    /**
+     * Path TTD dari myuser_code (null bila tak ada / file hilang).
+     * Didelegasikan ke App\Support\TtdUser supaya DUA format kolom
+     * myuser_ttd_image (path relatif & nama berkas saja) sama-sama kebaca.
+     */
     protected function dvTtdPath(?string $code): ?string
     {
-        if (empty($code)) {
-            return null;
-        }
-        $ttdPath = DB::table('users')->where('myuser_code', $code)->value('myuser_ttd_image');
-        return (!empty($ttdPath) && file_exists(public_path('storage/' . $ttdPath)))
-            ? public_path('storage/' . $ttdPath)
-            : null;
+        return TtdUser::pathBerkasDariKode($code);
     }
 
     /** Identitas RS untuk kop cetak. Siklik memakai tabel skmst_identitases. */
@@ -106,7 +105,7 @@ trait DokumenViewSupportTrait
 
     /**
      * Render blade print jadi HTML self-contained (untuk preview iframe di modal Lihat).
-     * $view = nama blade lengkap (mis. 'pages.components.modul-dokumen.r-j.xxx.cetak-xxx-print').
+     * $view = nama blade lengkap (mis. 'pages.components.modul-dokumen.rj.xxx.cetak-xxx-print').
      * Memakai payload yg sama dgn cetak → isi Lihat = persis tampilan Cetak.
      */
     protected function renderDokumenPreview(string $view, array $data): string

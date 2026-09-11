@@ -529,7 +529,7 @@ new class extends Component {
         $keluhan = $this->dataDaftarPoliRJ['anamnesa']['keluhanUtama'] ?? ($this->dataDaftarPoliRJ['anamnesa']['anamnesa'] ?? '-');
 
         $payload = [
-            'kdProviderPeserta' => env('PCARE_PROVIDER'),
+            'kdProviderPeserta' => config('bpjs.pcare.provider'),
             'tglDaftar' => $rjDate->format('d-m-Y'),
             'noKartu' => $noKartu,
             'kdPoli' => $this->dataDaftarPoliRJ['kdpolibpjs'] ?? '',

@@ -169,7 +169,19 @@ Solid merah (`bg-red-600`). **Disarankan pakai `confirm-button` sebagai gantinya
 
 ### 10. `<x-confirm-button>` — Aksi dengan Konfirmasi
 
-Tombol yang memunculkan dialog konfirmasi styled sebelum eksekusi. Mendukung variant: `danger`, `primary`, `secondary`, `outline`.
+Tombol yang memunculkan dialog konfirmasi styled sebelum eksekusi. Mendukung variant:
+`danger`, `danger-soft`, `warning-soft`, `primary`, `secondary`, `outline`.
+
+Dua varian "soft" memakai token semantik siklik (`error-tint`/`error-deep`, `warning-tint`/`warning-deep`):
+
+- `danger-soft` — merah bertint (bukan solid), untuk tombol hapus di dalam tabel/form.
+  Dibuat jadi varian supaya pemakai tidak perlu override `!important`.
+- `warning-soft` — kuning lembut, untuk aksi **koreksi** (Buka Kunci, batal proses)
+  supaya dua tombol berisiko di satu sel tidak tampak sama.
+
+Trigger otomatis disabled + menampilkan spinner "Memproses..." selama aksi `$wire`
+berjalan (anti klik-dobel). Targetnya nama method dari `action` (tanpa argumen);
+timpa lewat prop `wireTarget` bila perlu target lain.
 
 ```blade
 {{-- Hapus data penting --}}
@@ -188,7 +200,7 @@ Tombol yang memunculkan dialog konfirmasi styled sebelum eksekusi. Mendukung var
 </x-confirm-button>
 
 {{-- Transfer dengan peringatan --}}
-<x-confirm-button variant="warning" action="transferKeUGD()"
+<x-confirm-button variant="warning-soft" action="transferKeUGD()"
     title="Transfer ke UGD"
     message="Yakin ingin mentransfer biaya RJ ini ke UGD?"
     confirmText="Ya, transfer" cancelText="Batal">
@@ -200,13 +212,14 @@ Tombol yang memunculkan dialog konfirmasi styled sebelum eksekusi. Mendukung var
 
 | Prop | Default | Keterangan |
 |------|---------|------------|
-| `variant` | `danger` | `danger` / `primary` / `secondary` / `outline` |
+| `variant` | `danger` | `danger` / `danger-soft` / `warning-soft` / `primary` / `secondary` / `outline` |
 | `action` | (wajib) | Method Livewire yang dieksekusi, contoh: `"delete('10')"` |
 | `title` | `Konfirmasi` | Judul dialog |
 | `message` | `Apakah Anda yakin?` | Pesan dialog |
 | `confirmText` | `Ya` | Teks tombol konfirmasi |
 | `cancelText` | `Batal` | Teks tombol batal |
 | `disabled` | `false` | Nonaktifkan tombol |
+| `wireTarget` | nama method dari `action` | Target `wire:loading` bila berbeda dari method aksi |
 
 **WAJIB pakai untuk:**
 - Hapus data dari database (master, transaksi)
@@ -429,3 +442,38 @@ Perilaku:
 
 Jangan bikin tombol refresh/reset manual lagi — ikon reload HANYA untuk refresh,
 panah balik HANYA untuk reset (jangan tertukar).
+
+---
+
+## Tombol aksi per entri (x-cetak-button / x-hapus-button / x-lihat-button)
+
+Cetak, hapus, dan lihat **per entri di tabel** wajib memakai komponen baku berikut —
+jangan lagi merakit `x-icon-button` + SVG sendiri:
+
+| Aksi | Komponen | Warna ikon |
+|---|---|---|
+| Lihat per entri | `<x-lihat-button wire:click="viewEntry(…)" />` | mata, abu-abu |
+| Cetak per entri | `<x-cetak-button wire:click="cetak(…)" />` | printer, biru |
+| Hapus per entri (dialog browser) | `<x-hapus-button wire:click.prevent="hapus(…)" confirm="…" />` | tong sampah, merah |
+| Hapus per entri (dialog modal) | `<x-hapus-button :action="'hapusBaris(' . $indeks . ')'" title="…" :message="…" />` | dirender lewat `x-confirm-button` varian `danger-soft` |
+
+**Tinggi semua tombol aksi baris = 40px.** Tombol berteks memakai padding bawaan
+`px-5 py-2.5`; tombol ikon memakai `p-2.5` + ikon `w-5 h-5`. **JANGAN** menambahkan
+`px-2 py-1 text-xs` / `!py-1` pada tombol aksi baris tabel.
+
+```blade
+{{-- ikon saja (aksi per entri) --}}
+<x-cetak-button wire:click="cetak('{{ $row->id }}')" title="Cetak laporan" />
+<x-lihat-button wire:click="viewEntry('{{ $row->id }}')" />
+<x-hapus-button wire:click.prevent="hapus('{{ $row->id }}')" confirm="Yakin hapus entri ini?" />
+
+{{-- ikon + teks bila perlu keterangan --}}
+<x-cetak-button wire:click="cetakEresep" label="Cetak E-Resep" />
+```
+
+Perilaku bawaan: `wire:target` + spinner diambil otomatis dari `wire:click`
+(timpa lewat prop `target`), `title` default = `label` atau nama aksi.
+Sel `<td>` Aksi diberi `whitespace-nowrap` supaya teks tombol tidak patah dua baris.
+
+Yang sengaja **di luar** aturan 40px ini: chip toggle (`x-ghost-button` `!py-0.5`),
+baris edit-inline administrasi, dan X penutup header modal (`x-icon-button` bawaan).

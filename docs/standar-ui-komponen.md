@@ -213,7 +213,12 @@ Pola standar untuk halaman daftar data master.
 </td>
 ```
 
-**Aturan tabel master:**
+> **Catatan:** pola `px-2 py-1 text-xs` di atas adalah gaya lama. Untuk halaman baru
+> ikuti bagian "Tombol aksi per entri di tabel (BAKU)" di akhir dokumen ini —
+> tinggi tombol aksi baris diseragamkan 40px dan aksi cetak/hapus/lihat memakai
+> komponen `x-cetak-button` / `x-hapus-button` / `x-lihat-button`.
+
+**Aturan tabel master (gaya lama):**
 - Edit selalu `<x-secondary-button>` + `class="px-2 py-1 text-xs"`
 - Hapus selalu `<x-confirm-button variant="danger">` + `class="px-2 py-1 text-xs"`
 - Jangan pakai `x-outline-button` untuk Edit di tabel
@@ -289,3 +294,115 @@ Lihat [standar-komponen-tombol.md](standar-komponen-tombol.md) untuk panduan len
 5. **Satu `<x-primary-button>` per modal** — hanya untuk aksi utama
 6. **Close X selalu `<x-icon-button color="gray">`**
 7. **Body modal selalu `px-4 py-4 bg-gray-50/70`** — jangan variasikan padding
+8. **Tombol aksi per entri pakai komponen baku** — `x-cetak-button` / `x-hapus-button` / `x-lihat-button`, jangan rakit ikon sendiri
+
+---
+
+## Tombol aksi per entri di tabel (BAKU)
+
+Tinggi semua tombol aksi baris = **40px**: tombol berteks
+(`x-primary/secondary/outline/confirm-button`) memakai padding bawaan `px-5 py-2.5`;
+tombol ikon memakai `p-2.5` + ikon `w-5 h-5`. **Jangan** menambah `px-2 py-1 text-xs`
+atau `!py-1` pada tombol aksi baris tabel.
+
+| Aksi | Komponen | Catatan |
+|---|---|---|
+| Lihat per entri | `<x-lihat-button wire:click="viewEntry(…)" />` | ikon mata abu-abu; `label="…"` bila perlu teks |
+| Cetak per entri | `<x-cetak-button wire:click="cetak(…)" />` | ikon printer biru; `label="…"` bila perlu teks (Cetak E-Resep, Etiket) |
+| Hapus per entri | `<x-hapus-button wire:click.prevent="hapus(…)" confirm="…" />` | dialog browser (`wire:confirm`) |
+| Hapus, dialog modal | `<x-hapus-button :action="'hapusBaris(' . $indeks . ')'" title="…" :message="…" />` | dirender lewat `x-confirm-button` varian `danger-soft` |
+| Buka Kunci / konfirmasi lain | `<x-confirm-button variant="warning-soft" action="…">` | ukuran bawaan; teks tak patah baris (`whitespace-nowrap` bawaan) |
+| Menu titik-3 | `<x-secondary-button class="p-2.5">` + ikon 20px | `p-2` hanya 36px |
+
+Ketiganya mengambil `wire:target` + spinner otomatis dari `wire:click` (timpa lewat
+prop `target`), dan `title` default = `label` atau nama aksi. Sel `<td>` Aksi diberi
+`whitespace-nowrap` supaya teks tombol tidak patah dua baris.
+
+Yang sengaja di luar aturan ini: chip toggle (`x-ghost-button` `!py-0.5`), baris
+edit-inline administrasi, dan X penutup header modal (`x-icon-button` bawaan).
+
+Rincian varian tombol: `docs/standar-komponen-tombol.md`.
+
+---
+
+## `<x-stepper>` & `<x-step-number>`
+
+Penanda langkah untuk alur berurutan (mis. rujukan, pendaftaran bertahap).
+
+```blade
+{{-- deret langkah mendatar --}}
+<x-stepper :steps="$this->langkahRujukan()" />
+
+{{-- lingkaran angka di judul kelompok isian --}}
+<x-step-number :n="1" /> Identitas Pasien
+```
+
+Bentuk tiap langkah:
+
+```php
+['n' => 1, 'title' => 'Diagnosa & Kriteria', 'hint' => 'opsional',
+ 'state' => 'done' | 'current' | 'todo' | 'error']
+```
+
+- `done` → lingkaran hijau tint + centang, `current` → hijau solid,
+  `todo` → abu, `error` → merah tint + tanda seru.
+- `error` dipakai untuk langkah yang **gagal/ditolak** — bukan sekadar belum
+  dikerjakan — supaya petugas tahu harus mundur, bukan lanjut.
+- `x-step-number` memakai kelas/warna yang sama dengan lingkaran `x-stepper`
+  agar nomor di judul bagian terbaca satu keluarga.
+
+---
+
+## `<x-deskripsi-ringkas>`
+
+Deskripsi panjang yang dipotong sebaris + tombol "Selengkapnya" untuk membuka penuh.
+Dipakai di kartu modul dokumen dan baris judul modal — judul + badge + deskripsi
+dijejer satu baris supaya kartunya ringkas, tapi keterangannya tetap bisa dibaca utuh.
+
+```blade
+<x-deskripsi-ringkas>{{ $modul['deskripsi'] }}</x-deskripsi-ringkas>
+```
+
+Tombolnya `x-on:click.stop` supaya tidak ikut memicu aksi baris/kartu di belakangnya.
+Pakai bila deskripsi berpotensi lebih dari ~90 karakter.
+
+---
+
+## `.ds-table` — tabel ber-tema
+
+Kelas CSS (bukan komponen) di `resources/css/app.css`. Sudah mengatur font, padding,
+header uppercase, garis antar record, dan hover — **jangan tulis ulang kelas header
+tabel manual**. Semua warnanya lewat var token yang ikut ber-swap di mode gelap
+tanpa perlu menulis `dark:` di tiap elemen.
+
+```blade
+<table class="ds-table">
+    <thead class="sticky top-0 z-10">
+        <tr><th>Nama</th><th class="ds-c">Kode</th><th class="ds-c">Aksi</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="ds-td-strong">{{ $row->nama }}</td>
+            <td class="ds-c ds-td-token">{{ $row->kode }}</td>
+            <td class="ds-c whitespace-nowrap"><x-lihat-button wire:click="lihat({{ $row->id }})" /></td>
+        </tr>
+    </tbody>
+</table>
+```
+
+| Kelas | Kegunaan |
+|---|---|
+| `.ds-table` | tabel dasar (header + padding 24px + garis antar record + hover) |
+| `.ds-td-strong` | sel penekanan (warna ink, font-medium) |
+| `.ds-td-token` | kode/nomor — mono, nowrap |
+| `.ds-td-meta` | keterangan kecil — mono, muted-soft |
+| `.ds-td-class` | nama kelas/kode teknis — mono, warna primary |
+| `.ds-c` | rata tengah (hanya berlaku di dalam `.ds-table`) |
+| `.ds-table-foot` | baris kaki tabel (ringkasan/pagination) |
+| `.ds-table-entri` | varian padat untuk baris input yang menyatu dengan tabel (spinner `input[type=number]` disembunyikan) |
+| `.ds-table-rapat` | varian rapat untuk tabel di kolom sempit; melepas `nowrap` milik `.ds-td-*` |
+| `.ds-toggle-tumpuk` | `x-toggle` ditumpuk (sakelar di atas, label di bawah) untuk kolom sempit |
+| `.ds-form-title` | judul bagian pada kartu form (`x-border-form`) — ink + uppercase, bukan `ds-caption-up` yang muted |
+
+**Gotcha:** `ds-c` / `ds-td-*` hanya berefek di dalam `<table class="ds-table">`;
+dipakai di luar itu sel akan tampak berdempet tanpa padding.

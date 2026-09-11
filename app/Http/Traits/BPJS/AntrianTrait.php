@@ -5,7 +5,7 @@ namespace App\Http\Traits\BPJS;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
+use App\Support\Bpjs\BpjsHttp;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -23,11 +23,14 @@ use Illuminate\Support\Facades\Validator;
  *   - Response BPJS: AES-256-CBC encrypted + LZString compressed
  *     decrypt_key = cons_id . secret_key . timestamp
  *
- * Env yang dibutuhkan (didapat dari BPJS saat onboarding faskes):
- *   - ANTRIAN_URL          (mis. https://apijkn.bpjs-kesehatan.go.id/antreanrs_dev/)
- *   - ANTRIAN_CONS_ID
- *   - ANTRIAN_SECRET_KEY
- *   - ANTRIAN_USER_KEY
+ * Konfigurasi: config/bpjs.php grup "antrian" (kredensial dari BPJS saat onboarding faskes)
+ *   - bpjs.antrian.url          <- ANTRIAN_URL (mis. https://apijkn.bpjs-kesehatan.go.id/antreanrs_dev/)
+ *   - bpjs.antrian.cons_id      <- ANTRIAN_CONS_ID
+ *   - bpjs.antrian.secret_key   <- ANTRIAN_SECRET_KEY
+ *   - bpjs.antrian.user_key     <- ANTRIAN_USER_KEY
+ *   - bpjs.antrian.timeout      <- ANTRIAN_HTTP_TIMEOUT (bawaan 15 dtk)
+ *
+ * Semua panggilan keluar lewat App\Support\Bpjs\BpjsHttp (proxy whitelist IP BPJS).
  *
  * Method lain (tambah_antrean, batal_antrean, dst.) sengaja TIDAK di-port
  * karena siklik klinik pratama murni inbound — gak push ke BPJS.
@@ -40,9 +43,9 @@ trait AntrianTrait
 
     private static function antrianSignature(): array
     {
-        $cons_id   = env('ANTRIAN_CONS_ID');
-        $secretKey = env('ANTRIAN_SECRET_KEY');
-        $userkey   = env('ANTRIAN_USER_KEY');
+        $cons_id   = config('bpjs.antrian.cons_id');
+        $secretKey = config('bpjs.antrian.secret_key');
+        $userkey   = config('bpjs.antrian.user_key');
 
         date_default_timezone_set('UTC');
         $tStamp    = strval(time() - strtotime('1970-01-01 00:00:00'));
@@ -80,7 +83,7 @@ trait AntrianTrait
     {
         DB::table('web_log_status')->insert([
             'code'                => $code,
-            'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref'            => Carbon::now(config('app.timezone')),
             'response'            => json_encode($payload, JSON_UNESCAPED_UNICODE),
             'http_req'            => $url,
             'requestTransferTime' => $transferTime,
@@ -113,11 +116,11 @@ trait AntrianTrait
             return ['ok' => false, 'code' => 201, 'msg' => $validator->errors()->first(), 'list' => []];
         }
 
-        $url = rtrim(env('ANTRIAN_URL'), '/') . '/jadwaldokter/kodepoli/' . $kodePoli . '/tanggal/' . $tgl;
+        $url = rtrim((string) config('bpjs.antrian.url'), '/') . '/jadwaldokter/kodepoli/' . $kodePoli . '/tanggal/' . $tgl;
 
         try {
             $signature = self::antrianSignature();
-            $response  = Http::timeout(15)->withHeaders($signature)->get($url);
+            $response  = BpjsHttp::mulai()->timeout((int) config('bpjs.antrian.timeout'))->withHeaders($signature)->get($url);
             $transfer  = $response->transferStats?->getTransferTime();
 
             if ($response->failed()) {
@@ -178,11 +181,11 @@ trait AntrianTrait
             'keterangan'     => $data['keterangan']     ?? '',
         ];
 
-        $url = rtrim(env('ANTRIAN_URL'), '/') . '/antrean/add';
+        $url = rtrim((string) config('bpjs.antrian.url'), '/') . '/antrean/add';
 
         try {
             $signature = self::antrianSignature();
-            $response  = Http::timeout(15)->withHeaders($signature)->post($url, $payload);
+            $response  = BpjsHttp::mulai()->timeout((int) config('bpjs.antrian.timeout'))->withHeaders($signature)->post($url, $payload);
             $transfer  = $response->transferStats?->getTransferTime();
 
             if ($response->failed()) {
@@ -224,11 +227,11 @@ trait AntrianTrait
             'waktu'          => $waktuMs,
         ];
 
-        $url = rtrim(env('ANTRIAN_URL'), '/') . '/antrean/panggil';
+        $url = rtrim((string) config('bpjs.antrian.url'), '/') . '/antrean/panggil';
 
         try {
             $signature = self::antrianSignature();
-            $response  = Http::timeout(15)->withHeaders($signature)->post($url, $payload);
+            $response  = BpjsHttp::mulai()->timeout((int) config('bpjs.antrian.timeout'))->withHeaders($signature)->post($url, $payload);
             $transfer  = $response->transferStats?->getTransferTime();
 
             if ($response->failed()) {

@@ -16,16 +16,19 @@ trait SatuSehatTrait
     protected $clientSecret;
     protected $baseUrl;
     protected $organizationId;
+    // Dideklarasikan eksplisit: dipakai OrganizationTrait dan PHP 8.2 memberi
+    // peringatan deprecated untuk properti dinamis.
+    protected $organizationName;
 
 
     public function initializeSatuSehat()
     {
-        $this->authUrl         = env('SATUSEHAT_AUTH_URL');
-        $this->clientId        = env('SATUSEHAT_CLIENT_ID');
-        $this->clientSecret    = env('SATUSEHAT_SECRET_ID');
-        $this->baseUrl         = env('SATUSEHAT_BASE_URL');
-        $this->organizationId  = env('SATUSEHAT_ORGANIZATION_ID');
-        $this->organizationName = env('SATUSEHAT_ORGANIZATION_NAME');
+        $this->authUrl         = config('satusehat.auth_url');
+        $this->clientId        = config('satusehat.client_id');
+        $this->clientSecret    = config('satusehat.secret_id');
+        $this->baseUrl         = config('satusehat.base_url');
+        $this->organizationId  = config('satusehat.organization_id');
+        $this->organizationName = config('satusehat.organization_name');
     }
 
     /**
@@ -35,9 +38,9 @@ trait SatuSehatTrait
     {
         return Cache::remember('satusehat_access_token', 3500, function () {
             $headers = ['Content-Type' => 'application/x-www-form-urlencoded'];
-            $url = env('SATUSEHAT_AUTH_URL') . "accesstoken?grant_type=client_credentials";
+            $url = config('satusehat.auth_url') . "accesstoken?grant_type=client_credentials";
 
-            $response = Http::timeout(10)
+            $response = Http::timeout((int) config('satusehat.timeout'))
                 ->withHeaders($headers)
                 ->asForm()
                 ->post($url, [
@@ -63,7 +66,7 @@ trait SatuSehatTrait
         $url = $this->baseUrl . $endpoint;
 
         // Base client: timeout, bearer token, common headers
-        $client = Http::timeout(10)
+        $client = Http::timeout((int) config('satusehat.timeout'))
             ->withToken($token)
             ->withHeaders([
                 'Organization-Id' => $this->organizationId,

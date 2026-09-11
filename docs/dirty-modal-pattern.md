@@ -53,7 +53,7 @@ Dipakai luas di repo ini: EMR RJ, EMR UGD, modal master (kamar/bed/akun/karyawan
 
 ### Contoh Pemakaian
 
-`resources/views/pages/transaksi/rj/emr-rj/erm-rj.blade.php`:
+`resources/views/pages/transaksi/rj/emr-rj/emr-rj.blade.php`:
 
 ```blade
 <x-modal name="rm-perawat-actions" size="full" height="full" focusable>

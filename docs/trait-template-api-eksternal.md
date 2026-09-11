@@ -104,7 +104,7 @@ trait {Service}Trait
 
         DB::table('web_log_status')->insert([
             'code'                => $code,
-            'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref'            => Carbon::now(config('app.timezone')),
             'response'            => json_encode($response, true),
             'http_req'            => $url,
             'http_payload'        => $payload,
@@ -131,7 +131,7 @@ trait {Service}Trait
 
         DB::table('web_log_status')->insert([
             'code'                => $code,
-            'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref'            => Carbon::now(config('app.timezone')),
             'response'            => json_encode($response, true),
             'http_req'            => $url,
             'http_payload'        => $payload,
@@ -147,9 +147,9 @@ trait {Service}Trait
 
     public static function signature()
     {
-        $cons_id   = env('XYZ_CONS_ID');
-        $secretKey = env('XYZ_SECRET_KEY');
-        $userkey   = env('XYZ_USER_KEY');
+        $cons_id   = config('xyz.cons_id');
+        $secretKey = config('xyz.secret_key');
+        $userkey   = config('xyz.user_key');
 
         date_default_timezone_set('UTC');
         $tStamp = strval(time() - strtotime('1970-01-01 00:00:00'));
@@ -242,7 +242,7 @@ trait {Service}Trait
 
         // 2. HTTP call
         try {
-            $url = env('XYZ_URL') . 'endpoint/path';
+            $url = config('xyz.url') . 'endpoint/path';
             $signature = self::signature();
 
             $response = Http::timeout(10)
@@ -298,12 +298,25 @@ Lihat memo `feedback_oracle_mixed_case_column.md` di personal memory untuk konte
 - [ ] **Per-method**: 5 langkah → validate → try → `Http::post` → `response_decrypt` → catch.
 - [ ] **Sniff payload** di `response_decrypt` via `$response->transferStats?->getRequest()?->getBody()?->__toString()`.
 - [ ] **Insert ke `web_log_status`** WAJIB termasuk `http_payload` (kolom CLOB).
-- [ ] **ENV** — semua secret/URL via `env('PREFIX_*')`, tidak hardcode.
-- [ ] **Carbon timezone** — pakai `Carbon::now(env('APP_TIMEZONE'))` untuk timestamp lokal.
+- [ ] **CONFIG, bukan ENV** — secret/URL disimpan di `.env`, tapi dibaca lewat `config('xyz.*')`
+      dari file `config/xyz.php`. **JANGAN `env()` di dalam `app/`** — nilainya jadi `null` setelah
+      `php artisan config:cache` dan panggilan API gagal diam-diam di produksi.
+      Contoh nyata: `config/bpjs.php` (PCare/Antrean/i-Care) dan `config/satusehat.php`.
+- [ ] **Tambahkan kunci baru ke `.env.example`** supaya lingkungan lain ikut terisi.
+- [ ] **Transport BPJS** — kalau API-nya BPJS Kesehatan, panggilan **wajib** lewat
+      `App\Support\Bpjs\BpjsHttp::mulai()` (batas waktu + proxy whitelist IP), bukan `Http::` langsung.
+      Lihat `docs/bpjs-whitelist-ip-proxy.md`.
+- [ ] **Carbon timezone** — pakai `Carbon::now(config('app.timezone'))` untuk timestamp lokal.
 
 ---
 
 ## 5. Anti-pattern
+
+❌ **JANGAN** pakai `env()` di dalam `app/` (rusak setelah `config:cache`):
+```php
+$url = env('XYZ_URL');                    // BAD — null saat config di-cache
+$url = config('xyz.url');                 // GOOD
+```
 
 ❌ **JANGAN** hardcode URL/secret:
 ```php
@@ -397,7 +410,7 @@ private static function sirsResponse($response, string $url): \Illuminate\Http\J
 
     DB::table('web_log_status')->insert([
         'code'                => $status,
-        'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+        'date_ref'            => Carbon::now(config('app.timezone')),
         'response'            => json_encode($body),
         'http_req'            => $url,
         'http_payload'        => $payload,
@@ -412,7 +425,7 @@ private static function sirsError(string $message, int $code, string $url = null
     // payload null karena tidak ada $response saat error pre-flight
     DB::table('web_log_status')->insert([
         'code'                => $code,
-        'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+        'date_ref'            => Carbon::now(config('app.timezone')),
         'response'            => json_encode(['message' => $message, 'code' => $code]),
         'http_req'            => $url,
         'http_payload'        => null,
@@ -475,7 +488,7 @@ private function logSatuSehat(string $url, ?int $code, ?float $rtt, ?string $res
 {
     DB::table('web_log_status')->insert([
         'code'                => $code,
-        'date_ref'            => Carbon::now(env('APP_TIMEZONE')),
+        'date_ref'            => Carbon::now(config('app.timezone')),
         'response'            => $responseBody,
         'http_req'            => $url,
         'http_payload'        => $payload,

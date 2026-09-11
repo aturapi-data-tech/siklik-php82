@@ -3,7 +3,7 @@
 namespace App\Http\Traits\BPJS;
 
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
+use App\Support\Bpjs\BpjsHttp;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +25,7 @@ trait iCareTrait
         // Insert webLogStatus
         DB::table('web_log_status')->insert([
             'code' =>  $code,
-            'date_ref' => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref' => Carbon::now(config('app.timezone')),
             'response' => json_encode($response, true),
             'http_req' => $url,
             'requestTransferTime' => $requestTransferTime
@@ -48,7 +48,7 @@ trait iCareTrait
         // Insert webLogStatus
         DB::table('web_log_status')->insert([
             'code' =>  $code,
-            'date_ref' => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref' => Carbon::now(config('app.timezone')),
             'response' => json_encode($response, true),
             'http_req' => $url,
             'requestTransferTime' => $requestTransferTime
@@ -61,9 +61,9 @@ trait iCareTrait
     // API VCLAIM
     public static function signature()
     {
-        $cons_id =  env('ICARE_CONS_ID');
-        $secretKey = env('ICARE_SECRET_KEY');
-        $userkey = env('ICARE_USER_KEY');
+        $cons_id =  config('bpjs.icare.cons_id');
+        $secretKey = config('bpjs.icare.secret_key');
+        $userkey = config('bpjs.icare.user_key');
 
         date_default_timezone_set('UTC');
         $tStamp = strval(time() - strtotime('1970-01-01 00:00:00'));
@@ -159,12 +159,12 @@ trait iCareTrait
 
         // handler when time out and off line mode
         try {
-            $url = env('ICARE_URL') . "api/rs/validate";
+            $url = config('bpjs.icare.url') . "api/rs/validate";
             $signature = self::signature();
             $data = $r;
 
             $start = microtime(true);
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 // ->send('POST', $url, [
                 //     'body' => json_encode($data)

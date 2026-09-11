@@ -4,7 +4,7 @@ namespace App\Http\Traits\BPJS;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use App\Support\Bpjs\BpjsHttp;
 use Illuminate\Support\Facades\Validator;
 
 use App\Http\Traits\customErrorMessagesTrait;
@@ -28,7 +28,7 @@ trait PcareTrait
         // Insert webLogStatus
         DB::table('web_log_status')->insert([
             'code' =>  $code,
-            'date_ref' => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref' => Carbon::now(config('app.timezone')),
             'response' => json_encode($response, true),
             'http_req' => $url,
             'requestTransferTime' => $requestTransferTime
@@ -51,7 +51,7 @@ trait PcareTrait
         // Insert webLogStatus
         DB::table('web_log_status')->insert([
             'code' =>  $code,
-            'date_ref' => Carbon::now(env('APP_TIMEZONE')),
+            'date_ref' => Carbon::now(config('app.timezone')),
             'response' => json_encode($response, true),
             'http_req' => $url,
             'requestTransferTime' => $requestTransferTime
@@ -64,9 +64,9 @@ trait PcareTrait
     // API PCARE
     public function signature()
     {
-        $cons_id =  env('PCARE_CONS_ID');
-        $secretKey = env('PCARE_SECRET_KEY');
-        $userkey = env('PCARE_USER_KEY');
+        $cons_id =  config('bpjs.pcare.cons_id');
+        $secretKey = config('bpjs.pcare.secret_key');
+        $userkey = config('bpjs.pcare.user_key');
 
 
         date_default_timezone_set('UTC');
@@ -78,7 +78,7 @@ trait PcareTrait
             'X-cons-id' => $cons_id,
             'X-timestamp' => $tStamp,
             'X-signature' => $encodedSignature,
-            'X-authorization' => "Basic " . base64_encode(env('PCARE_USERNAME') . ':' . env('PCARE_PASSWORD') . ':' . '095'),
+            'X-authorization' => "Basic " . base64_encode(config('bpjs.pcare.username') . ':' . config('bpjs.pcare.password') . ':' . '095'),
             'user_key' => $userkey,
             'decrypt_key' => $cons_id . $secretKey . $tStamp
         );
@@ -153,9 +153,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "poli/fktp/" . $start . "/" . $end;
+            $url = config('bpjs.pcare.url') . "poli/fktp/" . $start . "/" . $end;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -188,9 +188,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "kesadaran";
+            $url = config('bpjs.pcare.url') . "kesadaran";
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -229,9 +229,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "dokter/" . $start . "/" . $end;
+            $url = config('bpjs.pcare.url') . "dokter/" . $start . "/" . $end;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -264,9 +264,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "spesialis";
+            $url = config('bpjs.pcare.url') . "spesialis";
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -300,9 +300,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "alergi/jenis/" . $alergi;
+            $url = config('bpjs.pcare.url') . "alergi/jenis/" . $alergi;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -335,9 +335,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "prognosa";
+            $url = config('bpjs.pcare.url') . "prognosa";
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -370,9 +370,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
             $myStatusInap = $statusInap ? 'true' : 'false';
-            $url = env('PCARE_URL') . "statuspulang/rawatInap/" . $myStatusInap;
+            $url = config('bpjs.pcare.url') . "statuspulang/rawatInap/" . $myStatusInap;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -411,9 +411,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "provider/" . $start . "/" . $end;
+            $url = config('bpjs.pcare.url') . "provider/" . $start . "/" . $end;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -450,9 +450,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "spesialis/sarana";
+            $url = config('bpjs.pcare.url') . "spesialis/sarana";
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -498,9 +498,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "diagnosa/" . $kodeNamaDiagnosa . "/" . $start . "/" . $end;
+            $url = config('bpjs.pcare.url') . "diagnosa/" . $kodeNamaDiagnosa . "/" . $start . "/" . $end;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -540,11 +540,11 @@ trait PcareTrait
 
         // handler when time out and off line mode
         try {
-            $url = env('PCARE_URL') . "spesialis/" . $kodeSpesialis . "/subspesialis";
+            $url = config('bpjs.pcare.url') . "spesialis/" . $kodeSpesialis . "/subspesialis";
 
             $signature = $this->signature();
             $signature['Content-Type'] = 'application/json; charset=utf-8';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -589,11 +589,11 @@ trait PcareTrait
 
         // handler when time out and off line mode
         try {
-            $url = env('PCARE_URL') . "spesialis/rujuk/subspesialis/" . $kodeSubspesialis . "/sarana/" . $kdSarana . "/tglEstRujuk/" . $tglEstRujuk;
+            $url = config('bpjs.pcare.url') . "spesialis/rujuk/subspesialis/" . $kodeSubspesialis . "/sarana/" . $kdSarana . "/tglEstRujuk/" . $tglEstRujuk;
 
             $signature = $this->signature();
             // $signature['Content-Type'] = 'application/json; charset=utf-8';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -634,9 +634,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "peserta/" . $jenisKartu . "/" . $nikNoka;
+            $url = config('bpjs.pcare.url') . "peserta/" . $jenisKartu . "/" . $nikNoka;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -673,9 +673,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "peserta/" . $noka;
+            $url = config('bpjs.pcare.url') . "peserta/" . $noka;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -731,10 +731,10 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "pendaftaran";
+            $url = config('bpjs.pcare.url') . "pendaftaran";
             $signature = $this->signature();
             $signature['Content-Type'] = 'text/plain';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->post($url, $r);
 
@@ -782,14 +782,14 @@ trait PcareTrait
 
         try {
 
-            $url = env('PCARE_URL')
+            $url = config('bpjs.pcare.url')
                 . 'pendaftaran/peserta/' . $noKartu
                 . '/tglDaftar/' . $tglFormatted
                 . '/noUrut/' . $noUrut
                 . '/kdPoli/' . $kdPoli;
             $signature = $this->signature();
             $signature['Content-Type'] = 'text/plain';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->delete($url, $r);
             // semua response error atau sukses dari BPJS di handle pada logic response_decrypt
@@ -826,9 +826,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "pendaftaran/noUrut/" . $noUrut . "/tglDaftar/" . $tglDaftar;
+            $url = config('bpjs.pcare.url') . "pendaftaran/noUrut/" . $noUrut . "/tglDaftar/" . $tglDaftar;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -868,9 +868,9 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "/pendaftaran/tglDaftar/" . $tglDaftar . "/" . $start . "/" . $end;
+            $url = config('bpjs.pcare.url') . "/pendaftaran/tglDaftar/" . $tglDaftar . "/" . $start . "/" . $end;
             $signature = $this->signature();
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
 
@@ -987,10 +987,10 @@ trait PcareTrait
         try {
 
 
-            $url = env('PCARE_URL') . "kunjungan";
+            $url = config('bpjs.pcare.url') . "kunjungan";
             $signature = $this->signature();
             $signature['Content-Type'] = 'text/plain';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->post($url, $r);
 
@@ -1064,10 +1064,10 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "kunjungan";
+            $url = config('bpjs.pcare.url') . "kunjungan";
             $signature = $this->signature();
             $signature['Content-Type'] = 'text/plain';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->put($url, $r);
 
@@ -1099,10 +1099,10 @@ trait PcareTrait
         // handler when time out and off line mode
         try {
 
-            $url = env('PCARE_URL') . "kunjungan/" . $noKunjungan;
+            $url = config('bpjs.pcare.url') . "kunjungan/" . $noKunjungan;
             $signature = $this->signature();
             $signature['Content-Type'] = 'text/plain';
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->delete($url);
 
@@ -1136,7 +1136,7 @@ trait PcareTrait
         }
 
         // 2. Siapkan URL
-        $url = env('PCARE_URL') . "kunjungan/peserta/" . $noKartu;
+        $url = config('bpjs.pcare.url') . "kunjungan/peserta/" . $noKartu;
 
         // 3. Siapkan header (termasuk Content-Type)
         $signature = $this->signature();
@@ -1144,7 +1144,7 @@ trait PcareTrait
 
         // 4. Panggil API dengan GET
         try {
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
         } catch (Exception $e) {
@@ -1188,7 +1188,7 @@ trait PcareTrait
         }
 
         // 2. Siapkan URL
-        $url = env('PCARE_URL') . "kunjungan/rujukan/" . $noRujukan;
+        $url = config('bpjs.pcare.url') . "kunjungan/rujukan/" . $noRujukan;
 
         // 3. Siapkan headers (dengan Content-Type)
         $signature = $this->signature();
@@ -1196,7 +1196,7 @@ trait PcareTrait
 
         // 4. Panggil API dengan GET
         try {
-            $response = Http::timeout(10)
+            $response = BpjsHttp::mulai()
                 ->withHeaders($signature)
                 ->get($url);
         } catch (Exception $e) {

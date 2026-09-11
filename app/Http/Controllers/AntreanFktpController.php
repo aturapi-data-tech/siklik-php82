@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
  *
  * Auth flow:
  *   1. BPJS hit GET /auth dengan x-username + x-password (cocokkan ke
- *      env ANTREAN_USERNAME/PASSWORD) → return JWT.
+ *      config bpjs.antrean_fktp.username/password) → return JWT.
  *   2. BPJS hit endpoint lain dengan x-username + x-token → authenticate()
  *      verifikasi JWT signature & exp.
  *
@@ -57,7 +57,7 @@ class AntreanFktpController extends Controller
             return $this->sendError($request, 'Unauthorized: Missing credentials (x-username / x-token)', 201);
         }
 
-        if ($username !== env('ANTREAN_USERNAME')) {
+        if ($username !== config('bpjs.antrean_fktp.username')) {
             return $this->sendError($request, 'Unauthorized: Username tidak terdaftar', 201);
         }
 
