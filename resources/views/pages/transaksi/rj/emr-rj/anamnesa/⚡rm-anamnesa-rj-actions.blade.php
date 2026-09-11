@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
 use App\Http\Traits\BPJS\PcareTrait;
 use App\Support\Terminologi\AlergiSnomed;
+use App\Support\Terminologi\AlergiPcare;
 use Livewire\Attributes\On;
 
 new class extends Component {
@@ -91,8 +92,10 @@ new class extends Component {
         // tak perlu migrasi data. Dipasang di sini (form DIBUKA) supaya petugas MELIHAT
         // jawabannya & bisa mengubah — bukan disisipkan diam-diam saat simpan.
         // Key BPJS PCare di node yang sama dibiarkan utuh. Lihat App\Support\Terminologi\AlergiSnomed.
+        // Key legacy siklik-lite `alergiMakanan` → `alergiMakan` (harus SEBELUM default '00' di-merge
+        // oleh rendering()). Lihat App\Support\Terminologi\AlergiPcare.
         $this->dataDaftarPoliRJ['anamnesa']['alergi'] = AlergiSnomed::normalisasi(
-            $this->dataDaftarPoliRJ['anamnesa']['alergi'] ?? [],
+            AlergiPcare::normalisasiKey($this->dataDaftarPoliRJ['anamnesa']['alergi'] ?? []),
         );
 
         // Pre-load 3 alergi options dari cache ref_bpjs_table (silent).
@@ -398,8 +401,12 @@ new class extends Component {
                 // Tangkap status baru/lama sebelum overwrite (key anamnesa belum ada saat pertama disimpan)
                 $isBaru = empty($data['anamnesa']);
 
-                // 7. Set hanya key 'anamnesa' — key lain tidak tersentuh
+                // 7. Set hanya key 'anamnesa' — key lain tidak tersentuh.
+                //    Key legacy alergiMakanan (bila ada) dicerminkan dari alergiMakan (AlergiPcare).
                 $data['anamnesa'] = $this->dataDaftarPoliRJ['anamnesa'] ?? [];
+                if (isset($data['anamnesa']['alergi']) && is_array($data['anamnesa']['alergi'])) {
+                    $data['anamnesa']['alergi'] = AlergiPcare::cerminLegacy($data['anamnesa']['alergi']);
+                }
 
                 // 8. Persist + sync properti lokal
                 $this->updateJsonRJ($this->rjNo, $data);

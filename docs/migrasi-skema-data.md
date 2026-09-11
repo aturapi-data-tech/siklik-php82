@@ -27,6 +27,7 @@ Cara memeriksa server lain: `php artisan siklik:audit-skema` (laporan `docs/audi
 | Tgl | Node | Bentuk lama → baru | Cara | Dev | Produksi | Rollback |
 |---|---|---|---|---|---|---|
 | 2026-09-11 | `anamnesa.alergi` | teks bebas ("-", "tidak ada", kosong) → `adaAlergi` Ya/Tidak + SNOMED 716186003 | **saat dibuka** di anamnesa (`AlergiSnomed::normalisasi`), bukan migrasi massal; record yang belum dibuka tetap lama dan tetap terbaca (`untukCetak`) | — | — | tidak perlu |
+| 2026-09-12 | `anamnesa.alergi.alergiMakanan` (legacy siklik-lite, 20.787 kunjungan) vs `alergiMakan` (kode baru, 420) | key lama tetap ada; **pembaca dua key** `App\Support\Terminologi\AlergiPcare` (form anamnesa saat dibuka, payload PCare `buildKunjunganPayload`); saat simpan key lama dicerminkan dari key baru bila record punya key lama | **tanpa migrasi** (siklik-lite masih membaca key lama); drop key lama = setelah legacy pensiun | — | — | tidak perlu |
 | 2026-09-11 | `pemeriksaan.tandaVital.tingkatKesadaran` | tiga bentuk nilai (kode BPJS `01`, teks lama `Sadar Baik / Alert`, kosong) | dibaca apa adanya (`NyeriKesadaranObservationMap::labelKesadaran`), belum dimigrasi | — | — | — |
 | 2026-09-11 | `penilaian.resikoJatuh` | objek legacy siklik-lite `{skalaMorse{…Score}, skalaHumptyDumpty{…Score}}` → list entri `[{tglPenilaian, petugasPenilai, resikoJatuh{resikoJatuhMetode{resikoJatuhMetode, resikoJatuhMetodeScore, dataResikoJatuh}, kategoriResiko}}]`; kategori dihitung ulang ambang form baru (Morse ≥45 Tinggi, ≥25 Sedang); yang kosong → `[]` | `php artisan siklik:migrasi-json-emr` (uji) lalu `--jalankan`; aturan di `App\Support\PenilaianLegacy` (dipakai juga saat form dibuka) | ✅ (2 konversi, 13.759 → []) | ⏳ | salinan asli `penilaian.resikoJatuhLegacy` + penanda `migrasiPenilaian`; `--rollback --jalankan` |
 | 2026-09-11 | `penilaian.nyeri` | objek legacy `{vas{vas}, pencetus, durasi, lokasi}` (hanya VAS yang pernah aktif) → list entri VAS `[{tglPenilaian, nyeri{nyeriMetode{VAS, skor, dataNyeri}, nyeriKet, pencetus, durasi, lokasi}}]` | sama (`siklik:migrasi-json-emr`) | ✅ (11 konversi, sisanya → []) | ⏳ | `penilaian.nyeriLegacy`; `--rollback --jalankan` |
@@ -60,6 +61,5 @@ Diisi otomatis oleh `siklik:migrasi-json-emr` (mode nyata) — jangan diedit man
 
 ## 5. Yang sengaja BELUM dimigrasi (butuh keputusan)
 
-- Key BPJS PCare legacy `alergiMakanan` vs kode `alergiMakan`: nilai alergi makanan record lama tidak terbaca ke PCare.
 - Tabel tanpa PK (12) — `docs/audit-skema.md` §3.
 - Synonym nama lama (`RSMST_*` dst.) masih hidup untuk siklik-lite; drop setelah legacy pensiun.
