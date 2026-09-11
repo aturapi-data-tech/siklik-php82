@@ -635,11 +635,10 @@ new class extends Component {
                     </p>
                     <div class="flex flex-wrap gap-1.5">
                         @foreach ($selectedItems as $id => $sel)
-                            <span
-                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-full bg-brand-green/10 text-brand-green border-brand-green/20">
+                            <x-badge variant="brand" class="gap-1 border rounded-full border-brand-green/20">
                                 {{ $sel['clabitem_desc'] }}
                                 @if ($sel['price'])
-                                    <span class="text-brand-green/60">· {{ number_format($sel['price']) }}</span>
+                                    <span class="opacity-60">· {{ number_format($sel['price']) }}</span>
                                 @endif
                                 <button type="button" wire:click="removeSelected('{{ $id }}')"
                                     class="ml-0.5 hover:text-red-500 transition-colors">
@@ -649,7 +648,7 @@ new class extends Component {
                                             clip-rule="evenodd" />
                                     </svg>
                                 </button>
-                            </span>
+                            </x-badge>
                         @endforeach
                     </div>
 
@@ -799,17 +798,8 @@ new class extends Component {
                                     Rp {{ number_format($dtl['price'] ?? 0) }}
                                 </td>
                                 <td class="ds-c">
-                                    <button type="button"
-                                        wire:click="deleteDtlRow({{ $dtl['checkup_dtl'] }})"
-                                        wire:confirm="Yakin hapus item ini?"
-                                        class="text-red-500 hover:text-red-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                                    <x-hapus-button :action="'deleteDtlRow(' . $dtl['checkup_dtl'] . ')'" title="Hapus Item"
+                                        message="Yakin hapus item ini?" />
                                 </td>
                             </tr>
                         @empty

@@ -319,10 +319,7 @@ new class extends Component {
                                         <div class="font-semibold text-gray-900 dark:text-gray-100">
                                             {{ $option['label'] ?? '-' }}
                                         </div>
-                                        <div
-                                            class="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded dark:bg-gray-800 dark:text-gray-400">
-                                            {{ $option['cat_id'] }}
-                                        </div>
+                                        <x-badge variant="gray">{{ $option['cat_id'] }}</x-badge>
                                     </div>
 
                                     @if (!empty($option['hint']))

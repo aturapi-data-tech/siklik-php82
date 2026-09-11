@@ -506,25 +506,8 @@ new class extends Component {
                                                     antrian
                                                 </span>
                                             </div>
-                                            <div class="space-y-0 leading-tight">
-                                                <div class="text-base font-medium text-gray-700 dark:text-gray-300">
-                                                    {{ $row->reg_no ?? '-' }}
-                                                </div>
-                                                <div class="text-lg font-semibold text-brand dark:text-white">
-                                                    {{ $row->reg_name ?? '-' }} /
-                                                    ({{ $row->sex === 'L' ? 'Laki-Laki' : ($row->sex === 'P' ? 'Perempuan' : '-') }})
-                                                </div>
-                                                <div x-show="expanded" x-collapse
-                                                    class="text-sm text-gray-700 dark:text-gray-400">
-                                                    {{ $row->birth_date ?? '-' }}
-                                                    @if (!empty($row->umur_format) && $row->umur_format !== '-')
-                                                        <span class="text-gray-500">({{ $row->umur_format }})</span>
-                                                    @endif
-                                                </div>
-                                                <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                    {{ $row->address ?? '-' }}
-                                                </div>
-                                            </div>
+                                            <x-list.identitas-pasien :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                :tglLahir="$row->birth_date" :alamat="$row->address" :collapseUmur="true" />
                                         </div>
                                     </td>
 
@@ -533,21 +516,13 @@ new class extends Component {
                                         <div class="font-semibold text-brand dark:text-emerald-400 leading-tight">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
-                                        @php
-                                            $isBpjs = $row->klaim_status === 'BPJS' || $row->klaim_id === 'JM';
-                                        @endphp
                                         <div
                                             class="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 leading-tight">
                                             <span>{{ $row->dr_name ?? '-' }}</span>
-                                            @if ($isBpjs)
-                                                <x-badge :variant="$isBpjs ? 'info' : 'alternative'">
-                                                    {{ $isBpjs ? 'BPJS' : 'UMUM' }}
-                                                </x-badge>
-                                            @endif
                                         </div>
-                                        <div><span class="text-gray-600 dark:text-gray-400 leading-tight text-xs">Klaim
-                                                : {{ $row->klaim_desc ?? '-' }}</span>
-
+                                        <div>
+                                            <x-list.klaim-badge :status="$row->klaim_status" :desc="$row->klaim_desc" :id="$row->klaim_id"
+                                                prefix="Klaim: " />
                                         </div>
                                         {{-- No Booking — hanya untuk pasien BPJS (klaim_status=BPJS atau klaim_id=JM/JKN Mobile) --}}
                                         @if ($row->klaim_status === 'BPJS' || $row->klaim_id === 'JM')
@@ -781,7 +756,7 @@ new class extends Component {
                                                 {{-- Dropdown Aksi --}}
                                                 <x-dropdown position="left" width="w-[500px]">
                                                     <x-slot name="trigger">
-                                                        <x-secondary-button type="button" class="p-2">
+                                                        <x-secondary-button type="button" class="p-2.5">
                                                             <svg class="w-5 h-5" fill="currentColor"
                                                                 viewBox="0 0 20 20">
                                                                 <path
@@ -792,6 +767,10 @@ new class extends Component {
 
                                                     <x-slot name="content">
                                                         <div class="p-2 space-y-2">
+
+                                                            {{-- Kepala menu: pasien yang dituju aksi-aksi di bawah ini --}}
+                                                            <x-list.identitas-aksi :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                                jalur="Rawat Jalan" />
 
                                                             {{-- Task ID 4/5 + Get — Perawat saja (Admin otomatis via super-user) --}}
                                                             @can('antrean.taskId')

@@ -278,26 +278,18 @@ new class extends Component {
                                         <div class="flex flex-wrap gap-2">
                                             @if ($editable)
                                                 <x-outline-button type="button"
-                                                    wire:click="openEdit('{{ $row->rcv_no }}')"
-                                                    class="px-2 py-1 text-xs">
+                                                    wire:click="openEdit('{{ $row->rcv_no }}')">
                                                     Ubah Data
                                                 </x-outline-button>
                                             @else
                                                 <x-secondary-button type="button"
-                                                    wire:click="openEdit('{{ $row->rcv_no }}')"
-                                                    class="px-2 py-1 text-xs">
+                                                    wire:click="openEdit('{{ $row->rcv_no }}')">
                                                     Lihat Data
                                                 </x-secondary-button>
                                             @endif
                                             {{-- @hasanyrole('Admin|Tu')
                                                 @if ($canDelete)
-                                                    <x-confirm-button variant="danger" :action="'requestDelete(\'' . $row->rcv_no . '\')'"
-                                                        title="Hapus Penerimaan"
-                                                        message="Yakin ingin menghapus penerimaan #{{ $row->rcv_no }}?"
-                                                        confirmText="Ya, hapus" cancelText="Batal"
-                                                        class="px-2 py-1 text-xs">
-                                                        Hapus
-                                                    </x-confirm-button>
+                                                    <x-hapus-button :action="'requestDelete(\'' . $row->rcv_no . '\')'" title="Hapus Penerimaan" message="Yakin ingin menghapus penerimaan #{{ $row->rcv_no }}?" />
                                                 @endif
                                             @endhasanyrole --}}
                                         </div>

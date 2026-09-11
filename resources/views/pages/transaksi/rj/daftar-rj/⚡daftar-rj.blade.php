@@ -585,21 +585,8 @@ new class extends Component {
                                             <div class="text-5xl font-bold text-gray-700 dark:text-gray-200">
                                                 {{ $row->no_antrian ?? '-' }}
                                             </div>
-                                            <div class="space-y-1">
-                                                <div class="text-base font-medium text-gray-700 dark:text-gray-300">
-                                                    {{ $row->reg_no ?? '-' }}
-                                                </div>
-                                                <div class="text-lg font-semibold text-brand dark:text-white">
-                                                    {{ $row->reg_name ?? '-' }} /
-                                                    ({{ $row->sex === 'L' ? 'Laki-Laki' : ($row->sex === 'P' ? 'Perempuan' : '-') }})
-                                                </div>
-                                                <div class="text-base text-gray-700 dark:text-gray-400">
-                                                    {{ $row->umur_format ?? '-' }}
-                                                </div>
-                                                <div class="text-base text-gray-600 dark:text-gray-400">
-                                                    {{ $row->address ?? '-' }}
-                                                </div>
-                                            </div>
+                                            <x-list.identitas-pasien :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                :tglLahir="$row->birth_date" :alamat="$row->address" />
                                         </div>
                                     </td>
 
@@ -609,8 +596,9 @@ new class extends Component {
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
                                         <div class="text-base text-gray-600 dark:text-gray-400">
-                                            {{ $row->dr_name ?? '-' }} / {{ $row->klaim_desc ?? '-' }}
+                                            {{ $row->dr_name ?? '-' }}
                                         </div>
+                                        <x-list.klaim-badge :status="$row->klaim_status" :desc="$row->klaim_desc" :id="$row->klaim_id" />
                                         <div class="font-mono text-base text-gray-700 dark:text-gray-300">
                                             {{ $row->vno_sep ?? '-' }}
                                         </div>
@@ -803,7 +791,7 @@ new class extends Component {
                                                 {{-- Dropdown Aksi --}}
                                                 <x-dropdown position="left" width="w-[500px]">
                                                     <x-slot name="trigger">
-                                                        <x-secondary-button type="button" class="p-2">
+                                                        <x-secondary-button type="button" class="p-2.5">
                                                             <svg class="w-5 h-5" fill="currentColor"
                                                                 viewBox="0 0 20 20">
                                                                 <path
@@ -814,6 +802,10 @@ new class extends Component {
 
                                                     <x-slot name="content">
                                                         <div class="p-2 space-y-2">
+
+                                                            {{-- Kepala menu: pasien yang dituju aksi-aksi di bawah ini --}}
+                                                            <x-list.identitas-aksi :regNo="$row->reg_no" :nama="$row->reg_name" :sex="$row->sex"
+                                                                jalur="Rawat Jalan" />
 
                                                             {{-- Task ID — Admin & Perawat selalu tampil, Mr hanya kalau lab/rad true --}}
                                                             @if (auth()->user()->hasAnyRole(['Admin', 'Perawat']) ||

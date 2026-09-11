@@ -183,16 +183,11 @@ new class extends Component {
                                     <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-secondary-button type="button"
-                                                wire:click="openEdit('{{ $row->co_no }}')" class="px-2 py-1 text-xs">
+                                                wire:click="openEdit('{{ $row->co_no }}')">
                                                 Edit
                                             </x-secondary-button>
                                             @can('kas.hapusTransaksi')
-                                                <x-confirm-button variant="danger" :action="'requestDelete(\'' . $row->co_no . '\')'"
-                                                    title="Hapus Transaksi" message="Yakin ingin menghapus transaksi #{{ $row->co_no }}?"
-                                                    confirmText="Ya, hapus" cancelText="Batal"
-                                                    class="px-2 py-1 text-xs">
-                                                    Hapus
-                                                </x-confirm-button>
+                                                <x-hapus-button :action="'requestDelete(\'' . $row->co_no . '\')'" title="Hapus Transaksi" message="Yakin ingin menghapus transaksi #{{ $row->co_no }}?" />
                                             @endcan
                                         </div>
                                     </td>

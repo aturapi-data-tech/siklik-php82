@@ -276,14 +276,12 @@ new class extends Component {
                                         <div class="flex flex-wrap gap-2">
                                             @if ($editable)
                                                 <x-outline-button type="button"
-                                                    wire:click="openEdit('{{ $row->rcv_no }}')"
-                                                    class="px-2 py-1 text-xs">
+                                                    wire:click="openEdit('{{ $row->rcv_no }}')">
                                                     Ubah Data
                                                 </x-outline-button>
                                             @else
                                                 <x-secondary-button type="button"
-                                                    wire:click="openEdit('{{ $row->rcv_no }}')"
-                                                    class="px-2 py-1 text-xs">
+                                                    wire:click="openEdit('{{ $row->rcv_no }}')">
                                                     Lihat Data
                                                 </x-secondary-button>
                                             @endif

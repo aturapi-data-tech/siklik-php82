@@ -54,15 +54,10 @@
                             <td>{{ $obat['dosis'] ?? '-' }}</td>
                             <td>{{ $obat['rute'] ?? '-' }}</td>
                             <td class="ds-c">
-                                <x-confirm-button variant="danger"
-                                    :action="'removeRekonsiliasiObat(\'' . addslashes($obat['namaObat']) . '\')'"
+                                <x-hapus-button :action="'removeRekonsiliasiObat(\'' . addslashes($obat['namaObat']) . '\')'"
                                     title="Hapus Obat"
                                     message="Yakin hapus '{{ $obat['namaObat'] }}'?"
-                                    confirmText="Ya, hapus" cancelText="Batal"
-                                    class="px-2 py-1 text-xs"
-                                    :disabled="$isFormLocked">
-                                    Hapus
-                                </x-confirm-button>
+                                    confirmText="Ya, hapus" :disabled="$isFormLocked" />
                             </td>
                         </tr>
                     @empty
