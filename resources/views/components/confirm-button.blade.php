@@ -1,19 +1,25 @@
 @props([
-    'variant' => 'danger', // danger|primary|secondary|outline
+    'variant' => 'danger', // danger|danger-soft|warning-soft|primary|secondary|outline
     'action', // contoh: "delete(10)" atau "delete('10')"
     'title' => 'Konfirmasi',
     'message' => 'Apakah Anda yakin?',
     'confirmText' => 'Ya',
     'cancelText' => 'Batal',
     'disabled' => false,
+    'wireTarget' => null, // default: nama method dari $action — timpa bila perlu target lain
 ])
 
 @php
     // id unik supaya aman dipakai berulang di table
     $confirmId = 'confirm_' . md5($action . '|' . ($attributes->get('wire:key') ?? '') . '|' . uniqid('', true));
 
+    // Target wire:loading — cukup nama method (tanpa argumen) supaya aman dari
+    // tanda kutip di $action. Konsekuensi: semua trigger ber-method sama ikut
+    // disabled selama proses; justru mencegah aksi ganda dari baris lain.
+    $loadingTarget = $wireTarget ?? \Illuminate\Support\Str::before($action, '(');
+
     // class trigger button — disesuaikan dengan komponen button standar
-    $base = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150';
+    $base = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors duration-150';
 
     $triggerButtonClass = match ($variant) {
         'primary'
@@ -22,6 +28,15 @@
             => $base . ' text-gray-700 bg-gray-100 border border-gray-300 hover:bg-gray-200 hover:text-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700',
         'outline'
             => $base . ' text-brand-green bg-brand-green/10 border border-brand-green/30 hover:bg-brand-green hover:text-white hover:border-brand-green focus:outline-none focus:ring-4 focus:ring-brand-green/20 dark:text-brand-lime dark:bg-brand-lime/10 dark:border-brand-lime/30 dark:hover:bg-brand-lime dark:hover:text-gray-900',
+        // Merah bertint (bukan solid) — tampilan tombol hapus ikon di dalam tabel/form.
+        // Dibuat jadi VARIAN supaya pemakai tak perlu override `!important`
+        // (dilarang Aturan Umum standar-ui-komponen.md).
+        'danger-soft'
+            => $base . ' text-error-deep bg-error-tint border border-error/30 hover:bg-error/20 hover:text-error-deep hover:border-error/50 focus:outline-none focus:ring-4 focus:ring-error/30 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800/30 dark:hover:bg-red-900/30 dark:hover:text-red-300 dark:focus:ring-red-900',
+        // Kuning lembut — aksi KOREKSI (Buka Kunci, batal proses): berbeda dari merah hapus
+        // supaya dua tombol berisiko di satu sel tidak tampak sama.
+        'warning-soft'
+            => $base . ' text-warning-deep bg-warning-tint border border-warning/30 hover:bg-warning/20 hover:text-warning-deep hover:border-warning/50 focus:outline-none focus:ring-4 focus:ring-warning/30 dark:text-amber-400 dark:bg-amber-900/20 dark:border-amber-800/30 dark:hover:bg-amber-900/30 dark:hover:text-amber-300 dark:focus:ring-amber-900',
         default
             => $base . ' text-white bg-error hover:bg-error-deep focus:outline-none focus:ring-4 focus:ring-error/30 dark:bg-error dark:hover:bg-error-deep dark:focus:ring-error/40',
     };
@@ -46,10 +61,18 @@
         $wire.{{ $action }};
     }
 }" x-on:keydown.escape.window="if (show) close()" class="inline-block">
-    {{-- Trigger --}}
-    <button type="button" @disabled($disabled) x-on:click="open()"
+    {{-- Trigger — disabled + spinner selama aksi $wire berjalan, supaya proses
+         lama tidak terkesan "tidak jalan" setelah user menekan tombol konfirmasi --}}
+    <button type="button" @disabled($disabled) x-on:click="open()" wire:loading.attr="disabled"
+        wire:target="{{ $loadingTarget }}"
         {{ $attributes->merge(['class' => $triggerButtonClass . ' disabled:opacity-60 disabled:cursor-not-allowed']) }}>
-        {{ $slot }}
+        <span wire:loading.remove wire:target="{{ $loadingTarget }}" class="inline-flex items-center gap-2">
+            {{ $slot }}
+        </span>
+        <span wire:loading wire:target="{{ $loadingTarget }}" class="inline-flex items-center gap-2">
+            <x-loading class="w-4 h-4" />
+            Memproses...
+        </span>
     </button>
 
     {{-- Modal Confirm (transisi DISAMAIN dengan <x-modal>) --}}
