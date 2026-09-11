@@ -1,15 +1,33 @@
 <?php
 
 use Livewire\Component;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
 
+/**
+ * KOMPONEN AKSI Batal antrian RJ (TaskId99) — berisi fungsi.
+ *
+ * Cetak-pattern: di-mount SEKALI sebagai sibling di antrian-apotek-rj & daftar-rj.
+ * Tombol Batal tiap baris ada di list dan memicu komponen ini via
+ * wire:click="$dispatch('task-id-batal-proses-rj', { rjNo })" (aksi Livewire).
+ * Nol komponen Livewire per baris. Logika prosesTaskId99 IDENTIK versi lama.
+ */
 new class extends Component {
     use EmrRJTrait;
 
     public ?int $rjNo = null;
-    public bool $isLoading = false;
+
+    /* ===============================
+     | ROUTER — dipicu tombol Batal baris via wire:click $dispatch
+     =============================== */
+    #[On('task-id-batal-proses-rj')]
+    public function proses(int $rjNo): void
+    {
+        $this->rjNo = $rjNo;
+        $this->prosesTaskId99();
+    }
 
     /* ===============================
      | PROSES TASK ID 99 (Batal Antrian)
@@ -17,10 +35,8 @@ new class extends Component {
      | Alur:
      | 1. Guard rjNo + data kosong + noBooking
      | 2. Guard: tidak bisa batal jika taskId4 atau taskId5 sudah ada
-     | 3. Guard: tidak bisa batal jika taskId99 sudah pernah dikirim sukses ke BPJS
-     | 4. Set taskId99 timestamp jika belum ada
-     | 5. Push ke BPJS jika poli spesialis — DI LUAR transaksi (API call)
-     | 6. lockRJRow + patch hanya key taskIdPelayanan — ATOMIK
+     | 3. Set taskId99 timestamp jika belum ada
+     | 4. lockRJRow + patch hanya key taskIdPelayanan — ATOMIK
     =============================== */
     public function prosesTaskId99(): void
     {
@@ -29,8 +45,6 @@ new class extends Component {
             $this->dispatch('toast', type: 'warning', message: 'Nomor RJ tidak boleh kosong', title: 'Peringatan');
             return;
         }
-
-        $this->isLoading = true;
 
         try {
             // 2. Ambil data RJ — tanpa lock dulu, hanya untuk baca awal
@@ -73,8 +87,7 @@ new class extends Component {
                 $data['taskIdPelayanan']['taskId99'] = Carbon::now(config('app.timezone'))->format('d/m/Y H:i:s');
             }
 
-            // 9. Push ke BPJS jika poli spesialis — DI LUAR transaksi (API call)
-            // 10. Simpan ke DB — lock + patch hanya key taskIdPelayanan
+            // 9. Simpan ke DB — lock + patch hanya key taskIdPelayanan
             DB::transaction(function () use ($data) {
                 $this->lockRJRow($this->rjNo);
 
@@ -94,24 +107,17 @@ new class extends Component {
             $this->dispatch('toast', type: 'error', message: $e->getMessage(), title: 'Error');
         } catch (\Exception $e) {
             $this->dispatch('toast', type: 'error', message: 'Terjadi kesalahan: ' . $e->getMessage(), title: 'Error');
-        } finally {
-            $this->isLoading = false;
         }
     }
-
-    /* ===============================
-     | HELPERS
-     =============================== */};
+};
 ?>
 
-<div class="inline-block">
-    <x-danger-button wire:click="prosesTaskId99" wire:loading.attr="disabled" wire:target="prosesTaskId99"
-        class="!px-2 !py-1 text-xs" title="Klik untuk membatalkan antrian (hanya bisa sebelum TaskId4/5)">
-        <span wire:loading.remove wire:target="prosesTaskId99">
-            Batal
-        </span>
-        <span wire:loading wire:target="prosesTaskId99">
-            <x-loading />
-        </span>
-    </x-danger-button>
+{{-- Indikator proses global (host tak punya tombol sendiri — tombol Batal ada di baris list). --}}
+<div wire:key="task-id-99-rj-host">
+    <div wire:loading wire:target="proses, prosesTaskId99"
+        class="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 text-sm font-medium
+               text-white bg-rose-600 rounded-xl shadow-lg dark:bg-rose-500">
+        <x-loading />
+        Membatalkan antrian…
+    </div>
 </div>

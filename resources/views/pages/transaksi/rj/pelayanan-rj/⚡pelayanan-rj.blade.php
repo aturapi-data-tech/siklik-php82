@@ -795,12 +795,26 @@ new class extends Component {
 
                                                             {{-- Task ID 4/5 + Get — Perawat saja (Admin otomatis via super-user) --}}
                                                             @hasanyrole('Perawat|Admin')
+                                                                {{-- Tombol Blade (BUKAN komponen Livewire per baris). wire:click="$dispatch(...)"
+                                                                     = aksi Livewire → host task-id-poli-actions tangkap via #[On]. Redup dari $row->task_id4/5. --}}
                                                                 <div class="flex space-x-1">
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
-                                                                        :rjNo="$row->rj_no"
-                                                                        :isDone4="(bool) $row->task_id4"
-                                                                        :isDone5="(bool) $row->task_id5"
-                                                                        wire:key="taskid-poli-{{ $row->rj_no }}" />
+                                                                    <x-primary-button type="button"
+                                                                        wire:click="$dispatch('task-id-poli-proses-rj', { rjNo: {{ $row->rj_no }}, aksi: '4' })"
+                                                                        class="!px-2 !py-1 text-xs {{ $row->task_id4 ? '!opacity-60' : '' }}"
+                                                                        title="{{ $row->task_id4 ? 'Sudah dijalankan, klik untuk update' : 'Klik untuk mencatat TaskId4 (Masuk Poli)' }}">
+                                                                        TaskId4
+                                                                    </x-primary-button>
+                                                                    <x-primary-button type="button"
+                                                                        wire:click="$dispatch('task-id-poli-proses-rj', { rjNo: {{ $row->rj_no }}, aksi: '5' })"
+                                                                        class="!px-2 !py-1 text-xs {{ $row->task_id5 ? '!opacity-60' : '' }}"
+                                                                        title="{{ $row->task_id5 ? 'Sudah dijalankan, klik untuk update' : 'Klik untuk mencatat TaskId5 (Panggil Antrian)' }}">
+                                                                        TaskId5
+                                                                    </x-primary-button>
+                                                                    <x-primary-button type="button"
+                                                                        wire:click="$dispatch('task-id-poli-proses-rj', { rjNo: {{ $row->rj_no }}, aksi: 'antrean' })"
+                                                                        class="!px-2 !py-1 text-xs" title="Klik untuk mengambil TaskId Antrean">
+                                                                        TaskId Antrean
+                                                                    </x-primary-button>
                                                                 </div>
                                                             @endhasanyrole
 
@@ -905,6 +919,13 @@ new class extends Component {
             </div>
 
             {{-- Sibling components — pelayanan-only: EMR + Modul Dokumen + Administrasi + Cetak Etiket --}}
+            {{-- Host aksi Task ID poli (T4/T5/Antrean) — mount 1×. Tombol tiap baris
+                 dispatch 'task-id-poli-proses-rj' ke sini via wire:click. --}}
+            @hasanyrole('Perawat|Admin')
+                <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
+                    wire:key="task-id-poli-actions-rj-host" />
+            @endhasanyrole
+
             <livewire:pages::transaksi.rj.emr-rj.erm-rj wire:key="rm-perawat-rj-actions" />
             <livewire:pages::transaksi.rj.emr-rj.modul-dokumen.modul-dokumen-rj wire:key="modul-dokumen-rj" />
             <livewire:pages::transaksi.rj.emr-rj.log-aktivitas.log-aktivitas-rj wire:key="log-aktivitas-rj" />

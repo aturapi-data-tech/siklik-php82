@@ -818,10 +818,24 @@ new class extends Component {
                                                             {{-- Task ID — Admin & Perawat selalu tampil, Mr hanya kalau lab/rad true --}}
                                                             @if (auth()->user()->hasAnyRole(['Admin', 'Perawat']) ||
                                                                     (auth()->user()->hasRole('Mr') && ($row->lab_status || $row->rad_status)))
+                                                                {{-- Tombol Blade (BUKAN komponen Livewire per baris). wire:click="$dispatch(...)"
+                                                                     = aksi Livewire → host task-id-poli-actions tangkap via #[On]. --}}
                                                                 <div class="flex space-x-1">
-                                                                    <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
-                                                                        :rjNo="$row->rj_no"
-                                                                        wire:key="taskid-poli-{{ $row->rj_no }}" />
+                                                                    <x-primary-button type="button"
+                                                                        wire:click="$dispatch('task-id-poli-proses-rj', { rjNo: {{ $row->rj_no }}, aksi: '4' })"
+                                                                        class="!px-2 !py-1 text-xs" title="Klik untuk mencatat TaskId4 (Masuk Poli)">
+                                                                        TaskId4
+                                                                    </x-primary-button>
+                                                                    <x-primary-button type="button"
+                                                                        wire:click="$dispatch('task-id-poli-proses-rj', { rjNo: {{ $row->rj_no }}, aksi: '5' })"
+                                                                        class="!px-2 !py-1 text-xs" title="Klik untuk mencatat TaskId5 (Panggil Antrian)">
+                                                                        TaskId5
+                                                                    </x-primary-button>
+                                                                    <x-primary-button type="button"
+                                                                        wire:click="$dispatch('task-id-poli-proses-rj', { rjNo: {{ $row->rj_no }}, aksi: 'antrean' })"
+                                                                        class="!px-2 !py-1 text-xs" title="Klik untuk mengambil TaskId Antrean">
+                                                                        TaskId Antrean
+                                                                    </x-primary-button>
                                                                 </div>
                                                             @endif
 
@@ -993,11 +1007,13 @@ new class extends Component {
                                                                 class="my-1 border-t border-gray-200 dark:border-gray-700">
                                                             </div>
 
-                                                            {{-- Batal Antrean (Task ID 99) — Admin only --}}
+                                                            {{-- Batal Antrean (Task ID 99) — Admin only. Tombol Blade → host task-id-99. --}}
                                                             @role('Admin')
-                                                                <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-99
-                                                                    :rjNo="$row->rj_no"
-                                                                    wire:key="taskid99-{{ $row->rj_no }}" />
+                                                                <x-danger-button type="button"
+                                                                    wire:click="$dispatch('task-id-batal-proses-rj', { rjNo: {{ $row->rj_no }} })"
+                                                                    class="!px-2 !py-1 text-xs" title="Klik untuk membatalkan antrian (hanya bisa sebelum TaskId4/5)">
+                                                                    Batal
+                                                                </x-danger-button>
                                                             @endrole
 
                                                             {{-- Hapus — Admin only --}}
@@ -1050,6 +1066,17 @@ new class extends Component {
 
             {{-- Child components — static wire:key agar tidak ikut re-mount saat filter berubah --}}
             {{-- Daftar RJ = pendaftaran only; EMR/Modul Dokumen/Administrasi pindah ke /rawat-jalan/pelayanan --}}
+            {{-- Host aksi Task ID poli (T4/T5/Antrean) — mount 1×. Tombol tiap baris
+                 dispatch 'task-id-poli-proses-rj' ke sini via wire:click. --}}
+            <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
+                wire:key="task-id-poli-actions-rj-host" />
+
+            {{-- Host aksi Batal antrian (task-id-99) — mount 1×, Admin only. --}}
+            @role('Admin')
+                <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-99
+                    wire:key="task-id-99-rj-host" />
+            @endrole
+
             <livewire:pages::transaksi.rj.daftar-rj.daftar-rj-actions wire:key="daftar-rj-actions" />
 
             {{-- Modal Satu Sehat (sibling, listen ke event daftar-rj.satu-sehat.open) --}}
