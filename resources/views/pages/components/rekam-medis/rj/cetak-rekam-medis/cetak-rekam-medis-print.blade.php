@@ -62,10 +62,10 @@
     {{-- ================================================================ --}}
     @php
         $txn = $data['dataDaftarTxn'];
-        $lastNyeri = !empty($txn['penilaian']['nyeri']) ? end($txn['penilaian']['nyeri']) : null;
-        $lastResikoJatuh = !empty($txn['penilaian']['resikoJatuh']) ? end($txn['penilaian']['resikoJatuh']) : null;
-        $lastDekubitus = !empty($txn['penilaian']['dekubitus']) ? end($txn['penilaian']['dekubitus']) : null;
-        $lastGizi = !empty($txn['penilaian']['gizi']) ? end($txn['penilaian']['gizi']) : null;
+        $lastNyeri = \App\Support\PenilaianLegacy::entriTerakhir($txn['penilaian']['nyeri'] ?? []); // objek legacy siklik-lite → null, bukan sub-array acak
+        $lastResikoJatuh = \App\Support\PenilaianLegacy::entriTerakhir($txn['penilaian']['resikoJatuh'] ?? []); // objek legacy siklik-lite → null, bukan sub-array acak
+        $lastDekubitus = \App\Support\PenilaianLegacy::entriTerakhir($txn['penilaian']['dekubitus'] ?? []); // objek legacy siklik-lite → null, bukan sub-array acak
+        $lastGizi = \App\Support\PenilaianLegacy::entriTerakhir($txn['penilaian']['gizi'] ?? []); // objek legacy siklik-lite → null, bukan sub-array acak
     @endphp
 
     <table class="w-full text-[10px] border-collapse">
