@@ -31,7 +31,7 @@ new class extends Component {
 
         // Hitung umur realtime (model etiket lama hanya pakai tahun, mis. "63 tahun")
         if (!empty($dataPasien['tglLahir'])) {
-            $umur = Carbon::createFromFormat('d/m/Y', $dataPasien['tglLahir'])->diff(Carbon::now(env('APP_TIMEZONE')));
+            $umur = Carbon::createFromFormat('d/m/Y', $dataPasien['tglLahir'])->diff(Carbon::now(config('app.timezone')));
             $dataPasien['thn'] = $umur->format('%y Thn, %m Bln %d Hr');
             $dataPasien['umurTahun'] = $umur->y;
         }

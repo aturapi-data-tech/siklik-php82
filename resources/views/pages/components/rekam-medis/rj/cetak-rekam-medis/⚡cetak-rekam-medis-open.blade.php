@@ -48,7 +48,7 @@ new class extends Component {
 
         if (!empty($pasien['tglLahir'])) {
             $pasien['thn'] = Carbon::createFromFormat('d/m/Y', $pasien['tglLahir'])
-                ->diff(Carbon::now(env('APP_TIMEZONE')))
+                ->diff(Carbon::now(config('app.timezone')))
                 ->format('%y Thn, %m Bln %d Hr');
         }
 

@@ -220,7 +220,7 @@ pages/transaksi/
 │   ├── eresep-rj/
 │   ├── antrian-apotek-rj/  antrian-kasir-rj/
 │   ├── emr-rj/
-│   │   ├── ⚡emr-rj.blade.php          # shell EMR + tab  (sekarang masih ⚡erm-rj — backlog §8/8)
+│   │   ├── ⚡emr-rj.blade.php          # shell EMR + tab  (sekarang masih ⚡emr-rj — backlog §8/8)
 │   │   ├── <section>/                  # anamnesa, pemeriksaan, penilaian, perencanaan,
 │   │   │   └── tabs/                   # diagnosa, log-aktivitas
 │   │   └── modul-dokumen/<modul>-rj/
@@ -453,7 +453,7 @@ komponen tersentuh (**bukan** `view:cache` — ia tidak menangkap galat kelas Vo
 | 🟢 4 | `Traits/customErrorMessagesTrait.php` — nama berkas huruf kecil di awal + letaknya di akar | 1 berkas | 🟢 | Mestinya `Concerns/CustomErrorMessagesTrait.php` (PSR-1). Cek dulu masih dipakai atau tidak |
 | 🟢 5 | `Support/Bpjs/BpjsHttp.php` → akar `App\Support` | 1 berkas | 🟢 | Aturan sub-namespace ≥2 anggota (§6.2). Boleh ditunda kalau anggota kedua segera lahir |
 | 🔴 6 | Seragamkan prefix URL (§7) + `Route::redirect` lama→baru | 9 route | 🔴 | `/rawat-jalan/*` → `/rj/*`; buang segmen `transaksi` dari 4 route; `/manajemen/*` disesuaikan ke `rs/{rj,tu}`. Nama route ikut berubah — jangan sapu buta, banyak string serupa adalah nama KOMPONEN |
-| 🟡 7 | `emr-rj/⚡erm-rj.blade.php` → `⚡emr-rj.blade.php` | 1 berkas | 🟢 | Foldernya sudah `emr-rj/`, berkasnya masih `erm-` (huruf tertukar). Sapu juga tag `<livewire:>` & penyebutan di komentar/docs |
+| ✅ 7 | `emr-rj/⚡erm-rj.blade.php` → `⚡emr-rj.blade.php` | 1 berkas | selesai | Sudah di-rename (huruf tertukar), tag `<livewire:pages::transaksi.rj.emr-rj.emr-rj>` & docs ikut disapu |
 | 🔴 8 | Pecah berkas melewati ambang §5 | 19 LIST + 7 `-actions` + 1 trait | 🔴 | Cek dulu proporsinya: kalau bulk-nya blok kelas Volt (seperti `⚡daftar-rj-actions`), memecah markup tidak menurunkannya ke bawah ambang — yang perlu dikurangi kelasnya |
 
 ### Cara memverifikasi

@@ -71,7 +71,7 @@ new class extends Component {
 
             $practitionerId = (string) (DB::table('skmst_doctors')->where('dr_id', $dataRJ['drId'] ?? '')->value('dr_uuid') ?? '');
             $rjDate = $this->parseDate($dataRJ['rjDate'] ?? '');
-            $orgId = env('SATUSEHAT_ORGANIZATION_ID');
+            $orgId = config('satusehat.organization_id');
             $drDesc = $dataRJ['drDesc'] ?? '';
             $patientName = $dataRJ['regName'] ?? '';
 

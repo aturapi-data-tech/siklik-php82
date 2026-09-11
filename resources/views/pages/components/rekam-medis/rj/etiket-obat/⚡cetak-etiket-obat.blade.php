@@ -54,7 +54,7 @@ new class extends Component {
         if (!empty($obat->birth_date)) {
             try {
                 $umur = Carbon::createFromFormat('d/m/Y', $obat->birth_date)
-                    ->diff(Carbon::now(env('APP_TIMEZONE')))
+                    ->diff(Carbon::now(config('app.timezone')))
                     ->format('%y Thn, %m Bln %d Hr');
             } catch (\Throwable) {
             }
