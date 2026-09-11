@@ -32,9 +32,13 @@ new class extends Component {
     /* ===============================
      | MOUNT
      =============================== */
-    public function mount(): void
+    public function mount(?int $rjNo = null): void
     {
         $this->registerAreas(['modal-pemeriksaan-rj']);
+        // Dimuat lazy oleh induk (@if($rjNo)): data dibaca dari prop, bukan menunggu event open-rm-*.
+        if (filled($rjNo)) {
+            $this->openPemeriksaan($rjNo);
+        }
     }
 
     /* ===============================

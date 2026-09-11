@@ -22,13 +22,17 @@ new class extends Component {
     /* ===============================
      | MOUNT
      =============================== */
-    public function mount(): void
+    public function mount(?int $rjNo = null): void
     {
         $this->registerAreas(['modal-penilaian-rj']);
         $this->formEntryNyeri = $this->defaultFormEntryNyeriState();
         $this->formEntryResikoJatuh = $this->defaultFormEntryResikoJatuhState();
         $this->formEntryDekubitus = $this->defaultFormEntryDekubitusState();
         $this->formEntryGizi = $this->defaultFormEntryGiziState();
+        // Dimuat lazy oleh induk (@if($rjNo)): data dibaca dari prop, bukan menunggu event open-rm-*.
+        if (filled($rjNo)) {
+            $this->openPenilaian($rjNo);
+        }
     }
 
     public function rendering(): void
@@ -37,7 +41,7 @@ new class extends Component {
         $current = $this->dataDaftarPoliRJ['penilaian'] ?? [];
         // Record lama siklik-lite (objek assoc per skala): konversi ke list entri lewat aturan yang sama
         // dengan siklik:migrasi-json-emr, supaya membuka lalu menyimpan tidak menulis balik bentuk legacy
-        // dan @foreach tab tidak mengiterasi skalaMorse/skalaHumptyDumpty sebagai "entri".
+        // dan perulangan tab tidak mengiterasi skalaMorse/skalaHumptyDumpty sebagai "entri".
         if (is_array($current) && PenilaianLegacy::adalahLegacy($current)) {
             $current = PenilaianLegacy::konversi($current, [
                 'tgl' => (string) ($this->dataDaftarPoliRJ['rjDate'] ?? now()->format('d/m/Y H:i:s')),

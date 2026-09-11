@@ -306,6 +306,8 @@ new class extends Component {
      | MODAL: TELAAH RESEP & OBAT (side-by-side grid)
      ============================================================ --}}
     <x-modal name="telaah-apotek" size="full" height="full" focusable>
+        {{-- Isi hanya dirender saat modal terbuka: tertutup = kosong, buka = render sekali, tutup (closeTelaah) = dihapus. --}}
+        @if ($rjNo)
         <div wire:key="{{ $this->renderKey('modal-telaah-apotek', [$rjNo ?? 'new']) }}">
 
             {{-- HEADER --}}
@@ -745,5 +747,6 @@ new class extends Component {
 
             </div> {{-- /GRID --}}
         </div>
+        @endif
     </x-modal>
 </div>

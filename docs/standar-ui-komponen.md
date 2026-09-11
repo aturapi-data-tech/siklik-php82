@@ -103,6 +103,42 @@ Semua modal full-screen mengikuti pola 3 bagian: **Header**, **Body**, **Footer*
 </div>
 ```
 
+### 1b. Isi modal LAZY — guard `@if` server, anak memuat dari prop (BAKU, 11 Sep 2026)
+
+Modal yang memuat **komponen anak Livewire** (EMR RJ, Administrasi RJ, E-Resep, Modul Dokumen,
+Log Aktivitas, Daftar RJ create/edit, Preview Rekam Medis, Telaah Apotek) TIDAK memakai
+`#[Lazy]`/`placeholder()`/`wire:init`. Polanya (mengikuti sirus 3f250856 & 4a86e1ef):
+
+```blade
+<x-modal name="rm-perawat-actions" size="full" height="full" focusable>
+    {{-- Anak hanya di-mount saat ada pasien: tertutup = nol komponen, buka = mount sekali, tutup = dihapus. --}}
+    @if ($rjNo)
+        <x-dirty-modal-content …>
+            <livewire:…anamnesa.rm-anamnesa-rj-actions :rjNo="$rjNo" wire:key="anamnesa-rj-{{ $rjNo }}" />
+        </x-dirty-modal-content>
+    @endif
+</x-modal>
+```
+```php
+// anak: baca data dari PROP di mount(); handler #[On('open-rm-*')] dipertahankan untuk pemanggil lama
+public function mount(?int $rjNo = null): void
+{
+    $this->registerAreas(['modal-anamnesa-rj']);
+    if (filled($rjNo)) { $this->openAnamnesa($rjNo); }
+}
+```
+
+| Aturan | Alasan |
+|---|---|
+| Induk **tidak** lagi `dispatch('open-rm-*-rj', $rjNo)` setelah `open-modal` | anak sudah memuat sendiri saat mount; event ganda = baca CLOB dua kali |
+| Penanda guard = `$rjNo`; modal yang punya mode **create tanpa nomor** pakai flag `public bool $modalTerbuka` (Daftar RJ) | guard harus benar-benar gugur saat tutup |
+| `closeModal()` **server** mengosongkan `$rjNo`/flag; tombol Tutup & X `wire:click="closeModal"` | tutup hanya lewat Alpine (`$dispatch('close-modal')`) tidak menggugurkan guard → anak tetap hidup |
+| Sub-tab di dalam modal (Modul Dokumen, Pemeriksaan) tetap Alpine `x-show` | komponen ringan; `@if` per tab akan mereset state anak tiap ganti tab |
+
+Sebelum pola ini: seluruh anak EMR ter-mount sejak halaman dimuat (HTML halaman Daftar RJ ikut
+memuat 5 modal EMR kosong), buka = mount ulang semua anak lalu tiap anak baca CLOB lagi lewat
+event, tutup = mount ulang lagi dengan state kosong.
+
 ---
 
 ## 2. Form Section (`<x-border-form>`)

@@ -112,12 +112,9 @@ new class extends Component {
             $this->isFormLocked = true;
         }
 
+        // Seksi anamnesa/pemeriksaan/penilaian/diagnosa/perencanaan memuat datanya sendiri di
+        // mount() dari prop rjNo (isi modal dibungkus @if($rjNo)), jadi event open-rm-*-rj tak dipancarkan lagi.
         $this->dispatch('open-modal', name: 'rm-perawat-actions');
-        $this->dispatch('open-rm-anamnesa-rj', $rjNo);
-        $this->dispatch('open-rm-pemeriksaan-rj', $rjNo);
-        $this->dispatch('open-rm-penilaian-rj', $rjNo);
-        $this->dispatch('open-rm-diagnosa-rj', $rjNo);
-        $this->dispatch('open-rm-perencanaan-rj', $rjNo);
     }
 
     /* ===============================
@@ -175,6 +172,9 @@ new class extends Component {
 
 <div>
     <x-modal name="rm-perawat-actions" size="full" height="full" focusable>
+        {{-- Anak hanya di-mount saat ada pasien: tertutup = nol komponen, buka = mount sekali
+             (tiap seksi baca CLOB dari prop rjNo di mount-nya), tutup = dihapus. --}}
+        @if ($rjNo)
         <x-dirty-modal-content name="rm-perawat-actions" event="refresh-after-rj.saved" label="EMR Rawat Jalan"
             :save-events="[
                 'save-rm-anamnesa-rj',
@@ -409,6 +409,7 @@ new class extends Component {
             </div>
 
         </x-dirty-modal-content>
+        @endif
     </x-modal>
 
     {{-- Modal i-Care --}}

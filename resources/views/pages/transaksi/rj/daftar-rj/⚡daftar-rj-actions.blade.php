@@ -25,6 +25,9 @@ new class extends Component {
     public array $dataDaftarPoliRJ = ['passStatus' => 'O'];
     public array $dataPasien = [];
 
+    /** Penanda modal rj-actions terbuka — guard if($modalTerbuka) di template (mode create tidak punya rjNo). */
+    public bool $modalTerbuka = false;
+
     public array $renderVersions = [];
     protected array $renderAreas = ['modal', 'pasien', 'dokter'];
 
@@ -72,6 +75,7 @@ new class extends Component {
         $this->dataDaftarPoliRJ['shift'] = $this->resolveShiftByTime($now->format('H:i:s'));
 
         $this->incrementVersion('modal');
+        $this->modalTerbuka = true;
         $this->dispatch('open-modal', name: 'rj-actions');
         $this->dispatch('focus-cari-pasien');
     }
@@ -104,6 +108,7 @@ new class extends Component {
         $this->syncFromDataDaftarPoliRJ();
 
         $this->incrementVersion('modal');
+        $this->modalTerbuka = true;
         $this->dispatch('open-modal', name: 'rj-actions');
 
         if (empty($this->dataDaftarPoliRJ['regNo'])) {
@@ -1034,6 +1039,7 @@ new class extends Component {
     protected function resetForm(): void
     {
         $this->reset(['rjNo', 'dataDaftarPoliRJ']);
+        $this->modalTerbuka = false;
         $this->resetVersion();
         $this->klaimId = 'UM';
         $this->kunjSakit = '1';
@@ -1054,6 +1060,8 @@ new class extends Component {
 {{-- Blade template tidak ada perubahan --}}
 <div>
     <x-modal name="rj-actions" size="full" height="full" focusable>
+        {{-- Anak (LOV pasien/dokter) hanya di-mount saat modal terbuka: tertutup = nol komponen, buka = mount sekali, tutup = dihapus. --}}
+        @if ($modalTerbuka)
         <div class="flex flex-col min-h-[calc(100vh-8rem)]"
             wire:key="{{ $this->renderKey('modal', [$formMode, $rjNo ?? 'new']) }}">
 
@@ -1246,6 +1254,7 @@ new class extends Component {
             </div>
 
         </div>
+        @endif
     </x-modal>
 
     {{-- Satu Sehat modal embed pindah ke ⚡daftar-rj.blade.php (page level)
@@ -1256,6 +1265,8 @@ new class extends Component {
          RIWAYAT KUNJUNGAN BPJS — modal
     ================================ --}}
     <x-modal name="rj-riwayat-bpjs" size="3xl" focusable>
+        {{-- Isi hanya dirender saat modal terbuka (showRiwayatBpjs); closeRiwayatBpjs mengosongkannya di server. --}}
+        @if ($showRiwayatBpjs)
         <div class="flex flex-col">
             {{-- HEADER --}}
             <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -1337,6 +1348,7 @@ new class extends Component {
                 <x-secondary-button type="button" wire:click="closeRiwayatBpjs">Tutup</x-secondary-button>
             </div>
         </div>
+        @endif
     </x-modal>
 
 </div>
