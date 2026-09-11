@@ -99,43 +99,42 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">NO</th>
-                                <th class="px-4 py-3 font-semibold">NAMA ALAT</th>
-                                <th class="px-4 py-3 font-semibold">KONDISI</th>
-                                <th class="px-4 py-3 font-semibold text-right">JUMLAH</th>
-                                <th class="px-4 py-3 font-semibold">UMUR</th>
-                                <th class="px-4 py-3 font-semibold">SERTIFIKAT</th>
-                                <th class="px-4 py-3 font-semibold">IZIN</th>
-                                <th class="px-4 py-3 font-semibold">TGL BELI</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>NO</th>
+                                <th>NAMA ALAT</th>
+                                <th>KONDISI</th>
+                                <th class="text-right">JUMLAH</th>
+                                <th>UMUR</th>
+                                <th>SERTIFIKAT</th>
+                                <th>IZIN</th>
+                                <th>TGL BELI</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="medik-{{ $row->medik_no }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $row->medik_no }}</td>
-                                    <td class="px-4 py-3 font-semibold">
+                                <tr wire:key="medik-{{ $row->medik_no }}">
+                                    <td class="ds-td-token">{{ $row->medik_no }}</td>
+                                    <td class="ds-td-strong">
                                         {{ $row->medik_name ?? '-' }}
                                         @if ($row->kapasiti)
                                             <div class="text-[11px] font-normal text-gray-400">Kap: {{ $row->kapasiti }}</div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-xs">{{ $row->condition ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-right text-xs">{{ (int) ($row->jml ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-xs">
+                                    <td class="text-xs">{{ $row->condition ?? '-' }}</td>
+                                    <td class="text-xs text-right">{{ (int) ($row->jml ?? 0) }}</td>
+                                    <td class="text-xs">
                                         @php $age = (int) ($row->age ?? 0); $bln = (int) ($row->bln ?? 0); @endphp
                                         @if ($age || $bln) {{ $age }}th {{ $bln }}bln @else - @endif
                                     </td>
-                                    <td class="px-4 py-3 text-xs">{{ $row->sertifikat ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-xs">{{ $row->izin ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-xs">
+                                    <td class="text-xs">{{ $row->sertifikat ?? '-' }}</td>
+                                    <td class="text-xs">{{ $row->izin ?? '-' }}</td>
+                                    <td class="text-xs">
                                         {{ $row->tgl_buy ? \Carbon\Carbon::parse($row->tgl_buy)->format('d/m/Y') : '-' }}
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->medik_no }}')" />
 
@@ -155,7 +154,7 @@ new class extends Component {
                     </table>
                 </div>
 
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

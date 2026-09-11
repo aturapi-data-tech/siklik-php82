@@ -491,9 +491,9 @@ new class extends Component {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm border-collapse">
+                        <table class="ds-table">
                             <thead>
-                                <tr class="text-xs font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300 bg-gray-50 dark:bg-gray-800">
+                                <tr>
                                     <th class="px-3 py-2 sticky left-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 min-w-[240px]">
                                         Dokter
                                     </th>
@@ -568,35 +568,20 @@ new class extends Component {
                                 </span>
                             @endif
 
-                            <button type="button"
-                                wire:click="applyKeSiklik"
-                                wire:loading.attr="disabled"
-                                wire:target="applyKeSiklik"
-                                wire:confirm="Yakin apply hasil ini ke SKMST_SCPOLIS? Data existing akan di-UPDATE, baru di-INSERT, dokter tanpa kd_dr_bpjs di-SKIP."
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
-                                       bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition">
-                                <span wire:loading.remove wire:target="applyKeSiklik" class="flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    Apply ke SKMST_SCPOLIS
-                                </span>
-                                <span wire:loading wire:target="applyKeSiklik" class="flex items-center gap-2">
-                                    <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
-                                    </svg>
-                                    Menyimpan...
-                                </span>
-                            </button>
+                            {{-- Konfirmasi lewat dialog modal baku (bukan wire:confirm browser) — standar-ui-komponen aturan umum #2 --}}
+                            <x-confirm-button variant="primary" action="applyKeSiklik" wireTarget="applyKeSiklik"
+                                title="Apply ke SKMST_SCPOLIS"
+                                message="Data existing akan di-UPDATE, jadwal baru di-INSERT, dokter tanpa kd_dr_bpjs di-SKIP. Lanjutkan?"
+                                confirmText="Ya, Apply">
+                                Apply ke SKMST_SCPOLIS
+                            </x-confirm-button>
                         </div>
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm border-collapse">
+                        <table class="ds-table">
                             <thead>
-                                <tr class="text-xs font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300 bg-gray-50 dark:bg-gray-800">
+                                <tr>
                                     <th class="px-3 py-2 sticky left-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 min-w-[240px]">
                                         Dokter
                                     </th>

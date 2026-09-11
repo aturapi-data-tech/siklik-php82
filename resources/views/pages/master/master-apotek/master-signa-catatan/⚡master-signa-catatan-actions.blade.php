@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
 
@@ -60,7 +61,16 @@ new class extends Component {
     #[On('master.signa-catatan.requestDelete')]
     public function deleteCatatan(string $catatan): void
     {
-        $deleted = DB::table('skmst_signa_catatans')->where('catatan', $catatan)->delete();
+        try {
+            $deleted = DB::table('skmst_signa_catatans')->where('catatan', $catatan)->delete();
+        } catch (QueryException $e) {
+            // Lapis kedua standar master: FK Oracle menolak hapus master yang masih dirujuk.
+            if (str_contains($e->getMessage(), 'ORA-02292')) {
+                $this->dispatch('toast', type: 'error', message: 'Catatan tidak bisa dihapus karena masih dipakai di resep.');
+                return;
+            }
+            throw $e;
+        }
         if ($deleted === 0) {
             $this->dispatch('toast', type: 'error', message: 'Data catatan tidak ditemukan.');
             return;

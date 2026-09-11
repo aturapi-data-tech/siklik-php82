@@ -219,28 +219,27 @@ new class extends Component {
 
                 {{-- TABLE SCROLL AREA (yang boleh scroll) --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
+                    <table class="ds-table">
                         {{-- TABLE HEAD (optional sticky) --}}
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">POLI</th>
-                                <th class="px-4 py-3 font-semibold">BPJS</th>
-                                <th class="px-4 py-3 font-semibold">UUID</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>POLI</th>
+                                <th>BPJS</th>
+                                <th>UUID</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
 
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
-                                <tr wire:key="poli-row-{{ $row->poli_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3">{{ $row->poli_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->poli_desc }}</td>
-                                    <td class="px-4 py-3">{{ $row->kd_poli_bpjs }}</td>
-                                    <td class="px-4 py-3">{{ $row->poli_uuid }}</td>
+                                <tr wire:key="poli-row-{{ $row->poli_id }}">
+                                    <td>{{ $row->poli_id }}</td>
+                                    <td class="ds-td-strong">{{ $row->poli_desc }}</td>
+                                    <td>{{ $row->kd_poli_bpjs }}</td>
+                                    <td>{{ $row->poli_uuid }}</td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->poli_id }}')" />
 
@@ -262,7 +261,7 @@ new class extends Component {
 
                 {{-- PAGINATION STICKY di bawah card --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

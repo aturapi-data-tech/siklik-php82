@@ -96,24 +96,23 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">DESKRIPSI</th>
-                                <th class="px-4 py-3 font-semibold w-20 text-center">CI/CO</th>
-                                <th class="px-4 py-3 font-semibold">AKUN</th>
-                                <th class="px-4 py-3 font-semibold w-24 text-center">STATUS</th>
-                                <th class="px-4 py-3 font-semibold w-48">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>DESKRIPSI</th>
+                                <th class="w-20 ds-c">CI/CO</th>
+                                <th>AKUN</th>
+                                <th class="w-24 ds-c">STATUS</th>
+                                <th class="w-48">AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="tucico-{{ $row->tucico_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $row->tucico_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->tucico_desc }}</td>
-                                    <td class="px-4 py-3 text-center">
+                                <tr wire:key="tucico-{{ $row->tucico_id }}">
+                                    <td class="ds-td-token">{{ $row->tucico_id }}</td>
+                                    <td class="ds-td-strong">{{ $row->tucico_desc }}</td>
+                                    <td class="ds-c">
                                         @if ((string) $row->tucico_status === 'CI')
                                             <span class="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800">CI</span>
                                         @elseif ((string) $row->tucico_status === 'CO')
@@ -122,7 +121,7 @@ new class extends Component {
                                             <span class="text-xs text-gray-400">{{ $row->tucico_status ?: '—' }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+                                    <td class="text-xs text-muted dark:text-gray-400">
                                         @if (!empty($row->acc_id))
                                             <span class="font-mono">{{ $row->acc_id }}</span>
                                             @if (!empty($row->acc_name))
@@ -132,14 +131,14 @@ new class extends Component {
                                             <span class="italic text-gray-400">— belum dipetakan —</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <x-toggle :current="(string) $row->active_status"
                                             trueValue="1" falseValue="0"
                                             wireClick="toggleActive('{{ $row->tucico_id }}')">
                                             {{ (string) $row->active_status === '1' ? 'Aktif' : 'Non-aktif' }}
                                         </x-toggle>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->tucico_id }}')" />
                                             <x-action-delete
@@ -159,7 +158,7 @@ new class extends Component {
                         </tbody>
                     </table>
                 </div>
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

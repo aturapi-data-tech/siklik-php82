@@ -170,56 +170,55 @@ new class extends Component {
 
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">PRODUK</th>
-                                <th class="px-4 py-3 font-semibold">KATEGORI / UOM</th>
-                                <th class="px-4 py-3 font-semibold text-right">HPP</th>
-                                <th class="px-4 py-3 font-semibold text-right">JUAL</th>
-                                <th class="px-4 py-3 font-semibold text-right">MARGIN%</th>
-                                <th class="px-4 py-3 font-semibold text-right">LIMIT</th>
-                                <th class="px-4 py-3 font-semibold">SUPPLIER</th>
-                                <th class="px-4 py-3 font-semibold">STATUS</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>PRODUK</th>
+                                <th>KATEGORI / UOM</th>
+                                <th class="text-right">HPP</th>
+                                <th class="text-right">JUAL</th>
+                                <th class="text-right">MARGIN%</th>
+                                <th class="text-right">LIMIT</th>
+                                <th>SUPPLIER</th>
+                                <th>STATUS</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="product-{{ $row->product_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $row->product_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">
+                                <tr wire:key="product-{{ $row->product_id }}">
+                                    <td class="ds-td-token">{{ $row->product_id }}</td>
+                                    <td class="ds-td-strong">
                                         {{ $row->product_name }}
                                         @if ($row->product_rak)
                                             <div class="text-[11px] font-normal text-gray-400">Rak: {{ $row->product_rak }}</div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-xs">
+                                    <td class="text-xs">
                                         <div>{{ $row->cat_desc ?? '-' }}</div>
                                         <div class="text-gray-500">{{ $row->uom_desc ?? '-' }}</div>
                                     </td>
-                                    <td class="px-4 py-3 text-right font-mono">
+                                    <td class="ds-td-token text-right">
                                         {{ number_format((float) ($row->cost_price ?? 0), 0, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-3 text-right font-mono">
+                                    <td class="ds-td-token text-right">
                                         {{ number_format((float) ($row->sales_price ?? 0), 0, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-3 text-right text-xs">
+                                    <td class="text-xs text-right">
                                         {{ rtrim(rtrim(number_format((float) ($row->margin_persen ?? 0), 2, ',', '.'), '0'), ',') }}%
                                     </td>
-                                    <td class="px-4 py-3 text-right text-xs">
+                                    <td class="text-xs text-right">
                                         {{ (int) ($row->limit_stock ?? 0) }}
                                     </td>
-                                    <td class="px-4 py-3 text-xs">{{ $row->supp_name ?? '-' }}</td>
-                                    <td class="px-4 py-3">
+                                    <td class="text-xs">{{ $row->supp_name ?? '-' }}</td>
+                                    <td>
                                         <x-toggle :current="(string) $row->active_status" trueValue="1" falseValue="0"
                                             wireClick="toggleActive('{{ $row->product_id }}')">
                                             {{ (string) $row->active_status === '1' ? 'AKTIF' : 'NONAKTIF' }}
                                         </x-toggle>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->product_id }}')" />
                                             <x-action-delete
@@ -240,7 +239,7 @@ new class extends Component {
                     </table>
                 </div>
 
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

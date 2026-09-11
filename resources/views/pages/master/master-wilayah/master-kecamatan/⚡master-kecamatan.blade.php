@@ -132,26 +132,25 @@ new class extends Component {
             <div class="mt-4 flex flex-col flex-1 min-h-0 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
 
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">KECAMATAN/KOTA</th>
-                                <th class="px-4 py-3 font-semibold">PROVINSI</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>KECAMATAN/KOTA</th>
+                                <th>PROVINSI</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse ($this->rows as $row)
-                                <tr wire:key="kecamatan-{{ $row->kec_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <tr wire:key="kecamatan-{{ $row->kec_id }}">
 
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $row->kec_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->kec_name }}</td>
-                                    <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+                                    <td class="ds-td-token">{{ $row->kec_id }}</td>
+                                    <td class="ds-td-strong">{{ $row->kec_name }}</td>
+                                    <td class="text-xs text-muted dark:text-gray-400">
                                         {{ $row->kab_name ?? '— kabupaten tidak ditemukan —' }}
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit({{ $row->kec_id }})" />
 
@@ -172,7 +171,7 @@ new class extends Component {
                     </table>
                 </div>
 
-                <div class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                <div class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

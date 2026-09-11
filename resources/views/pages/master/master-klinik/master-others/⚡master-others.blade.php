@@ -151,35 +151,34 @@ new class extends Component {
 
                 {{-- TABLE SCROLL AREA --}}
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
-                    <table class="min-w-full text-sm">
+                    <table class="ds-table">
                         {{-- TABLE HEAD --}}
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">NAMA</th>
-                                <th class="px-4 py-3 font-semibold">HARGA</th>
-                                <th class="px-4 py-3 font-semibold">STATUS</th>
-                                <th class="px-4 py-3 font-semibold">AKSI</th>
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>NAMA</th>
+                                <th>HARGA</th>
+                                <th>STATUS</th>
+                                <th>AKSI</th>
                             </tr>
                         </thead>
 
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
-                                <tr wire:key="others-row-{{ $row->other_id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                    <td class="px-4 py-3">{{ $row->other_id }}</td>
-                                    <td class="px-4 py-3 font-semibold">{{ $row->other_desc }}</td>
-                                    <td class="px-4 py-3">
+                                <tr wire:key="others-row-{{ $row->other_id }}">
+                                    <td>{{ $row->other_id }}</td>
+                                    <td class="ds-td-strong">{{ $row->other_desc }}</td>
+                                    <td>
                                         <span class="font-mono text-gray-600 dark:text-green-400">
                                             {{ $this->formatRupiah($row->other_price) }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <x-badge :variant="(string) $row->active_status === '1' ? 'success' : 'danger'">
                                             {{ (string) $row->active_status === '1' ? 'Aktif' : 'Tidak Aktif' }}
                                         </x-badge>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-action-edit wire:click="openEdit('{{ $row->other_id }}')" />
 
@@ -201,7 +200,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

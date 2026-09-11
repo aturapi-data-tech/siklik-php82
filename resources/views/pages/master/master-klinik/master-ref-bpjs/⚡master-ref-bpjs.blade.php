@@ -196,23 +196,23 @@ new class extends Component {
     <div class="w-full min-h-[calc(100vh-5rem)] bg-white dark:bg-gray-800">
         <div class="px-6 pt-4 pb-6">
             <div class="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
-                <table class="min-w-full text-sm">
-                    <thead class="text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                        <tr class="text-left">
-                            <th class="px-4 py-3 font-semibold w-1/4">Kategori</th>
-                            <th class="px-4 py-3 font-semibold">Deskripsi</th>
-                            <th class="px-4 py-3 font-semibold w-24 text-right">Jumlah</th>
-                            <th class="px-4 py-3 font-semibold w-64">Preview Cache</th>
-                            <th class="px-4 py-3 font-semibold w-32 text-center">Aksi</th>
+                <table class="ds-table">
+                    <thead>
+                        <tr>
+                            <th class="w-1/4">Kategori</th>
+                            <th>Deskripsi</th>
+                            <th class="w-24 text-right">Jumlah</th>
+                            <th class="w-64">Preview Cache</th>
+                            <th class="w-32 ds-c">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                    <tbody>
                         @foreach ($categories as $cat)
                             @php $meta = $this->refRows[$cat['key']] ?? ['count' => 0, 'items' => []]; @endphp
                             <tr wire:key="ref-bpjs-{{ $cat['key'] }}" class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                <td class="px-4 py-3 font-semibold">{{ $cat['key'] }}</td>
-                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $cat['desc'] }}</td>
-                                <td class="px-4 py-3 text-right font-mono">
+                                <td class="ds-td-strong">{{ $cat['key'] }}</td>
+                                <td class="text-muted dark:text-gray-400">{{ $cat['desc'] }}</td>
+                                <td class="ds-td-token text-right">
                                     @if ($meta['count'] > 0)
                                         <span class="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
                                             {{ $meta['count'] }}
@@ -221,7 +221,7 @@ new class extends Component {
                                         <span class="text-xs text-gray-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3">
+                                <td>
                                     @if ($meta['count'] > 0)
                                         <x-select-input title="Display only — preview entries cache">
                                             <option value="">— lihat {{ $meta['count'] }} entries —</option>
@@ -238,7 +238,7 @@ new class extends Component {
                                         <span class="text-xs italic text-gray-400">belum di-sync</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="ds-c">
                                     <x-secondary-button type="button"
                                         wire:click="updateRef('{{ $cat['key'] }}')"
                                         wire:loading.attr="disabled"
