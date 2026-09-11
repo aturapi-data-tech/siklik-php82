@@ -56,4 +56,20 @@ class AksiRole
 
     /** Tombol i-Care BPJS di header EMR. */
     public const EMR_ICARE = ['Dokter', 'Admin'];
+
+    /* ──────────────── RUJUKAN BERBASIS KOMPETENSI (FKTP) ──────────────── */
+
+    /**
+     * Menerbitkan rujukan ke BPJS/SATUSEHAT dari panel Rujukan Kompetensi.
+     * Keputusan merujuk adalah keputusan klinis, jadi dibatasi dokter (+Admin
+     * untuk menambal kasus operasional).
+     */
+    public const RUJUKAN_KIRIM = ['Dokter', 'Admin'];
+
+    /**
+     * Membatalkan rujukan yang sudah terbit. Dipisah dari RUJUKAN_KIRIM karena
+     * akibatnya jauh lebih besar: pembatalan FKTP ikut MENGHAPUS pendaftaran
+     * PCare pasien, bukan cuma rujukannya.
+     */
+    public const RUJUKAN_BATAL = ['Admin', 'Mr'];
 }

@@ -34,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('emr.cetakEresep', fn ($user) => $user->hasAnyRole(AksiRole::EMR_CETAK_ERESEP));
         Gate::define('emr.icare', fn ($user) => $user->hasAnyRole(AksiRole::EMR_ICARE));
         Gate::define('administrasi.buka', fn ($user) => $user->hasAnyRole(AksiRole::ADMINISTRASI_BUKA));
+        Gate::define('rujukan.kirim', fn ($user) => $user->hasAnyRole(AksiRole::RUJUKAN_KIRIM));
+        Gate::define('rujukan.batal', fn ($user) => $user->hasAnyRole(AksiRole::RUJUKAN_BATAL));
 
         // Share $sidebarMenus (grouped + filtered by user role) ke sidebar layout.
         // Tidak query DB di guest pages — guard via auth check.

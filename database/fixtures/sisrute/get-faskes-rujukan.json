@@ -1,0 +1,57 @@
+{
+    "_catatan": "FIXTURE MODE SIMULASI — nama & kode faskes DUMMY. Bentuk mengikuti response asli Sisrute/GetFaskesRujukan: {count, list[]}. Perhatikan kodeFaskesSatuSehat di RESPONSE berprefix 'Organization/' sedangkan payload kirim balik memakai angkanya saja. Tiga kandidat sengaja berbeda strata (Dasar/Madya/Utama) dan berbeda kelengkapan jadwal/kapasitas.",
+    "metaData": {
+        "code": 200,
+        "message": "OK"
+    },
+    "response": {
+        "count": 3,
+        "list": [
+            {
+                "kodeFaskesSatuSehat": "Organization/100900001",
+                "kdppk": "3504R901",
+                "nmppk": "RSUD CONTOH TULUNGAGUNG",
+                "strataSatuSehat": "Dasar",
+                "alamatPpk": "JL. CONTOH NO. 1",
+                "telpPpk": "0355-000001",
+                "kelas": "C",
+                "nmkc": "TULUNGAGUNG",
+                "distance": 3.2,
+                "jadwal": "Senin - Jumat : 08:00 - 14:00",
+                "jmlRujuk": 4,
+                "kapasitas": 20,
+                "persentase": 20
+            },
+            {
+                "kodeFaskesSatuSehat": "Organization/100900002",
+                "kdppk": "3504R902",
+                "nmppk": "RS CONTOH MADYA TRENGGALEK",
+                "strataSatuSehat": "Madya",
+                "alamatPpk": "JL. CONTOH NO. 2",
+                "telpPpk": "0355-000002",
+                "kelas": "B",
+                "nmkc": "TRENGGALEK",
+                "distance": 28.7,
+                "jadwal": null,
+                "jmlRujuk": 0,
+                "kapasitas": 0,
+                "persentase": 0
+            },
+            {
+                "kodeFaskesSatuSehat": "Organization/100900003",
+                "kdppk": "3578R903",
+                "nmppk": "RS CONTOH UTAMA SURABAYA",
+                "strataSatuSehat": "Utama",
+                "alamatPpk": "JL. CONTOH NO. 3",
+                "telpPpk": "031-0000003",
+                "kelas": "A",
+                "nmkc": "KOTA SURABAYA",
+                "distance": 154.9,
+                "jadwal": "Sabtu : 09:00 - 12:00",
+                "jmlRujuk": 18,
+                "kapasitas": 25,
+                "persentase": 72
+            }
+        ]
+    }
+}

@@ -8,13 +8,15 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use App\Http\Traits\Txn\Rj\EmrRJTrait;
+use App\Http\Traits\Txn\Rj\KunjunganPcarePayloadTrait;
+use App\Support\Rujukan\RujukanKompetensiOptions;
 use App\Http\Traits\Master\MasterPasien\MasterPasienTrait;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
 use App\Http\Traits\BPJS\PcareTrait;
 use App\Http\Traits\BPJS\AntrianTrait;
 
 new class extends Component {
-    use EmrRJTrait, MasterPasienTrait, WithRenderVersioningTrait, PcareTrait, AntrianTrait;
+    use EmrRJTrait, KunjunganPcarePayloadTrait, MasterPasienTrait, WithRenderVersioningTrait, PcareTrait, AntrianTrait;
 
     public string $formMode = 'create';
     public bool $isFormLocked = false;
@@ -619,6 +621,16 @@ new class extends Component {
             return;
         }
 
+        // Pasien yang DIRUJUK (kdStatusPulang '4' = Rujuk Vertikal) kunjungannya
+        // TIDAK boleh lewat endpoint `kunjungan` biasa: rujukan FKTP terbit dari
+        // satu panggilan Sisrute/postKunjungan yang membawa rujukLanjut +
+        // satuSehatRujukan sekaligus. Mengirim dua-duanya menghasilkan kunjungan
+        // ganda di PCare, dan yang pertama terkirim mengunci yang kedua.
+        if (($this->dataDaftarPoliRJ['perencanaan']['kdStatusPulang'] ?? '') === RujukanKompetensiOptions::STATUS_PULANG_RUJUK) {
+            $this->dispatch('toast', type: 'info', message: 'Kunjungan pasien dirujuk dikirim lewat panel Rujukan Kompetensi di EMR (tab Tindak Lanjut).', title: 'Lewat Panel Rujukan', duration: 7000);
+            return;
+        }
+
         $payload = $this->buildKunjunganPayload($rjNo);
         if ($payload === null) {
             return;
@@ -734,6 +746,12 @@ new class extends Component {
             return;
         }
 
+        // Pasien dirujuk: kunjungan hidup di Sisrute/postKunjungan, jangan diedit lewat endpoint biasa.
+        if (($this->dataDaftarPoliRJ['perencanaan']['kdStatusPulang'] ?? '') === RujukanKompetensiOptions::STATUS_PULANG_RUJUK) {
+            $this->dispatch('toast', type: 'info', message: 'Kunjungan pasien dirujuk dikelola lewat panel Rujukan Kompetensi di EMR (tab Tindak Lanjut).', title: 'Lewat Panel Rujukan', duration: 7000);
+            return;
+        }
+
         $kunjunganCode = $this->dataDaftarPoliRJ['taskIdPelayanan']['pcareKunjungan']['code'] ?? '';
         if ($kunjunganCode != 200 && $kunjunganCode != 201) {
             $this->dispatch('toast', type: 'warning', message: 'Kunjungan belum pernah dikirim sukses. Pakai "Kirim Kunjungan BPJS" dulu.', title: 'BPJS Edit');
@@ -831,61 +849,11 @@ new class extends Component {
 
     /* -------------------------
      | Build payload kunjungan (dipakai add & edit)
+     |
+     | Isinya pindah ke App\Http\Traits\Txn\Rj\KunjunganPcarePayloadTrait supaya
+     | panel Rujukan Kompetensi (EMR, tab Tindak Lanjut) memakai bentuk payload
+     | yang PERSIS SAMA saat mengirim kunjungan lewat Sisrute/postKunjungan.
      * ------------------------- */
-    private function buildKunjunganPayload(string $rjNo): ?array
-    {
-        $diagnosa = $this->dataDaftarPoliRJ['diagnosis'] ?? [];
-        $kdDiag1 = $diagnosa[0]['icdX'] ?? '';
-        $kdDiag2 = $diagnosa[1]['icdX'] ?? null;
-        $kdDiag3 = $diagnosa[2]['icdX'] ?? null;
-
-        if (!$kdDiag1) {
-            $this->dispatch('toast', type: 'warning', message: 'Diagnosa primer wajib diisi sebelum kirim Kunjungan.', title: 'Diagnosa Belum');
-            return null;
-        }
-
-        $pf = $this->dataDaftarPoliRJ['pemeriksaanFisik'] ?? ($this->dataDaftarPoliRJ['tandaVital'] ?? []);
-
-        $rjDate = Carbon::createFromFormat('d/m/Y H:i:s', $this->dataDaftarPoliRJ['rjDate']);
-        $noKartu = preg_replace('/\D/', '', $this->dataPasien['pasien']['identitas']['nokartuBpjs'] ?? '');
-        $perencanaan = $this->dataDaftarPoliRJ['perencanaan'] ?? [];
-        $anamnesa = $this->dataDaftarPoliRJ['anamnesa'] ?? [];
-
-        return [
-            'noKunjungan' => 'RJ-' . $rjNo,
-            'noKartu' => $noKartu,
-            'tglDaftar' => $rjDate->format('d-m-Y'),
-            'kdPoli' => $this->dataDaftarPoliRJ['kdpolibpjs'] ?? '',
-            'keluhan' => $anamnesa['keluhanUtama'] ?? '-',
-            'kdSadar' => $pf['kdSadar'] ?? '01',
-            'sistole' => (int) ($pf['sistole'] ?? 0),
-            'diastole' => (int) ($pf['diastole'] ?? 0),
-            'beratBadan' => (int) ($pf['beratBadan'] ?? 0),
-            'tinggiBadan' => (int) ($pf['tinggiBadan'] ?? 0),
-            'respRate' => (int) ($pf['rr'] ?? ($pf['respirasi'] ?? 0)),
-            'heartRate' => (int) ($pf['nadi'] ?? 0),
-            'lingkarPerut' => (int) ($pf['lingkarPerut'] ?? 0),
-            'kdStatusPulang' => $perencanaan['kdStatusPulang'] ?? '4',
-            'tglPulang' => Carbon::now()->format('d-m-Y'),
-            'kdDokter' => $this->dataDaftarPoliRJ['kddrbpjs'] ?? '',
-            'kdDiag1' => $kdDiag1,
-            'kdDiag2' => $kdDiag2,
-            'kdDiag3' => $kdDiag3,
-            'kdPoliRujukInternal' => null,
-            'rujukLanjut' => null,
-            'kdTacc' => -1,
-            'alasanTacc' => '',
-            'anamnesa' => $anamnesa['anamnesa'] ?? ($anamnesa['keluhanUtama'] ?? '-'),
-            'alergiMakan' => $anamnesa['alergi']['alergiMakan'] ?? ($anamnesa['alergiMakan'] ?? '00'),
-            'alergiUdara' => $anamnesa['alergi']['alergiUdara'] ?? ($anamnesa['alergiUdara'] ?? '00'),
-            'alergiObat' => $anamnesa['alergi']['alergiObat'] ?? ($anamnesa['alergiObat'] ?? '00'),
-            'kdPrognosa' => $perencanaan['kdPrognosa'] ?? '01',
-            'terapiObat' => $perencanaan['terapiObat'] ?? '-',
-            'terapiNonObat' => $perencanaan['terapiNonObat'] ?? '',
-            'bmhp' => $perencanaan['bmhp'] ?? '',
-            'suhu' => (string) ($pf['suhu'] ?? '36.5'),
-        ];
-    }
 
     /* ===============================
      | DB ERROR HANDLER

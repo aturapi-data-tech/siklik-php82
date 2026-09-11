@@ -1,0 +1,65 @@
+{
+    "_catatan": "FIXTURE MODE SIMULASI (SISRUTE_SIMULASI=true) — BUKAN data pasien nyata. Bentuk mengikuti response asli Sisrute/GetKriteriaRujukan: kriteriaRujukan[] (linkId DINAMIS per diagnosa) + JejaringWilayah (Questionnaire FHIR, linkId 1.1 Provinsi & 1.2 Kabupaten/Kota). Daftar wilayah dipangkas seperlunya untuk latihan.",
+    "metaData": {
+        "code": 200,
+        "message": "OK"
+    },
+    "response": {
+        "kriteriaRujukan": [
+            {
+                "linkId": "50038,51169,53165",
+                "text": "Terapi",
+                "type": "boolean",
+                "item": null
+            },
+            {
+                "linkId": "25129,26260,28256",
+                "text": "Tindakan Medis",
+                "type": "text",
+                "item": null
+            },
+            {
+                "linkId": "220,1351,3347",
+                "text": "Upaya Diagnosis",
+                "type": "boolean",
+                "item": null
+            }
+        ],
+        "JejaringWilayah": [
+            {
+                "linkId": "1",
+                "text": "Jejaring wilayah rujukan",
+                "type": "group",
+                "item": [
+                    {
+                        "linkId": "1.1",
+                        "text": "Provinsi",
+                        "type": "choice",
+                        "required": true,
+                        "answerOption": [
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "31", "display": "DKI JAKARTA" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "32", "display": "JAWA BARAT" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "33", "display": "JAWA TENGAH" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "35", "display": "JAWA TIMUR" } }
+                        ]
+                    },
+                    {
+                        "linkId": "1.2",
+                        "text": "Kabupaten/Kota",
+                        "type": "choice",
+                        "required": false,
+                        "answerOption": [
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3504", "display": "TULUNGAGUNG" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3503", "display": "TRENGGALEK" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3505", "display": "BLITAR" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3506", "display": "KEDIRI" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3578", "display": "KOTA SURABAYA" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3273", "display": "KOTA BANDUNG" } },
+                            { "valueCoding": { "system": "http://sys-ids.kemkes.go.id/administrative-area", "code": "3171", "display": "KOTA JAKARTA PUSAT" } }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
