@@ -457,14 +457,14 @@ new class extends Component {
                     class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="w-full min-w-full text-base border-separate border-spacing-y-3 table-fixed">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-sm font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-6 py-3 w-[24%]">Pasien</th>
-                                <th class="px-6 py-3 w-[20%]">Poli</th>
-                                <th class="px-6 py-3 w-[16%]">Status Layanan</th>
-                                <th class="px-6 py-3 w-[18%]">Tindak Lanjut</th>
-                                <th class="px-6 py-3 w-[22%] text-center">Action</th>
+                                <th class="w-[24%]">Pasien</th>
+                                <th class="w-[20%]">Poli</th>
+                                <th class="w-[16%]">Status Layanan</th>
+                                <th class="w-[18%]">Tindak Lanjut</th>
+                                <th class="w-[22%] ds-c">Action</th>
                             </tr>
                         </thead>
 
@@ -482,7 +482,7 @@ new class extends Component {
                                                 : 'bg-white dark:bg-gray-900 hover:shadow-lg hover:bg-green-50 dark:hover:bg-gray-800')) }}">
 
                                     {{-- PASIEN --}}
-                                    <td class="px-6 py-6 space-y-3 align-middle">
+                                    <td class="space-y-3 align-middle">
                                         {{-- Toggle Detail chevron — absolute, bottom-center row (di dalam card) --}}
                                         <button type="button" x-on:click="expanded = !expanded"
                                             class="absolute z-10 inline-flex items-center justify-center w-7 h-7 text-gray-500 transition bg-white border border-gray-200 rounded-full shadow-sm hover:text-emerald-600 hover:bg-emerald-50 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300"
@@ -529,7 +529,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- POLI --}}
-                                    <td class="px-6 py-6 space-y-0.5 align-middle">
+                                    <td class="space-y-0.5 align-middle">
                                         <div class="font-semibold text-brand dark:text-emerald-400 leading-tight">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
@@ -571,7 +571,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS LAYANAN --}}
-                                    <td class="px-6 py-6 space-y-2 align-middle">
+                                    <td class="space-y-2 align-middle">
                                         <x-badge :variant="$row->status_variant">
                                             {{ $row->status_text }}
                                         </x-badge>
@@ -625,7 +625,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- TINDAK LANJUT --}}
-                                    <td class="px-6 py-6 space-y-2 align-middle">
+                                    <td class="space-y-2 align-middle">
                                         <div class="text-xs space-y-1">
                                             <div class="flex items-center gap-1.5">
                                                 <span
@@ -719,7 +719,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- ACTION --}}
-                                    <td class="px-6 py-6 align-middle">
+                                    <td class="align-middle">
                                         @if ($row->is_booking_pending)
                                             {{-- Pending: hanya info, belum bisa diakses --}}
                                             <div class="flex flex-col items-center gap-2 text-center">
@@ -794,7 +794,7 @@ new class extends Component {
                                                         <div class="p-2 space-y-2">
 
                                                             {{-- Task ID 4/5 + Get — Perawat saja (Admin otomatis via super-user) --}}
-                                                            @hasanyrole('Perawat|Admin')
+                                                            @can('antrean.taskId')
                                                                 {{-- Tombol Blade (BUKAN komponen Livewire per baris). wire:click="$dispatch(...)"
                                                                      = aksi Livewire → host task-id-poli-actions tangkap via #[On]. Redup dari $row->task_id4/5. --}}
                                                                 <div class="flex space-x-1">
@@ -816,7 +816,7 @@ new class extends Component {
                                                                         TaskId Antrean
                                                                     </x-primary-button>
                                                                 </div>
-                                                            @endhasanyrole
+                                                            @endcan
 
                                                             {{-- GRID 2 KOLOM --}}
                                                             <div class="grid grid-cols-2 gap-1">
@@ -912,7 +912,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
 
@@ -921,10 +921,10 @@ new class extends Component {
             {{-- Sibling components — pelayanan-only: EMR + Modul Dokumen + Administrasi + Cetak Etiket --}}
             {{-- Host aksi Task ID poli (T4/T5/Antrean) — mount 1×. Tombol tiap baris
                  dispatch 'task-id-poli-proses-rj' ke sini via wire:click. --}}
-            @hasanyrole('Perawat|Admin')
+            @can('antrean.taskId')
                 <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-poli-actions
                     wire:key="task-id-poli-actions-rj-host" />
-            @endhasanyrole
+            @endcan
 
             <livewire:pages::transaksi.rj.emr-rj.emr-rj wire:key="rm-perawat-rj-actions" />
             <livewire:pages::transaksi.rj.emr-rj.modul-dokumen.modul-dokumen-rj wire:key="modul-dokumen-rj" />

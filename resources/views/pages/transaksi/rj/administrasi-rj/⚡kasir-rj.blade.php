@@ -771,7 +771,7 @@ new class extends Component {
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
                     <p class="text-sm italic text-gray-400 dark:text-gray-600">Form input dinonaktifkan.</p>
-                    @hasanyrole('Admin|Tu')
+                    @can('administrasi.batalTransfer')
                     <div class="flex gap-2">
                         @if ($txnStatus === 'I')
                             <x-confirm-button variant="warning" :action="'batalTransferUGD()'" title="Batal Transfer UGD"
@@ -787,7 +787,7 @@ new class extends Component {
                             </x-confirm-button>
                         @endif
                     </div>
-                    @endhasanyrole
+                    @endcan
                 </div>
 
                 {{-- Keterangan status --}}
@@ -935,26 +935,26 @@ new class extends Component {
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="ds-table">
                 <thead
                     class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="px-4 py-3">Tanggal</th>
-                        <th class="px-4 py-3">Akun Kas</th>
-                        <th class="px-4 py-3">Keterangan</th>
-                        <th class="px-4 py-3 text-right">Nominal</th>
+                        <th>Tanggal</th>
+                        <th>Akun Kas</th>
+                        <th>Keterangan</th>
+                        <th class="text-right">Nominal</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @forelse ($cashins as $cash)
                         <tr wire:key="cashin-rj-{{ $cash->rjc_dtl ?? $loop->index }}" class="transition hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                            <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="text-muted dark:text-gray-400 whitespace-nowrap">
                                 {{ Carbon::parse($cash->rjc_date)->format('d/m/Y') }}
                             </td>
-                            <td class="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="ds-td-meta whitespace-nowrap">
                                 {{ $cash->cb_id ?? '—' }}
                             </td>
-                            <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ $cash->rjc_desc }}</td>
+                            <td>{{ $cash->rjc_desc }}</td>
                             <td
                                 class="px-4 py-3 font-semibold text-right text-gray-800 dark:text-gray-200 whitespace-nowrap">
                                 Rp {{ number_format($cash->rjc_nominal) }}
@@ -982,7 +982,7 @@ new class extends Component {
                                 class="px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">
                                 Total Dibayar
                             </td>
-                            <td class="px-4 py-3 text-sm font-bold text-right text-brand-green dark:text-brand-lime">
+                            <td class="ds-td-strong text-right text-brand-green dark:text-brand-lime">
                                 Rp {{ number_format($cashins->sum('rjc_nominal')) }}
                             </td>
                         </tr>

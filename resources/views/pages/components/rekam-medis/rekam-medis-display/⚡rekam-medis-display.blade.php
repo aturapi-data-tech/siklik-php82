@@ -595,7 +595,7 @@ new class extends Component {
                                                     </div>
 
                                                     {{-- Actions --}}
-                                                    @role(['Dokter', 'Admin', 'Perawat'])
+                                                    @can('rm.salinResep')
                                                         <div class="grid grid-cols-2 gap-2 mt-3">
                                                             <div class="grid grid-cols-1 gap-2">
                                                                 @if ($isRJ)
@@ -648,7 +648,7 @@ new class extends Component {
                                                                 </span>
                                                             @endif
                                                         </div>
-                                                    @endrole
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @empty

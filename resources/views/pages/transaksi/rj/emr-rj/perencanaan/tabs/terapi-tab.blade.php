@@ -8,7 +8,7 @@
     </div>
 
     {{-- Tombol E-Resep --}}
-    @role(['Dokter', 'Admin'])
+    @can('eresep.tulis')
         @if (!$isFormLocked)
             <x-outline-button type="button" class="justify-center w-full" wire:click.prevent="openModalEresepRJ"
                 wire:loading.attr="disabled" wire:target="openModalEresepRJ">
@@ -24,6 +24,6 @@
                 </span>
             </x-outline-button>
         @endif
-    @endrole
+    @endcan
 
 </div>

@@ -359,14 +359,14 @@ new class extends Component {
                     </div>
 
                     <div class="overflow-x-auto max-h-[calc(100dvh-300px)] overflow-y-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                                <tr class="text-left">
-                                    <th class="px-3 py-2 font-semibold">Produk</th>
-                                    <th class="px-3 py-2 font-semibold text-right">Saldo {{ $year }}</th>
+                        <table class="ds-table">
+                            <thead class="sticky top-0 z-10">
+                                <tr>
+                                    <th>Produk</th>
+                                    <th class="text-right">Saldo {{ $year }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                            <tbody>
                                 @forelse($this->productList as $row)
                                     @php
                                         $isActive = $productId === $row->product_id;
@@ -376,11 +376,11 @@ new class extends Component {
                                         wire:click="selectProduct('{{ $row->product_id }}')"
                                         class="cursor-pointer transition-colors
                                             {{ $isActive ? 'bg-brand/10 dark:bg-brand-lime/15' : 'hover:bg-gray-50 dark:hover:bg-gray-800/60' }}">
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <div class="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{{ $row->product_name }}</div>
                                             <div class="font-mono text-xs text-gray-400">{{ $row->product_id }}</div>
                                         </td>
-                                        <td class="px-3 py-2 text-right whitespace-nowrap">
+                                        <td class="text-right whitespace-nowrap">
                                             <div class="font-mono font-semibold {{ $belowMin ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-gray-100' }}">
                                                 {{ number_format($row->saldo_akhir) }}
                                             </div>
@@ -424,18 +424,18 @@ new class extends Component {
                         </div>
 
                         <div class="overflow-x-auto max-h-[calc(100dvh-380px)] overflow-y-auto">
-                            <table class="min-w-full text-sm">
-                                <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                                    <tr class="text-left">
-                                        <th class="px-3 py-2 font-semibold">Tanggal</th>
-                                        <th class="px-3 py-2 font-semibold">Status</th>
-                                        <th class="px-3 py-2 font-semibold">Keterangan</th>
-                                        <th class="px-3 py-2 font-semibold text-right text-emerald-700">Masuk</th>
-                                        <th class="px-3 py-2 font-semibold text-right text-rose-700">Keluar</th>
-                                        <th class="px-3 py-2 font-semibold text-right">Saldo</th>
+                            <table class="ds-table">
+                                <thead class="sticky top-0 z-10">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Status</th>
+                                        <th>Keterangan</th>
+                                        <th class="text-right text-emerald-700">Masuk</th>
+                                        <th class="text-right text-rose-700">Keluar</th>
+                                        <th class="text-right">Saldo</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                                <tbody>
                                     @forelse($this->mutationsWithBalance as $row)
                                         @php
                                             [$label, $badgeClass] = $this::statusLabel($row->txn_status);
@@ -447,19 +447,19 @@ new class extends Component {
                                                 default => $row->txn_status . ' ' . $row->txn_no,
                                             };
                                         @endphp
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                            <td class="px-3 py-2 font-mono whitespace-nowrap">{{ $row->txn_date_display }}</td>
-                                            <td class="px-3 py-2">
+                                        <tr>
+                                            <td class="ds-td-token whitespace-nowrap">{{ $row->txn_date_display }}</td>
+                                            <td>
                                                 <span class="px-2 py-0.5 text-xs rounded-full {{ $badgeClass }}">{{ $label }}</span>
                                             </td>
-                                            <td class="px-3 py-2">{{ $ket }}</td>
-                                            <td class="px-3 py-2 font-mono text-right text-emerald-700">
+                                            <td>{{ $ket }}</td>
+                                            <td class="ds-td-token text-right text-emerald-700">
                                                 {{ $row->qty_d > 0 ? number_format($row->qty_d) : '-' }}
                                             </td>
-                                            <td class="px-3 py-2 font-mono text-right text-rose-700">
+                                            <td class="ds-td-token text-right text-rose-700">
                                                 {{ $row->qty_k > 0 ? number_format($row->qty_k) : '-' }}
                                             </td>
-                                            <td class="px-3 py-2 font-mono font-semibold text-right">{{ number_format($row->saldo) }}</td>
+                                            <td class="ds-td-strong ds-td-token text-right">{{ number_format($row->saldo) }}</td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -471,14 +471,14 @@ new class extends Component {
 
                                     {{-- Row penutup: saldo awal (paling bawah karena urut DESC) --}}
                                     <tr class="bg-gray-50/50 dark:bg-gray-800/30">
-                                        <td class="px-3 py-2 font-mono whitespace-nowrap">01/01/{{ $year }} 00:00:00</td>
-                                        <td class="px-3 py-2">
+                                        <td class="ds-td-token whitespace-nowrap">01/01/{{ $year }} 00:00:00</td>
+                                        <td>
                                             <span class="px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200">SALDO AWAL</span>
                                         </td>
                                         <td class="px-3 py-2 italic text-gray-500">Saldo awal tahun {{ $year }}</td>
-                                        <td class="px-3 py-2 font-mono text-right text-gray-400">-</td>
-                                        <td class="px-3 py-2 font-mono text-right text-gray-400">-</td>
-                                        <td class="px-3 py-2 font-mono font-semibold text-right">{{ number_format($this->saldo['awal']) }}</td>
+                                        <td class="ds-td-meta text-right">-</td>
+                                        <td class="ds-td-meta text-right">-</td>
+                                        <td class="ds-td-strong ds-td-token text-right">{{ number_format($this->saldo['awal']) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -564,7 +564,7 @@ new class extends Component {
                         </div>
 
                         {{-- Card: Stock Opname --}}
-                        @hasanyrole('Admin|Apotek')
+                        @can('gudang.medis')
                             @php $isCurrentYear = $year === (string) now()->year; @endphp
                             <div class="bg-white border-2 border-amber-200 shadow-sm rounded-2xl dark:border-amber-700 dark:bg-gray-900">
                                 <div class="px-5 py-4 border-b border-amber-200 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
@@ -650,7 +650,7 @@ new class extends Component {
                                     </x-confirm-button>
                                 </div>
                             </div>
-                        @endhasanyrole
+                        @endcan
                     </div>
                 </div>
             @else

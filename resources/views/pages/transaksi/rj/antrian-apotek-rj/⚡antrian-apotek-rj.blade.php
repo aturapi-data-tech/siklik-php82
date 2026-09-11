@@ -384,14 +384,14 @@ new class extends Component {
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="min-w-full text-base border-separate border-spacing-y-2">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-xs font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-4 py-3">Antrian & Pasien</th>
-                                <th class="px-4 py-3">Poli / Dokter</th>
-                                <th class="px-4 py-3">Status Layanan</th>
-                                <th class="px-4 py-3">Waktu Apotek</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
+                                <th>Antrian & Pasien</th>
+                                <th>Poli / Dokter</th>
+                                <th>Status Layanan</th>
+                                <th>Waktu Apotek</th>
+                                <th class="ds-c">Aksi</th>
                             </tr>
                         </thead>
 
@@ -402,7 +402,7 @@ new class extends Component {
                                     {{ $row->no_antrian_apotek > 0 ? 'border-l-4 border-l-emerald-500' : '' }}">
 
                                     {{-- ANTRIAN & PASIEN --}}
-                                    <td class="px-4 py-4 align-top">
+                                    <td class="align-top">
                                         <div class="flex items-start gap-3">
                                             {{-- Nomor antrian apotek --}}
                                             <div
@@ -449,7 +449,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- POLI / DOKTER --}}
-                                    <td class="px-4 py-4 space-y-1 align-top">
+                                    <td class="space-y-1 align-top">
                                         <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
@@ -470,7 +470,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS LAYANAN --}}
-                                    <td class="px-4 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-xs text-gray-500 dark:text-gray-400">
                                             {{ $row->rj_date_display }} | Shift {{ $row->shift ?? '-' }}
                                         </div>
@@ -541,7 +541,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- WAKTU APOTEK --}}
-                                    <td class="px-4 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-xs space-y-1">
                                             <div class="flex items-center gap-1.5">
                                                 <span
@@ -583,7 +583,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-4 py-4 align-top">
+                                    <td class="align-top">
                                         <div class="flex flex-col gap-2">
 
                                             {{-- Masuk / Keluar Apotek — tombol Blade (BUKAN komponen Livewire per baris).
@@ -604,13 +604,13 @@ new class extends Component {
                                                     class="!px-2 !py-1 text-xs" title="Klik untuk mengambil TaskId Antrean">
                                                     TaskId Antrean
                                                 </x-primary-button>
-                                                @role('Admin')
+                                                @can('antrean.batal')
                                                     <x-danger-button type="button"
                                                         wire:click="$dispatch('task-id-batal-proses-rj', { rjNo: {{ $row->rj_no }} })"
                                                         class="!px-2 !py-1 text-xs" title="Klik untuk membatalkan antrian (hanya bisa sebelum TaskId4/5)">
                                                         Batal
                                                     </x-danger-button>
-                                                @endrole
+                                                @endcan
                                             </div>
 
                                             {{-- Telaah Resep & Obat (unified) --}}
@@ -697,7 +697,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>
@@ -712,10 +712,10 @@ new class extends Component {
             wire:key="task-id-apotek-actions-rj-host" />
 
         {{-- Host aksi Batal antrian (task-id-99) — mount 1×, Admin only. --}}
-        @role('Admin')
+        @can('antrean.batal')
             <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-99
                 wire:key="task-id-99-rj-host" />
-        @endrole
+        @endcan
 
         <livewire:pages::transaksi.rj.antrian-apotek-rj.antrian-apotek-rj-actions
             wire:key="antrian-apotek-rj-actions" />

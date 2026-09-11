@@ -276,7 +276,7 @@ new class extends Component {
                                                     </div>
 
                                                     {{-- Actions --}}
-                                                    @role(['Dokter', 'Admin', 'Perawat', 'Radiologi'])
+                                                    @can('radiologi.lihatHasil')
                                                         <div class="flex items-center gap-2 mt-3">
 
                                                             {{-- Tombol Hasil Bacaan --}}
@@ -329,7 +329,7 @@ new class extends Component {
                                                             @endif
 
                                                         </div>
-                                                    @endrole
+                                                    @endcan
 
                                                 </td>
                                             </tr>

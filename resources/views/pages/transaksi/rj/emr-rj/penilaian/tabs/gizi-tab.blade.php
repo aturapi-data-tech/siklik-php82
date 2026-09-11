@@ -116,23 +116,23 @@
     @if (!empty($dataDaftarPoliRJ['penilaian']['gizi']))
         <x-border-form :title="__('Riwayat Penilaian Gizi')" :align="__('start')" :bgcolor="__('bg-white')">
             <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="w-full text-xs text-left text-gray-600 dark:text-gray-300">
-                    <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                <table class="ds-table ds-table-entri">
+                    <thead>
                         <tr>
-                            <th class="px-3 py-2 font-medium">Tgl Penilaian</th>
-                            <th class="px-3 py-2 font-medium">Petugas</th>
-                            <th class="px-3 py-2 font-medium">BB (kg)</th>
-                            <th class="px-3 py-2 font-medium">TB (cm)</th>
-                            <th class="px-3 py-2 font-medium">IMT</th>
-                            <th class="px-3 py-2 font-medium">Skor Skrining</th>
-                            <th class="px-3 py-2 font-medium">Kategori</th>
-                            <th class="px-3 py-2 font-medium">Catatan</th>
+                            <th>Tgl Penilaian</th>
+                            <th>Petugas</th>
+                            <th>BB (kg)</th>
+                            <th>TB (cm)</th>
+                            <th>IMT</th>
+                            <th>Skor Skrining</th>
+                            <th>Kategori</th>
+                            <th>Catatan</th>
                             @if (!$isFormLocked)
-                                <th class="px-3 py-2 font-medium"></th>
+                                <th></th>
                             @endif
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody>
                         @foreach (array_reverse($dataDaftarPoliRJ['penilaian']['gizi'] ?? [], true) as $i => $row)
                             @php
                                 $kat = $row['gizi']['kategoriGizi'] ?? '-';
@@ -145,23 +145,23 @@
                                 };
                             @endphp
                             <tr class="{{ $rowBg }}">
-                                <td class="px-3 py-2 whitespace-nowrap">{{ $row['tglPenilaian'] ?? '-' }}</td>
-                                <td class="px-3 py-2">{{ $row['petugasPenilai'] ?? '-' }}</td>
-                                <td class="px-3 py-2">{{ $row['gizi']['beratBadan'] ?? '-' }}</td>
-                                <td class="px-3 py-2">{{ $row['gizi']['tinggiBadan'] ?? '-' }}</td>
-                                <td class="px-3 py-2 font-bold">{{ $row['gizi']['imt'] ?? '-' }}</td>
-                                <td class="px-3 py-2 font-bold">{{ $row['gizi']['skorSkrining'] ?? '-' }}</td>
-                                <td class="px-3 py-2">
+                                <td class="whitespace-nowrap">{{ $row['tglPenilaian'] ?? '-' }}</td>
+                                <td>{{ $row['petugasPenilai'] ?? '-' }}</td>
+                                <td>{{ $row['gizi']['beratBadan'] ?? '-' }}</td>
+                                <td>{{ $row['gizi']['tinggiBadan'] ?? '-' }}</td>
+                                <td class="ds-td-strong">{{ $row['gizi']['imt'] ?? '-' }}</td>
+                                <td class="ds-td-strong">{{ $row['gizi']['skorSkrining'] ?? '-' }}</td>
+                                <td>
                                     <span
                                         class="px-2 py-0.5 rounded-full text-xs font-medium
                                         {{ $kat === 'Berisiko Malnutrisi' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700' }}">
                                         {{ $kat }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-2 text-gray-500 max-w-xs truncate">
+                                <td class="text-muted dark:text-gray-400 max-w-xs truncate">
                                     {{ $row['gizi']['catatan'] ?? '-' }}</td>
                                 @if (!$isFormLocked)
-                                    <td class="px-3 py-2">
+                                    <td>
                                         <x-icon-button variant="danger"
                                             wire:click="removeAssessmentGizi({{ $i }})"
                                             wire:confirm="Hapus data gizi ini?" tooltip="Hapus">

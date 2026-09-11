@@ -383,36 +383,36 @@ new class extends Component {
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="ds-table">
                 <thead
                     class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="px-4 py-3">Kode</th>
-                        <th class="px-4 py-3">Keterangan</th>
-                        <th class="px-4 py-3 text-right">Tarif Radiologi</th>
+                        <th>Kode</th>
+                        <th>Keterangan</th>
+                        <th class="text-right">Tarif Radiologi</th>
                         @if (!$isFormLocked)
-                            <th class="px-4 py-3 text-center w-28">Aksi</th>
+                            <th class="ds-c w-28">Aksi</th>
                         @endif
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @forelse ($rjRad as $item)
                         @php $isEditing = $editingDtl === $item['radDtl']; @endphp
                         <tr wire:key="rad-row-{{ $item['radDtl'] }}-{{ $isEditing ? 'edit' : 'view' }}" x-data
                             class="{{ $isEditing ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/40' }} transition">
 
                             {{-- Kode --}}
-                            <td class="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="ds-td-meta whitespace-nowrap">
                                 {{ $item['radId'] }}
                             </td>
 
                             {{-- Deskripsi --}}
-                            <td class="px-4 py-2 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 {{ $item['radDesc'] }}
                             </td>
 
                             {{-- Tarif --}}
-                            <td class="px-4 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <div class="flex justify-end">
                                         <x-text-input wire:model="editRow.radPrice" placeholder="Tarif"
@@ -432,7 +432,7 @@ new class extends Component {
 
                             {{-- Aksi --}}
                             @if (!$isFormLocked)
-                                <td class="px-4 py-2 whitespace-nowrap">
+                                <td class="whitespace-nowrap">
                                     @if ($isEditing)
                                         <div class="flex items-center justify-center gap-1">
                                             <x-secondary-button type="button" wire:click="saveEdit"
@@ -489,7 +489,7 @@ new class extends Component {
                         <tr>
                             <td colspan="{{ $isFormLocked ? 2 : 3 }}"
                                 class="px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Total</td>
-                            <td class="px-4 py-3 text-sm font-bold text-right text-gray-900 dark:text-white">
+                            <td class="ds-td-strong text-right">
                                 Rp {{ number_format(collect($rjRad)->sum('radPrice')) }}
                             </td>
                             @if (!$isFormLocked)

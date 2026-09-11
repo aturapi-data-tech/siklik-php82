@@ -420,32 +420,32 @@ new class extends Component {
             {{-- List Diagnosa --}}
             @if (!empty($dataDaftarPoliRJ['diagnosis']))
                 <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                    <table class="w-full text-xs text-left text-gray-600 dark:text-gray-300">
-                        <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    <table class="ds-table ds-table-entri">
+                        <thead>
                             <tr>
-                                <th class="px-3 py-2 font-medium">Diagnosis</th>
-                                <th class="px-3 py-2 font-medium">Kategori</th>
+                                <th>Diagnosis</th>
+                                <th>Kategori</th>
                                 @if (!$isFormLocked)
-                                    <th class="px-3 py-2 font-medium"></th>
+                                    <th></th>
                                 @endif
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody>
                             @foreach ($dataDaftarPoliRJ['diagnosis'] as $index => $diagnosa)
                                 <tr wire:key="diagnosa-row-{{ $diagnosa['rjDtlDtl'] ?? $index }}-{{ $this->renderKey('modal-diagnosis-rj') }}"
                                     class="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
-                                    <td class="px-3 py-2 font-medium text-gray-800 dark:text-white">
+                                    <td class="ds-td-strong">
                                         {{ $diagnosa['diagId'] ?? ($diagnosa['icdX'] ?? '') }}
                                         {{ $diagnosa['diagDesc'] ?? '' }}
                                     </td>
-                                    <td class="px-3 py-2">
+                                    <td>
                                         <x-badge
                                             variant="{{ ($diagnosa['kategoriDiagnosa'] ?? 'Secondary') === 'Primary' ? 'success' : 'warning' }}">
                                             {{ $diagnosa['kategoriDiagnosa'] ?? 'Secondary' }}
                                         </x-badge>
                                     </td>
                                     @if (!$isFormLocked)
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <x-icon-button variant="danger"
                                                 wire:click="removeDiagnosaICD10({{ $diagnosa['rjDtlDtl'] }})"
                                                 wire:confirm="Yakin ingin menghapus diagnosa ini?" tooltip="Hapus">
@@ -496,25 +496,25 @@ new class extends Component {
             {{-- List Procedure --}}
             @if (!empty($dataDaftarPoliRJ['procedure']))
                 <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                    <table class="w-full text-xs text-left text-gray-600 dark:text-gray-300">
-                        <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    <table class="ds-table ds-table-entri">
+                        <thead>
                             <tr>
-                                <th class="px-3 py-2 font-medium">Procedure</th>
+                                <th>Procedure</th>
                                 @if (!$isFormLocked)
-                                    <th class="px-3 py-2 font-medium"></th>
+                                    <th></th>
                                 @endif
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody>
                             @foreach ($dataDaftarPoliRJ['procedure'] as $index => $procedure)
                                 <tr wire:key="procedure-row-{{ $procedure['procedureId'] }}-{{ $this->renderKey('modal-diagnosis-rj') }}"
                                     class="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
-                                    <td class="px-3 py-2 font-medium text-gray-800 dark:text-white">
+                                    <td class="ds-td-strong">
                                         {{ $procedure['procedureId'] ?? '' }}
                                         {{ $procedure['procedureDesc'] ?? '' }}
                                     </td>
                                     @if (!$isFormLocked)
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <x-icon-button variant="danger"
                                                 wire:click="removeProcedureICD9Cm('{{ $procedure['procedureId'] }}')"
                                                 wire:confirm="Yakin ingin menghapus procedure {{ $procedure['procedureId'] }}?"

@@ -560,14 +560,14 @@ new class extends Component {
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="min-w-full text-base border-separate border-spacing-y-3">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-base font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-6 py-3">Pasien</th>
-                                <th class="px-6 py-3">Poli</th>
-                                <th class="px-6 py-3">Status Layanan</th>
-                                <th class="px-6 py-3">Tindak Lanjut</th>
-                                <th class="px-6 py-3 text-center">Action</th>
+                                <th>Pasien</th>
+                                <th>Poli</th>
+                                <th>Status Layanan</th>
+                                <th>Tindak Lanjut</th>
+                                <th class="ds-c">Action</th>
                             </tr>
                         </thead>
 
@@ -580,7 +580,7 @@ new class extends Component {
                                         : 'bg-white dark:bg-gray-900 hover:shadow-lg hover:bg-green-50 dark:hover:bg-gray-800' }}">
 
                                     {{-- PASIEN --}}
-                                    <td class="px-6 py-6 space-y-3 align-top">
+                                    <td class="space-y-3 align-top">
                                         <div class="flex items-start gap-4">
                                             <div class="text-5xl font-bold text-gray-700 dark:text-gray-200">
                                                 {{ $row->no_antrian ?? '-' }}
@@ -604,7 +604,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- POLI --}}
-                                    <td class="px-6 py-6 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="font-semibold text-brand dark:text-emerald-400">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
@@ -628,7 +628,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS LAYANAN --}}
-                                    <td class="px-6 py-6 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-sm text-gray-700 dark:text-gray-400">
                                             {{ $row->rj_date_display ?? '-' }} | Shift : {{ $row->shift ?? '-' }}
                                         </div>
@@ -709,7 +709,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- TINDAK LANJUT --}}
-                                    <td class="px-6 py-6 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-sm text-gray-600 dark:text-gray-400">
                                             Administrasi :
                                             <span class="font-semibold text-gray-800 dark:text-gray-200">
@@ -759,7 +759,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- ACTION --}}
-                                    <td class="px-6 py-6 align-top">
+                                    <td class="align-top">
                                         @if ($row->is_booking_pending)
                                             {{-- Pending: hanya info, belum bisa diakses --}}
                                             <div class="flex flex-col items-center gap-2 text-center">
@@ -843,7 +843,7 @@ new class extends Component {
                                                             <div class="grid grid-cols-2 gap-1">
 
                                                                 {{-- Ubah — Mr & Admin --}}
-                                                                @hasanyrole('Mr|Admin')
+                                                                @can('daftar.edit')
                                                                     <x-dropdown-link href="#"
                                                                         wire:click.prevent="openEdit('{{ $row->rj_no }}')"
                                                                         class="px-3 py-2 text-sm rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40">
@@ -862,10 +862,10 @@ new class extends Component {
                                                                             </span>
                                                                         </div>
                                                                     </x-dropdown-link>
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                                 {{-- Kirim Satu Sehat — Admin --}}
-                                                                @role('Admin')
+                                                                @can('satusehat.kirim')
                                                                     <x-dropdown-link href="#"
                                                                         wire:click.prevent="openSatuSehat('{{ $row->rj_no }}')"
                                                                         class="px-3 py-2 text-sm rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:hover:bg-teal-900/40">
@@ -884,10 +884,10 @@ new class extends Component {
                                                                             </span>
                                                                         </div>
                                                                     </x-dropdown-link>
-                                                                @endrole
+                                                                @endcan
 
                                                                 {{-- Kirim BPJS PCare — kirim Pendaftaran (RJTP klinik pratama) --}}
-                                                                @hasanyrole('Admin|Mr|Perawat')
+                                                                @can('pcare.kirimPendaftaran')
                                                                     @if (($row->klaim_status === 'BPJS' || $row->klaim_id === 'JM'))
                                                                         <x-dropdown-link href="#"
                                                                             wire:click.prevent="$dispatch('rj.pcare.push-pendaftaran', { rjNo: '{{ $row->rj_no }}' })"
@@ -907,10 +907,10 @@ new class extends Component {
                                                                             </div>
                                                                         </x-dropdown-link>
                                                                     @endif
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                                 {{-- Kirim BPJS PCare — kirim Kunjungan (setelah dokter selesai diagnosa+terapi) --}}
-                                                                @hasanyrole('Admin|Dokter')
+                                                                @can('pcare.kelolaKunjungan')
                                                                     @if (($row->klaim_status === 'BPJS' || $row->klaim_id === 'JM') && $row->rj_status === 'L')
                                                                         <x-dropdown-link href="#"
                                                                             wire:click.prevent="$dispatch('rj.pcare.push-kunjungan', { rjNo: '{{ $row->rj_no }}' })"
@@ -930,10 +930,10 @@ new class extends Component {
                                                                             </div>
                                                                         </x-dropdown-link>
                                                                     @endif
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                                 {{-- Riwayat Kunjungan BPJS — semua role medis, asalkan pasien BPJS --}}
-                                                                @hasanyrole('Admin|Dokter|Mr|Perawat')
+                                                                @can('pcare.lihatRiwayat')
                                                                     @if (($row->klaim_status === 'BPJS' || $row->klaim_id === 'JM'))
                                                                         <x-dropdown-link href="#"
                                                                             wire:click.prevent="$dispatch('rj.pcare.riwayat-kunjungan', { rjNo: '{{ $row->rj_no }}' })"
@@ -953,10 +953,10 @@ new class extends Component {
                                                                             </div>
                                                                         </x-dropdown-link>
                                                                     @endif
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                                 {{-- Edit Kunjungan BPJS — hanya kalau pcareKunjungan sudah berhasil --}}
-                                                                @hasanyrole('Admin|Dokter')
+                                                                @can('pcare.kelolaKunjungan')
                                                                     @php
                                                                         $kunjCode = data_get($row, 'pcare_kunjungan_code')
                                                                             ?? data_get(json_decode($row->datadaftarpolirj_json ?? '{}', true), 'taskIdPelayanan.pcareKunjungan.code', 0);
@@ -998,7 +998,7 @@ new class extends Component {
                                                                             </div>
                                                                         </x-dropdown-link>
                                                                     @endif
-                                                                @endhasanyrole
+                                                                @endcan
 
                                                             </div>
 
@@ -1008,16 +1008,16 @@ new class extends Component {
                                                             </div>
 
                                                             {{-- Batal Antrean (Task ID 99) — Admin only. Tombol Blade → host task-id-99. --}}
-                                                            @role('Admin')
+                                                            @can('antrean.batal')
                                                                 <x-danger-button type="button"
                                                                     wire:click="$dispatch('task-id-batal-proses-rj', { rjNo: {{ $row->rj_no }} })"
                                                                     class="!px-2 !py-1 text-xs" title="Klik untuk membatalkan antrian (hanya bisa sebelum TaskId4/5)">
                                                                     Batal
                                                                 </x-danger-button>
-                                                            @endrole
+                                                            @endcan
 
                                                             {{-- Hapus — Admin only --}}
-                                                            @role('Admin')
+                                                            @can('daftar.hapus')
                                                                 <x-dropdown-link href="#"
                                                                     wire:click.prevent="requestDelete('{{ $row->rj_no }}')"
                                                                     class="w-full px-3 py-2 text-sm font-semibold text-red-600 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
@@ -1032,7 +1032,7 @@ new class extends Component {
                                                                         <span>Hapus</span>
                                                                     </div>
                                                                 </x-dropdown-link>
-                                                            @endrole
+                                                            @endcan
 
                                                         </div>
                                                     </x-slot>
@@ -1058,7 +1058,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
 
@@ -1072,10 +1072,10 @@ new class extends Component {
                 wire:key="task-id-poli-actions-rj-host" />
 
             {{-- Host aksi Batal antrian (task-id-99) — mount 1×, Admin only. --}}
-            @role('Admin')
+            @can('antrean.batal')
                 <livewire:pages::transaksi.rj.task-id-pelayanan.task-id-99
                     wire:key="task-id-99-rj-host" />
-            @endrole
+            @endcan
 
             <livewire:pages::transaksi.rj.daftar-rj.daftar-rj-actions wire:key="daftar-rj-actions" />
 

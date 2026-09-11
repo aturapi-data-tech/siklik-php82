@@ -155,52 +155,52 @@ new class extends Component {
     {{-- MAIN TABLE --}}
     <div class="mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
         <div class="overflow-x-auto rounded-t-2xl">
-            <table class="min-w-full text-sm">
-                <thead class="bg-gray-50 dark:bg-gray-800">
+            <table class="ds-table">
+                <thead>
                     <tr class="text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-300">
-                        <th class="px-4 py-3 text-left">Bulan</th>
-                        <th class="px-3 py-3 text-right">Total</th>
-                        <th class="px-3 py-3 text-right">Pasien Unik</th>
-                        <th class="px-3 py-3 text-right text-emerald-700 dark:text-emerald-300">BPJS</th>
-                        <th class="px-3 py-3 text-right text-amber-700 dark:text-amber-300">UMUM</th>
-                        <th class="px-3 py-3 text-right text-blue-700 dark:text-blue-300">Baru</th>
-                        <th class="px-3 py-3 text-right text-slate-700 dark:text-slate-300">Lama</th>
-                        <th class="px-3 py-3 text-right text-emerald-700 dark:text-emerald-300">Selesai</th>
-                        <th class="px-3 py-3 text-right text-rose-700 dark:text-rose-300">Batal</th>
+                        <th>Bulan</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-right">Pasien Unik</th>
+                        <th class="text-right text-emerald-700 dark:text-emerald-300">BPJS</th>
+                        <th class="text-right text-amber-700 dark:text-amber-300">UMUM</th>
+                        <th class="text-right text-blue-700 dark:text-blue-300">Baru</th>
+                        <th class="text-right text-slate-700 dark:text-slate-300">Lama</th>
+                        <th class="text-right text-emerald-700 dark:text-emerald-300">Selesai</th>
+                        <th class="text-right text-rose-700 dark:text-rose-300">Batal</th>
                         <th class="px-3 py-3 text-right text-purple-700 dark:text-purple-300" title="Transfer biaya RJ ke UGD (rj_status='I')">Transfer UGD</th>
-                        <th class="px-3 py-3 text-right text-amber-700 dark:text-amber-300">Antrian</th>
+                        <th class="text-right text-amber-700 dark:text-amber-300">Antrian</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($this->rows as $r)
                         <tr class="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 {{ $r['total'] === 0 ? 'opacity-50' : '' }}">
-                            <td class="px-4 py-2.5 font-medium text-gray-800 dark:text-gray-100">{{ $r['periode_label'] }}</td>
-                            <td class="px-3 py-2.5 text-right font-semibold tabular-nums">{{ number_format($r['total']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-gray-600 dark:text-gray-400">{{ number_format($r['pasien_unik']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-emerald-700 dark:text-emerald-300">{{ number_format($r['bpjs']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-amber-700 dark:text-amber-300">{{ number_format($r['umum']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-blue-700 dark:text-blue-300">{{ number_format($r['baru']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-slate-700 dark:text-slate-300">{{ number_format($r['lama']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-emerald-700 dark:text-emerald-300">{{ number_format($r['selesai']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-rose-700 dark:text-rose-300">{{ number_format($r['batal']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-purple-700 dark:text-purple-300">{{ number_format($r['transfer_ugd']) }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums text-amber-700 dark:text-amber-300">{{ number_format($r['antrian']) }}</td>
+                            <td class="ds-td-strong">{{ $r['periode_label'] }}</td>
+                            <td class="ds-td-strong text-right tabular-nums">{{ number_format($r['total']) }}</td>
+                            <td class="text-muted dark:text-gray-400 text-right tabular-nums">{{ number_format($r['pasien_unik']) }}</td>
+                            <td class="text-right tabular-nums text-emerald-700 dark:text-emerald-300">{{ number_format($r['bpjs']) }}</td>
+                            <td class="text-right tabular-nums text-amber-700 dark:text-amber-300">{{ number_format($r['umum']) }}</td>
+                            <td class="text-right tabular-nums text-blue-700 dark:text-blue-300">{{ number_format($r['baru']) }}</td>
+                            <td class="text-right tabular-nums text-slate-700 dark:text-slate-300">{{ number_format($r['lama']) }}</td>
+                            <td class="text-right tabular-nums text-emerald-700 dark:text-emerald-300">{{ number_format($r['selesai']) }}</td>
+                            <td class="text-right tabular-nums text-rose-700 dark:text-rose-300">{{ number_format($r['batal']) }}</td>
+                            <td class="text-right tabular-nums text-purple-700 dark:text-purple-300">{{ number_format($r['transfer_ugd']) }}</td>
+                            <td class="text-right tabular-nums text-amber-700 dark:text-amber-300">{{ number_format($r['antrian']) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot class="bg-gray-100 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-600">
                     <tr class="text-sm font-bold text-gray-800 dark:text-gray-100">
-                        <td class="px-4 py-3">TOTAL</td>
-                        <td class="px-3 py-3 text-right tabular-nums">{{ number_format($tot['total']) }}</td>
+                        <td>TOTAL</td>
+                        <td class="text-right tabular-nums">{{ number_format($tot['total']) }}</td>
                         <td class="px-3 py-3 text-right tabular-nums text-gray-500" title="Pasien unik global (distinct reg_no di seluruh periode)">{{ number_format($this->pasienUnikGlobal) }}*</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-emerald-800 dark:text-emerald-200">{{ number_format($tot['bpjs']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-amber-800 dark:text-amber-200">{{ number_format($tot['umum']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-blue-800 dark:text-blue-200">{{ number_format($tot['baru']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-slate-800 dark:text-slate-200">{{ number_format($tot['lama']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-emerald-800 dark:text-emerald-200">{{ number_format($tot['selesai']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-rose-800 dark:text-rose-200">{{ number_format($tot['batal']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-purple-800 dark:text-purple-200">{{ number_format($tot['transfer_ugd']) }}</td>
-                        <td class="px-3 py-3 text-right tabular-nums text-amber-800 dark:text-amber-200">{{ number_format($tot['antrian']) }}</td>
+                        <td class="text-right tabular-nums text-emerald-800 dark:text-emerald-200">{{ number_format($tot['bpjs']) }}</td>
+                        <td class="text-right tabular-nums text-amber-800 dark:text-amber-200">{{ number_format($tot['umum']) }}</td>
+                        <td class="text-right tabular-nums text-blue-800 dark:text-blue-200">{{ number_format($tot['baru']) }}</td>
+                        <td class="text-right tabular-nums text-slate-800 dark:text-slate-200">{{ number_format($tot['lama']) }}</td>
+                        <td class="text-right tabular-nums text-emerald-800 dark:text-emerald-200">{{ number_format($tot['selesai']) }}</td>
+                        <td class="text-right tabular-nums text-rose-800 dark:text-rose-200">{{ number_format($tot['batal']) }}</td>
+                        <td class="text-right tabular-nums text-purple-800 dark:text-purple-200">{{ number_format($tot['transfer_ugd']) }}</td>
+                        <td class="text-right tabular-nums text-amber-800 dark:text-amber-200">{{ number_format($tot['antrian']) }}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -234,23 +234,23 @@ new class extends Component {
             </h3>
         </div>
         <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <table class="min-w-full text-sm">
-                <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+            <table class="ds-table">
+                <thead class="sticky top-0 z-10">
                     <tr class="text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-300">
-                        <th class="px-4 py-3 text-left w-12">#</th>
-                        <th class="px-3 py-3 text-left">Poli</th>
-                        <th class="px-3 py-3 text-right">Total Kunjungan</th>
-                        <th class="px-3 py-3 text-left w-1/3">Persentase</th>
+                        <th class="w-12">#</th>
+                        <th>Poli</th>
+                        <th class="text-right">Total Kunjungan</th>
+                        <th class="w-1/3">Persentase</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($this->poliBreakdown as $i => $poli)
                         @php $pct = $tot['total'] > 0 ? ($poli->total / $tot['total']) * 100 : 0; @endphp
                         <tr class="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                            <td class="px-4 py-2.5 font-bold text-gray-400">{{ $i + 1 }}</td>
-                            <td class="px-3 py-2.5 font-medium text-gray-800 dark:text-gray-100">{{ $poli->poli_desc ?? '(Tanpa Poli)' }}</td>
-                            <td class="px-3 py-2.5 text-right tabular-nums font-semibold">{{ number_format($poli->total) }}</td>
-                            <td class="px-3 py-2.5">
+                            <td class="ds-td-strong text-muted dark:text-gray-400">{{ $i + 1 }}</td>
+                            <td class="ds-td-strong">{{ $poli->poli_desc ?? '(Tanpa Poli)' }}</td>
+                            <td class="ds-td-strong text-right tabular-nums">{{ number_format($poli->total) }}</td>
+                            <td>
                                 <div class="flex items-center gap-2">
                                     <div class="flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
                                         <div class="h-2 rounded-full bg-brand-green dark:bg-brand-lime" style="width: {{ min(100, round($pct, 1)) }}%"></div>

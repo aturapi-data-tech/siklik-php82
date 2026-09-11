@@ -372,31 +372,31 @@ new class extends Component {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                                <tr class="text-left">
+                        <table class="ds-table">
+                            <thead>
+                                <tr>
                                     @php
                                         $allChecked = $this->rcvList->isNotEmpty() && $this->rcvList->every(fn ($r) => $r->is_checked);
                                     @endphp
-                                    <th class="px-3 py-2 font-semibold text-center w-16">
+                                    <th class="ds-c w-16">
                                         <x-toggle :current="$allChecked ? '1' : '0'" trueValue="1" falseValue="0"
                                             wireClick="toggleCheckBoxAll" />
                                     </th>
-                                    <th class="px-3 py-2 font-semibold">No Nota</th>
-                                    <th class="px-3 py-2 font-semibold">Tgl Beli</th>
-                                    <th class="px-3 py-2 font-semibold">Jatuh Tempo</th>
-                                    <th class="px-3 py-2 font-semibold">Keterangan</th>
+                                    <th>No Nota</th>
+                                    <th>Tgl Beli</th>
+                                    <th>Jatuh Tempo</th>
+                                    <th>Keterangan</th>
                                     <th class="px-3 py-2 font-semibold text-right text-gray-900 dark:text-gray-100">Total</th>
-                                    <th class="px-3 py-2 font-semibold text-right text-emerald-700">Titipan</th>
-                                    <th class="px-3 py-2 font-semibold text-right text-rose-700">Sisa</th>
+                                    <th class="text-right text-emerald-700">Titipan</th>
+                                    <th class="text-right text-rose-700">Sisa</th>
                                 </tr>
                             </thead>
-                            <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                            <tbody>
                                 @forelse($this->rcvList as $row)
                                     <tr wire:key="hutang-pbf-{{ $row->rcv_no }}"
                                         class="hover:bg-gray-50 dark:hover:bg-gray-800/60
                                             {{ $row->is_checked ? 'bg-amber-50/60 dark:bg-amber-950/20' : '' }}">
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <div class="flex items-center gap-2">
                                                 <x-toggle :current="$row->is_checked ? '1' : '0'" trueValue="1" falseValue="0"
                                                     wireClick="toggleCheckBox({{ $row->rcv_no }})" />
@@ -408,19 +408,19 @@ new class extends Component {
                                                 @endif
                                             </div>
                                         </td>
-                                        <td class="px-3 py-2 font-mono whitespace-nowrap">{{ $row->rcv_no }}</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">{{ $row->rcv_date_display }}</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">
+                                        <td class="ds-td-token whitespace-nowrap">{{ $row->rcv_no }}</td>
+                                        <td class="whitespace-nowrap">{{ $row->rcv_date_display }}</td>
+                                        <td class="whitespace-nowrap">
                                             @if ($row->due_date_display)
                                                 <span class="text-amber-700 dark:text-amber-400">{{ $row->due_date_display }}</span>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-2">{{ $row->rcv_desc ?? '-' }}</td>
-                                        <td class="px-3 py-2 font-mono font-semibold text-right">{{ number_format($row->total) }}</td>
-                                        <td class="px-3 py-2 font-mono text-right text-emerald-700">{{ number_format($row->titipan) }}</td>
-                                        <td class="px-3 py-2 font-mono font-bold text-right text-rose-700">{{ number_format($row->sisa) }}</td>
+                                        <td>{{ $row->rcv_desc ?? '-' }}</td>
+                                        <td class="ds-td-strong ds-td-token text-right">{{ number_format($row->total) }}</td>
+                                        <td class="ds-td-token text-right text-emerald-700">{{ number_format($row->titipan) }}</td>
+                                        <td class="ds-td-strong ds-td-token text-right text-rose-700">{{ number_format($row->sisa) }}</td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -441,16 +441,16 @@ new class extends Component {
                                 <tfoot class="text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
                                     <tr class="font-semibold">
                                         <td colspan="5" class="px-3 py-3 text-right">TOTAL SEMUA</td>
-                                        <td class="px-3 py-3 font-mono text-right">Rp {{ number_format($this->summary['tottotal']) }}</td>
-                                        <td class="px-3 py-3 font-mono text-right text-emerald-700">Rp {{ number_format($this->summary['tottitipan']) }}</td>
-                                        <td class="px-3 py-3 font-mono text-right text-rose-700">Rp {{ number_format($this->summary['totsisa']) }}</td>
+                                        <td class="ds-td-token text-right">Rp {{ number_format($this->summary['tottotal']) }}</td>
+                                        <td class="ds-td-token text-right text-emerald-700">Rp {{ number_format($this->summary['tottitipan']) }}</td>
+                                        <td class="ds-td-token text-right text-rose-700">Rp {{ number_format($this->summary['totsisa']) }}</td>
                                     </tr>
                                     @if ($this->summary['jumlah_checked'] > 0)
                                         <tr class="font-semibold bg-amber-50 dark:bg-amber-950/30">
                                             <td colspan="7" class="px-3 py-3 text-right text-amber-800 dark:text-amber-300">
                                                 AKAN DIBAYAR ({{ $this->summary['jumlah_checked'] }} dipilih)
                                             </td>
-                                            <td class="px-3 py-3 font-mono text-right text-amber-800 dark:text-amber-300">
+                                            <td class="ds-td-token text-right text-amber-800 dark:text-amber-300">
                                                 Rp {{ number_format($this->summary['sisa_checked']) }}
                                             </td>
                                         </tr>

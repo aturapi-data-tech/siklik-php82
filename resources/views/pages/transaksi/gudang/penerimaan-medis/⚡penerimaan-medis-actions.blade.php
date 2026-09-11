@@ -1088,38 +1088,38 @@ new class extends Component {
 
                             {{-- ═══ TABEL KERANJANG — lanjutan section yang sama ═══ --}}
                             <div class="overflow-x-auto border-t border-gray-200 dark:border-gray-700">
-                                <table class="min-w-full text-sm">
+                                <table class="ds-table ds-table-entri">
                                     <thead
                                         class="text-xs tracking-wider text-gray-600 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                                        <tr class="text-left">
-                                            <th class="px-3 py-2 font-semibold">#</th>
-                                            <th class="px-3 py-2 font-semibold">Barang</th>
-                                            <th class="px-3 py-2 font-semibold text-right">Qty</th>
-                                            <th class="px-3 py-2 font-semibold text-right">Harga</th>
-                                            <th class="px-3 py-2 font-semibold text-right">Diskon</th>
-                                            <th class="px-3 py-2 font-semibold text-right">Total</th>
-                                            <th class="px-3 py-2 font-semibold">Batch</th>
-                                            <th class="px-3 py-2 font-semibold">ED</th>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Barang</th>
+                                            <th class="text-right">Qty</th>
+                                            <th class="text-right">Harga</th>
+                                            <th class="text-right">Diskon</th>
+                                            <th class="text-right">Total</th>
+                                            <th>Batch</th>
+                                            <th>ED</th>
                                             @if (!$isReadOnly)
-                                                <th class="px-3 py-2 font-semibold"></th>
+                                                <th></th>
                                             @endif
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    <tbody>
                                         @forelse($details as $i => $dtl)
                                             <tr wire:key="dtl-{{ $dtl['_key'] }}"
                                                 class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                                <td class="px-3 py-2 text-gray-400">{{ $i + 1 }}</td>
-                                                <td class="px-3 py-2">
+                                                <td class="text-muted dark:text-gray-400">{{ $i + 1 }}</td>
+                                                <td>
                                                     <div class="font-medium text-gray-900 dark:text-gray-100">
                                                         {{ $dtl['product_name'] ?? '-' }}</div>
                                                     <div class="text-xs text-gray-400">{{ $dtl['product_id'] }}</div>
                                                 </td>
-                                                <td class="px-3 py-2 font-mono text-right">
+                                                <td class="ds-td-token text-right">
                                                     {{ number_format($dtl['qty'] ?? 0) }}</td>
-                                                <td class="px-3 py-2 font-mono text-right">
+                                                <td class="ds-td-token text-right">
                                                     {{ number_format($dtl['cost_price'] ?? 0) }}</td>
-                                                <td class="px-3 py-2 text-right">
+                                                <td class="text-right">
                                                     <div>{{ $dtl['dsp_discount'] ?? '-' }}</div>
                                                     @if (!empty($dtl['dsp_discount1']))
                                                         <div class="text-xs text-gray-400">{{ $dtl['dsp_discount1'] }}
@@ -1129,10 +1129,10 @@ new class extends Component {
                                                 <td
                                                     class="px-3 py-2 font-mono font-semibold text-right text-brand dark:text-brand-lime">
                                                     Rp {{ number_format($dtl['vtotal'] ?? 0) }}</td>
-                                                <td class="px-3 py-2">{{ $dtl['rcv_bath'] ?? '-' }}</td>
-                                                <td class="px-3 py-2">{{ $dtl['rcv_ed'] ?? '-' }}</td>
+                                                <td>{{ $dtl['rcv_bath'] ?? '-' }}</td>
+                                                <td>{{ $dtl['rcv_ed'] ?? '-' }}</td>
                                                 @if (!$isReadOnly)
-                                                    <td class="px-3 py-2">
+                                                    <td>
                                                         <x-confirm-button variant="danger" :action="'hapusBarang(' . $dtl['_key'] . ')'"
                                                             title="Hapus Barang"
                                                             message="Hapus {{ $dtl['product_name'] ?? '' }} dari keranjang?"
@@ -1244,7 +1244,7 @@ new class extends Component {
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     {{-- KIRI: Batalkan Transaksi --}}
                     <div class="flex items-center gap-3">
-                        @hasanyrole('Admin|Tu')
+                        @can('gudang.hapusPenerimaan')
                             @if ($formMode === 'edit' && $rcvNo && $rcvStatus !== 'F')
                                 @php
                                     $batalMsg =
@@ -1257,7 +1257,7 @@ new class extends Component {
                                     Batalkan Transaksi
                                 </x-confirm-button>
                             @endif
-                        @endhasanyrole
+                        @endcan
                         <div class="text-xs text-gray-500 dark:text-gray-400">
                             <strong>{{ count($details) }}</strong> item &middot; Grand Total:
                             <strong class="font-mono text-brand dark:text-brand-lime">Rp

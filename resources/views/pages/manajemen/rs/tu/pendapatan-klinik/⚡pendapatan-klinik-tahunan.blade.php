@@ -138,7 +138,7 @@ new class extends Component {
 
     {{-- TABLE --}}
     <div class="mt-4 overflow-auto bg-white border border-gray-200 rounded-2xl dark:border-gray-700 dark:bg-gray-900">
-        <table class="w-full text-xs text-left text-gray-700 dark:text-gray-300 table-auto">
+        <table class="ds-table">
             <thead class="text-[10px] text-gray-900 uppercase bg-gray-100 dark:bg-gray-900 dark:text-gray-100">
                 <tr>
                     <th rowspan="2" class="px-3 py-2 text-left border-r border-gray-300 dark:border-gray-600">Tahun</th>
@@ -147,7 +147,7 @@ new class extends Component {
                     <th rowspan="2" class="px-3 py-2 text-right">Total</th>
                 </tr>
                 <tr class="text-[10px]">
-                    <th class="px-3 py-1 text-right bg-emerald-50 dark:bg-emerald-900/20">BPJS</th>
+                    <th class="text-right bg-emerald-50 dark:bg-emerald-900/20">BPJS</th>
                     <th class="px-3 py-1 text-right border-r border-gray-300 dark:border-gray-600 bg-emerald-50/50 dark:bg-emerald-900/10">UMUM</th>
                 </tr>
             </thead>
@@ -155,18 +155,18 @@ new class extends Component {
                 @foreach ($this->rows as $row)
                     <tr class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td class="px-3 py-2 font-medium border-r border-gray-200 dark:border-gray-700">{{ $row['label'] }}</td>
-                        <td class="px-3 py-2 text-right font-mono">{{ number_format($row['rj_bpjs'], 0, ',', '.') }}</td>
+                        <td class="ds-td-token text-right">{{ number_format($row['rj_bpjs'], 0, ',', '.') }}</td>
                         <td class="px-3 py-2 text-right font-mono text-gray-500 border-r border-gray-200 dark:border-gray-700">{{ number_format($row['rj_umum'], 0, ',', '.') }}</td>
                         <td class="px-3 py-2 text-right font-mono text-amber-700 dark:text-amber-300 border-r border-gray-200 dark:border-gray-700">{{ number_format($row['apt_umum'], 0, ',', '.') }}</td>
-                        <td class="px-3 py-2 text-right font-mono font-bold">{{ number_format($row['total'], 0, ',', '.') }}</td>
+                        <td class="ds-td-strong ds-td-token text-right">{{ number_format($row['total'], 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
                 <tr class="font-bold bg-gray-200 dark:bg-gray-700 border-t-2 border-gray-300 dark:border-gray-600">
                     <td class="px-3 py-2 border-r border-gray-300 dark:border-gray-600">Total {{ $rangeLabel }}</td>
-                    <td class="px-3 py-2 text-right font-mono">{{ number_format($tot['rj_bpjs'], 0, ',', '.') }}</td>
+                    <td class="ds-td-token text-right">{{ number_format($tot['rj_bpjs'], 0, ',', '.') }}</td>
                     <td class="px-3 py-2 text-right font-mono border-r border-gray-300 dark:border-gray-600">{{ number_format($tot['rj_umum'], 0, ',', '.') }}</td>
                     <td class="px-3 py-2 text-right font-mono text-amber-800 dark:text-amber-200 border-r border-gray-300 dark:border-gray-600">{{ number_format($tot['apt_umum'], 0, ',', '.') }}</td>
-                    <td class="px-3 py-2 text-right font-mono">{{ number_format($tot['total'], 0, ',', '.') }}</td>
+                    <td class="ds-td-token text-right">{{ number_format($tot['total'], 0, ',', '.') }}</td>
                 </tr>
             </tbody>
         </table>

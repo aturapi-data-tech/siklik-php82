@@ -513,29 +513,29 @@ new class extends Component {
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="ds-table">
                 <thead
                     class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="px-4 py-3">Dokter</th>
-                        <th class="px-4 py-3">Kode</th>
-                        <th class="px-4 py-3">Jasa Dokter</th>
-                        <th class="px-4 py-3 text-right">Tarif</th>
+                        <th>Dokter</th>
+                        <th>Kode</th>
+                        <th>Jasa Dokter</th>
+                        <th class="text-right">Tarif</th>
                         @if (!$isFormLocked)
-                            <th class="w-20 px-4 py-3 text-center">Hapus</th>
+                            <th class="w-20 ds-c">Hapus</th>
                         @endif
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @forelse ($dataDaftarPoliRJ['JasaDokter'] ?? [] as $item)
                         <tr class="transition group hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                            <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="text-xs text-muted dark:text-gray-400 whitespace-nowrap">
                                 {{ $item['DokterName'] ?? '-' }}
                             </td>
-                            <td class="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="ds-td-meta whitespace-nowrap">
                                 {{ $item['JasaDokterId'] }}
                             </td>
-                            <td class="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 {{ $item['JasaDokterDesc'] }}
                             </td>
                             <td
@@ -543,7 +543,7 @@ new class extends Component {
                                 Rp {{ number_format($item['JasaDokterPrice']) }}
                             </td>
                             @if (!$isFormLocked)
-                                <td class="px-4 py-3 text-center">
+                                <td class="ds-c">
                                     <x-outline-button type="button"
                                         wire:click.prevent="removeJasaDokter({{ $item['rjaccdocDtl'] }})"
                                         wire:confirm="Hapus jasa dokter ini?" wire:loading.attr="disabled"
@@ -578,7 +578,7 @@ new class extends Component {
                         <tr>
                             <td colspan="3"
                                 class="px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Total</td>
-                            <td class="px-4 py-3 text-sm font-bold text-right text-gray-900 dark:text-white">
+                            <td class="ds-td-strong text-right">
                                 Rp
                                 {{ number_format(collect($dataDaftarPoliRJ['JasaDokter'])->sum('JasaDokterPrice')) }}
                             </td>

@@ -533,42 +533,42 @@ new class extends Component {
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="ds-table">
                 <thead
                     class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="px-3 py-3">Kode</th>
-                        <th class="px-3 py-3">Nama Obat</th>
-                        <th class="px-3 py-3 text-right">Qty</th>
-                        <th class="px-3 py-3 text-center">Signa</th>
-                        <th class="px-3 py-3">Takar</th>
-                        <th class="px-3 py-3">Ket</th>
-                        <th class="px-3 py-3">Exp. Date</th>
-                        <th class="px-3 py-3">Catatan</th>
-                        <th class="px-3 py-3 text-center">Etiket</th>
-                        <th class="px-3 py-3 text-right">Harga</th>
-                        <th class="px-3 py-3 text-right">Total</th>
+                        <th>Kode</th>
+                        <th>Nama Obat</th>
+                        <th class="text-right">Qty</th>
+                        <th class="ds-c">Signa</th>
+                        <th>Takar</th>
+                        <th>Ket</th>
+                        <th>Exp. Date</th>
+                        <th>Catatan</th>
+                        <th class="ds-c">Etiket</th>
+                        <th class="text-right">Harga</th>
+                        <th class="text-right">Total</th>
                         @if (!$isFormLocked)
-                            <th class="w-24 px-3 py-3 text-center">Aksi</th>
+                            <th class="w-24 ds-c">Aksi</th>
                         @endif
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @forelse ($rjObat as $item)
                         @php $isEditing = $editingDtl === $item['rjobatDtl']; @endphp
                         <tr wire:key="obat-row-{{ $item['rjobatDtl'] }}-{{ $isEditing ? 'edit' : 'view' }}" x-data
                             class="{{ $isEditing ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/40' }} transition">
 
                             {{-- Kode --}}
-                            <td class="px-3 py-2 font-mono text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <td class="ds-td-meta whitespace-nowrap">
                                 {{ $item['productId'] }}
                             </td>
                             {{-- Nama Obat --}}
-                            <td class="px-3 py-2 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 {{ $item['productName'] }}
                             </td>
                             {{-- Qty --}}
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <x-text-input wire:model="editRow.qty" class="w-16 text-sm text-right"
                                         x-ref="editQty" x-init="$el.focus();
@@ -583,7 +583,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Signa --}}
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <div class="flex items-center gap-1">
                                         <x-text-input wire:model="editRow.carapakai" class="w-12 text-sm text-center"
@@ -600,7 +600,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Takar --}}
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <x-select-input wire:model="editRow.takar" x-ref="editTakar"
                                         x-on:keyup.enter="$nextTick(() => $refs.editKet?.focus())"
@@ -619,7 +619,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Ket --}}
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <x-text-input wire:model="editRow.ket" placeholder="Ket." class="text-sm w-28"
                                         x-ref="editKet"
@@ -630,7 +630,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Exp Date --}}
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <x-text-input type="date" wire:model="editRow.expDate" class="text-sm w-36"
                                         x-ref="editExpDate"
@@ -644,7 +644,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Catatan --}}
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <x-text-input wire:model="editRow.catatanKhusus" placeholder="Catatan..."
                                         class="text-sm w-36" x-ref="editCatatan"
@@ -655,7 +655,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Etiket --}}
-                            <td class="px-3 py-2 text-center whitespace-nowrap">
+                            <td class="ds-c whitespace-nowrap">
                                 <x-ghost-button wire:click="cetakEtiketItem({{ $item['rjobatDtl'] }})"
                                     wire:loading.attr="disabled"
                                     wire:target="cetakEtiketItem({{ $item['rjobatDtl'] }})"
@@ -674,7 +674,7 @@ new class extends Component {
                                 </x-ghost-button>
                             </td>
                             {{-- Harga --}}
-                            <td class="px-3 py-2 text-right text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                            <td class="text-muted dark:text-gray-400 text-right whitespace-nowrap">
                                 Rp {{ number_format($item['price']) }}
                             </td>
                             {{-- Total --}}
@@ -685,7 +685,7 @@ new class extends Component {
                             </td>
                             {{-- Aksi --}}
                             @if (!$isFormLocked)
-                                <td class="px-3 py-2 whitespace-nowrap">
+                                <td class="whitespace-nowrap">
                                     @if ($isEditing)
                                         <div class="flex items-center gap-1">
                                             <x-secondary-button type="button" wire:click="saveEdit"
@@ -742,7 +742,7 @@ new class extends Component {
                         <tr>
                             <td colspan="{{ $isFormLocked ? 10 : 11 }}"
                                 class="px-3 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Total</td>
-                            <td class="px-3 py-3 text-sm font-bold text-right text-gray-900 dark:text-white">
+                            <td class="ds-td-strong text-right">
                                 Rp {{ number_format(collect($rjObat)->sum('total')) }}
                             </td>
                             @if (!$isFormLocked)

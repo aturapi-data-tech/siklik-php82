@@ -326,25 +326,25 @@ new class extends Component {
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="ds-table">
                 <thead
                     class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="px-4 py-3">Keterangan</th>
-                        <th class="px-4 py-3 text-right">Tarif Laborat</th>
+                        <th>Keterangan</th>
+                        <th class="text-right">Tarif Laborat</th>
                         @if (!$isFormLocked)
-                            <th class="px-4 py-3 text-center w-28">Aksi</th>
+                            <th class="ds-c w-28">Aksi</th>
                         @endif
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @forelse ($rjLab as $item)
                         @php $isEditing = $editingDtl === $item['labDtl']; @endphp
                         <tr wire:key="lab-row-{{ $item['labDtl'] }}-{{ $isEditing ? 'edit' : 'view' }}" x-data
                             class="{{ $isEditing ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/40' }} transition">
 
                             {{-- Keterangan --}}
-                            <td class="px-4 py-2">
+                            <td>
                                 @if ($isEditing)
                                     <x-text-input wire:model="editRow.labDesc" placeholder="Keterangan..."
                                         class="w-full text-sm" x-ref="editLabDesc" x-init="$el.focus();
@@ -359,7 +359,7 @@ new class extends Component {
                             </td>
 
                             {{-- Tarif --}}
-                            <td class="px-4 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap">
                                 @if ($isEditing)
                                     <div class="flex justify-end">
                                         <x-text-input wire:model="editRow.labPrice" placeholder="Tarif"
@@ -378,7 +378,7 @@ new class extends Component {
 
                             {{-- Aksi --}}
                             @if (!$isFormLocked)
-                                <td class="px-4 py-2 whitespace-nowrap">
+                                <td class="whitespace-nowrap">
                                     @if ($isEditing)
                                         <div class="flex items-center justify-center gap-1">
                                             <x-secondary-button type="button" wire:click="saveEdit"
@@ -431,8 +431,8 @@ new class extends Component {
                 @if (!empty($rjLab))
                     <tfoot class="border-t border-gray-200 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700">
                         <tr>
-                            <td class="px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Total</td>
-                            <td class="px-4 py-3 text-sm font-bold text-right text-gray-900 dark:text-white">
+                            <td class="ds-td-strong text-muted dark:text-gray-400">Total</td>
+                            <td class="ds-td-strong text-right">
                                 Rp {{ number_format(collect($rjLab)->sum('labPrice')) }}
                             </td>
                             @if (!$isFormLocked)

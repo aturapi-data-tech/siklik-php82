@@ -199,22 +199,22 @@ new class extends Component {
 
         {{-- OUT DTL TABLE --}}
         <div class="overflow-x-auto border rounded-lg border-gray-200 dark:border-gray-700">
-            <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-800">
+            <table class="ds-table">
+                <thead>
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">No</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Deskripsi</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Hasil</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Nilai Normal</th>
-                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Aksi</th>
+                        <th>No</th>
+                        <th>Deskripsi</th>
+                        <th>Hasil</th>
+                        <th>Nilai Normal</th>
+                        <th class="ds-c">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+                <tbody>
                     @forelse ($outDtlRows as $idx => $out)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <td class="px-3 py-2 text-gray-500">{{ $idx + 1 }}</td>
+                            <td class="text-muted dark:text-gray-400">{{ $idx + 1 }}</td>
                             {{-- Deskripsi: editable saat P, read-only saat C/H --}}
-                            <td class="px-3 py-2">
+                            <td>
                                 @if ($labStatus === 'P')
                                     <x-text-input type="text" value="{{ $out['labout_desc'] ?? '' }}"
                                         wire:change="updateOutDtlResult({{ $out['labout_dtl'] }}, 'labout_desc', $event.target.value)"
@@ -224,7 +224,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Hasil: editable saat C, read-only saat P/H --}}
-                            <td class="px-3 py-2">
+                            <td>
                                 @if ($labStatus === 'C')
                                     <x-text-input type="text" value="{{ $out['labout_result'] ?? '' }}"
                                         wire:change="updateOutDtlResult({{ $out['labout_dtl'] }}, 'labout_result', $event.target.value)"
@@ -235,7 +235,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Normal: editable saat C, read-only saat P/H --}}
-                            <td class="px-3 py-2">
+                            <td>
                                 @if ($labStatus === 'C')
                                     <x-text-input type="text" value="{{ $out['labout_normal'] ?? '' }}"
                                         wire:change="updateOutDtlResult({{ $out['labout_dtl'] }}, 'labout_normal', $event.target.value)"
@@ -246,7 +246,7 @@ new class extends Component {
                                 @endif
                             </td>
                             {{-- Aksi: hapus hanya saat P --}}
-                            <td class="px-3 py-2 text-center">
+                            <td class="ds-c">
                                 @if ($labStatus === 'P')
                                     <button type="button"
                                         wire:click="deleteOutDtlRow({{ $out['labout_dtl'] }})"

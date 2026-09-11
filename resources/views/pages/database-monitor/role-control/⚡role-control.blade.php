@@ -176,34 +176,33 @@ new class extends Component {
             <div
                 class="mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-320px)] rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">ID</th>
-                                <th class="px-4 py-3 font-semibold">Nama Role</th>
-                                <th class="px-4 py-3 font-semibold">Guard</th>
-                                <th class="px-4 py-3 font-semibold">Permissions</th>
-                                <th class="px-4 py-3 font-semibold">Jml User</th>
-                                <th class="px-4 py-3 font-semibold">Dibuat</th>
-                                <th class="px-4 py-3 font-semibold">Aksi</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nama Role</th>
+                                <th>Guard</th>
+                                <th>Permissions</th>
+                                <th>Jml User</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
-                                <tr wire:key="role-row-{{ $row->id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <tr wire:key="role-row-{{ $row->id }}">
 
-                                    <td class="px-4 py-3 text-xs font-mono text-gray-500">{{ $row->id }}</td>
+                                    <td class="ds-td-meta">{{ $row->id }}</td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <span class="{{ $this->roleBadgeClass($row->name) }}">{{ $row->name }}</span>
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <x-badge variant="alternative">{{ $row->guard_name }}</x-badge>
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-1">
                                             @forelse($row->permission_list as $p)
                                                 <span
@@ -216,7 +215,7 @@ new class extends Component {
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         @if ($row->user_count > 0)
                                             <x-badge variant="success">{{ $row->user_count }} user</x-badge>
                                         @else
@@ -224,9 +223,9 @@ new class extends Component {
                                         @endif
                                     </td>
 
-                                    <td class="px-4 py-3 text-xs text-gray-500">{{ $row->created_at ?? '-' }}</td>
+                                    <td class="text-xs text-muted dark:text-gray-400">{{ $row->created_at ?? '-' }}</td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             <x-secondary-button type="button"
                                                 wire:click="openEdit({{ $row->id }})" class="px-2 py-1 text-xs">
@@ -253,7 +252,7 @@ new class extends Component {
                 </div>
 
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

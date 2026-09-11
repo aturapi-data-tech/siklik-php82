@@ -132,21 +132,21 @@ new class extends Component {
                         <x-badge variant="gray">{{ count($adminLogs) }} entri</x-badge>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
+                        <table class="ds-table">
                             <thead class="text-xs font-semibold text-gray-500 uppercase dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50">
                                 <tr>
-                                    <th class="px-4 py-3">Tanggal</th>
-                                    <th class="px-4 py-3">Kategori</th>
-                                    <th class="px-4 py-3">User</th>
-                                    <th class="px-4 py-3">Keterangan</th>
+                                    <th>Tanggal</th>
+                                    <th>Kategori</th>
+                                    <th>User</th>
+                                    <th>Keterangan</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                            <tbody>
                                 @forelse ($adminLogs as $log)
                                     @php $cat = $log['userLogCat'] ?? 'ADMIN'; @endphp
                                     <tr wire:key="log-aktivitas-rj-{{ $loop->index }}" class="transition hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                                        <td class="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">{{ $log['userLogDate'] ?? '-' }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
+                                        <td class="ds-td-meta whitespace-nowrap">{{ $log['userLogDate'] ?? '-' }}</td>
+                                        <td class="whitespace-nowrap">
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
                                                 {{ $cat === 'MR'
                                                     ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
@@ -154,8 +154,8 @@ new class extends Component {
                                                 {{ $cat === 'MR' ? 'Rekam Medis' : 'Administrasi' }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ $log['userLog'] ?? '-' }}</td>
-                                        <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ $log['userLogDesc'] ?? '-' }}</td>
+                                        <td class="text-xs text-muted dark:text-gray-400 whitespace-nowrap">{{ $log['userLog'] ?? '-' }}</td>
+                                        <td>{{ $log['userLogDesc'] ?? '-' }}</td>
                                     </tr>
                                 @empty
                                     <tr>

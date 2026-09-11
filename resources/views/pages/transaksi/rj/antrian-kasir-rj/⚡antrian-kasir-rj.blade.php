@@ -424,14 +424,14 @@ new class extends Component {
                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-t-2xl">
                     <table class="min-w-full text-base border-separate border-spacing-y-2">
 
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                        <thead class="sticky top-0 z-10">
                             <tr
                                 class="text-sm font-semibold tracking-wide text-left text-gray-600 uppercase dark:text-gray-300">
-                                <th class="px-4 py-3">Pasien</th>
-                                <th class="px-4 py-3">Poli / Dokter</th>
-                                <th class="px-4 py-3">Status Layanan</th>
-                                <th class="px-4 py-3">Waktu Kasir</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
+                                <th>Pasien</th>
+                                <th>Poli / Dokter</th>
+                                <th>Status Layanan</th>
+                                <th>Waktu Kasir</th>
+                                <th class="ds-c">Aksi</th>
                             </tr>
                         </thead>
 
@@ -441,7 +441,7 @@ new class extends Component {
                                     class="transition bg-white dark:bg-gray-900 hover:shadow-md hover:bg-green-50 dark:hover:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
 
                                     {{-- PASIEN --}}
-                                    <td class="px-6 py-6 space-y-3 align-top">
+                                    <td class="space-y-3 align-top">
                                         <div class="space-y-1">
                                             <div class="text-base font-medium text-gray-700 dark:text-gray-300">
                                                 {{ $row->reg_no ?? '-' }}
@@ -463,7 +463,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- POLI / DOKTER --}}
-                                    <td class="px-4 py-4 space-y-1 align-top">
+                                    <td class="space-y-1 align-top">
                                         <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                             {{ $row->poli_desc ?? '-' }}
                                         </div>
@@ -491,7 +491,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- STATUS LAYANAN --}}
-                                    <td class="px-4 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-xs text-gray-500 dark:text-gray-400">
                                             {{ $row->rj_date_display }} | Shift {{ $row->shift ?? '-' }}
                                         </div>
@@ -537,7 +537,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- WAKTU KASIR --}}
-                                    <td class="px-4 py-4 space-y-2 align-top">
+                                    <td class="space-y-2 align-top">
                                         <div class="text-xs space-y-1">
                                             <div class="flex items-center gap-1.5">
                                                 <span
@@ -596,7 +596,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- AKSI --}}
-                                    <td class="px-4 py-4 align-top">
+                                    <td class="align-top">
                                         @if ($row->status_text === 'Batal')
                                             {{-- Batal: actions tidak diakses, konfirmasi ke Pendaftaran --}}
                                             <div
@@ -659,7 +659,7 @@ new class extends Component {
 
                 {{-- PAGINATION --}}
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>

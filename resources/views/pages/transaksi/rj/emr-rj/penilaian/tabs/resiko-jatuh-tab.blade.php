@@ -156,22 +156,22 @@
     @if (!empty($dataDaftarPoliRJ['penilaian']['resikoJatuh']))
         <x-border-form :title="__('Riwayat Penilaian Risiko Jatuh')" :align="__('start')" :bgcolor="__('bg-white')">
             <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="w-full text-xs text-left text-gray-600 dark:text-gray-300">
-                    <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                <table class="ds-table ds-table-entri">
+                    <thead>
                         <tr>
-                            <th class="px-3 py-2 font-medium">Tgl Penilaian</th>
-                            <th class="px-3 py-2 font-medium">Petugas</th>
-                            <th class="px-3 py-2 font-medium">Risiko</th>
-                            <th class="px-3 py-2 font-medium">Metode</th>
-                            <th class="px-3 py-2 font-medium">Skor</th>
-                            <th class="px-3 py-2 font-medium">Kategori</th>
-                            <th class="px-3 py-2 font-medium">Rekomendasi</th>
+                            <th>Tgl Penilaian</th>
+                            <th>Petugas</th>
+                            <th>Risiko</th>
+                            <th>Metode</th>
+                            <th>Skor</th>
+                            <th>Kategori</th>
+                            <th>Rekomendasi</th>
                             @if (!$isFormLocked)
-                                <th class="px-3 py-2 font-medium"></th>
+                                <th></th>
                             @endif
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody>
                         @foreach (array_reverse($dataDaftarPoliRJ['penilaian']['resikoJatuh'] ?? [], true) as $i => $row)
                             @php
                                 $kat = $row['resikoJatuh']['kategoriResiko'] ?? '-';
@@ -186,31 +186,31 @@
                                 };
                             @endphp
                             <tr class="{{ $rowBg }}">
-                                <td class="px-3 py-2 whitespace-nowrap">{{ $row['tglPenilaian'] ?? '-' }}</td>
-                                <td class="px-3 py-2">{{ $row['petugasPenilai'] ?? '-' }}</td>
-                                <td class="px-3 py-2">
+                                <td class="whitespace-nowrap">{{ $row['tglPenilaian'] ?? '-' }}</td>
+                                <td>{{ $row['petugasPenilai'] ?? '-' }}</td>
+                                <td>
                                     <span
                                         class="px-2 py-0.5 rounded-full text-xs font-medium
                                         {{ ($row['resikoJatuh']['resikoJatuh'] ?? '') === 'Ya' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700' }}">
                                         {{ $row['resikoJatuh']['resikoJatuh'] ?? '-' }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-2">
+                                <td>
                                     {{ $row['resikoJatuh']['resikoJatuhMetode']['resikoJatuhMetode'] ?? '-' }}</td>
-                                <td class="px-3 py-2 font-bold">
+                                <td class="ds-td-strong">
                                     {{ $row['resikoJatuh']['resikoJatuhMetode']['resikoJatuhMetodeScore'] ?? '-' }}
                                 </td>
-                                <td class="px-3 py-2">
+                                <td>
                                     <span
                                         class="px-2 py-0.5 rounded-full text-xs font-medium
                                         {{ $kat === 'Tinggi' ? 'bg-red-100 text-red-700' : ($kat === 'Sedang' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
                                         {{ $kat }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-2 text-gray-500">{{ $row['resikoJatuh']['rekomendasi'] ?? '-' }}
+                                <td class="text-muted dark:text-gray-400">{{ $row['resikoJatuh']['rekomendasi'] ?? '-' }}
                                 </td>
                                 @if (!$isFormLocked)
-                                    <td class="px-3 py-2">
+                                    <td>
                                         <x-icon-button variant="danger"
                                             wire:click="removeAssessmentResikoJatuh({{ $i }})"
                                             wire:confirm="Hapus data risiko jatuh ini?" tooltip="Hapus">

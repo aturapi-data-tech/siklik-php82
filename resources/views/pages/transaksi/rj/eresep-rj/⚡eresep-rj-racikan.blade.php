@@ -393,7 +393,7 @@ new class extends Component {
 
                 <x-input-label for="" :value="__('Racikan')" :required="false" class="pt-2 sm:text-xl" />
 
-                @role(['Dokter', 'Admin'])
+                @can('eresep.tulis')
                     <div x-data x-ref="racikanSection">
 
                         {{-- LOV + No Racikan --}}
@@ -515,27 +515,27 @@ new class extends Component {
                         @endif
 
                     </div>
-                @endrole
+                @endcan
 
                 {{-- Tabel Resep Racikan --}}
                 <div class="flex flex-col my-2">
                     <div class="overflow-x-auto rounded-lg">
                         <div class="inline-block min-w-full align-middle">
                             <div class="overflow-hidden shadow sm:rounded-lg">
-                                <table class="w-full text-sm text-left text-gray-500 table-auto dark:text-gray-400">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <table class="ds-table">
+                                    <thead>
                                         <tr>
-                                            <th class="px-4 py-3 w-28">Racikan</th>
-                                            <th class="px-4 py-3">Obat</th>
-                                            <th class="w-16 px-4 py-3">Sedia</th>
-                                            <th class="w-24 px-4 py-3">Dosis</th>
-                                            <th class="w-20 px-4 py-3">Jml Racikan</th>
-                                            <th class="px-4 py-3">Catatan</th>
-                                            <th class="px-4 py-3">Signa</th>
-                                            <th class="w-8 px-4 py-3 text-center">Action</th>
+                                            <th class="w-28">Racikan</th>
+                                            <th>Obat</th>
+                                            <th class="w-16">Sedia</th>
+                                            <th class="w-24">Dosis</th>
+                                            <th class="w-20">Jml Racikan</th>
+                                            <th>Catatan</th>
+                                            <th>Signa</th>
+                                            <th class="w-8 ds-c">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="bg-white">
+                                    <tbody>
                                         @isset($dataDaftarPoliRJ['eresepRacikan'])
                                             @php $myPreviousRow = null; @endphp
 
@@ -551,18 +551,18 @@ new class extends Component {
                                                     <tr class="{{ $myRacikanBorder }} group" x-data>
 
                                                         {{-- Racikan label --}}
-                                                        <td class="px-4 py-3 w-28 whitespace-nowrap">
+                                                        <td class="w-28 whitespace-nowrap">
                                                             {{ $eresep['jenisKeterangan'] . ' (' . $eresep['noRacikan'] . ')' }}{{ $myPreviousRow }}
                                                         </td>
 
                                                         {{-- Nama Obat --}}
-                                                        <td class="px-4 py-3">{{ $eresep['productName'] }}</td>
+                                                        <td>{{ $eresep['productName'] }}</td>
 
                                                         {{-- Sedia --}}
-                                                        <td class="w-16 px-4 py-3">{{ $eresep['sedia'] }}</td>
+                                                        <td class="w-16">{{ $eresep['sedia'] }}</td>
 
                                                         {{-- Dosis --}}
-                                                        <td class="w-24 px-4 py-3">
+                                                        <td class="w-24">
                                                             <x-text-input placeholder="Dosis" :disabled="$isFormLocked"
                                                                 wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.dosis"
                                                                 x-ref="dosis{{ $key }}"
@@ -573,7 +573,7 @@ new class extends Component {
                                                         </td>
 
                                                         {{-- Jml Racikan --}}
-                                                        <td class="w-20 px-4 py-3">
+                                                        <td class="w-20">
                                                             <x-text-input placeholder="Jml" :disabled="$isFormLocked"
                                                                 wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.qty"
                                                                 x-ref="qty{{ $key }}"
@@ -581,7 +581,7 @@ new class extends Component {
                                                         </td>
 
                                                         {{-- Catatan --}}
-                                                        <td class="px-4 py-3">
+                                                        <td>
                                                             <x-text-input placeholder="Catatan" :disabled="$isFormLocked"
                                                                 wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.catatan"
                                                                 x-ref="catatan{{ $key }}"
@@ -589,7 +589,7 @@ new class extends Component {
                                                         </td>
 
                                                         {{-- Signa --}}
-                                                        <td class="px-4 py-3">
+                                                        <td>
                                                             <x-text-input placeholder="Signa" :disabled="$isFormLocked"
                                                                 wire:model="dataDaftarPoliRJ.eresepRacikan.{{ $key }}.catatanKhusus"
                                                                 x-ref="catatanKhusus{{ $key }}"
@@ -606,8 +606,8 @@ new class extends Component {
                                                         </td>
 
                                                         {{-- Action --}}
-                                                        <td class="w-8 px-4 py-3 text-center">
-                                                            @role(['Dokter', 'Admin'])
+                                                        <td class="ds-c w-8">
+                                                            @can('eresep.tulis')
                                                                 <x-outline-button type="button"
                                                                     wire:click.prevent="removeProduct('{{ $eresep['rjObatDtl'] }}')"
                                                                     wire:confirm="Hapus obat racikan ini?"
@@ -620,7 +620,7 @@ new class extends Component {
                                                                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                     </svg>
                                                                 </x-outline-button>
-                                                            @endrole
+                                                            @endcan
                                                         </td>
                                                     </tr>
 

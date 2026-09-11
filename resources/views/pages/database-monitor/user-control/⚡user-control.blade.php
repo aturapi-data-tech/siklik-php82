@@ -297,41 +297,40 @@ new class extends Component {
             <div
                 class="mt-4 bg-white border border-gray-200 shadow-sm rounded-2xl dark:border-gray-700 dark:bg-gray-900">
                 <div class="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-320px)] rounded-t-2xl">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 z-10 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-200">
-                            <tr class="text-left">
-                                <th class="px-4 py-3 font-semibold">Nama & Kode</th>
-                                <th class="px-4 py-3 font-semibold">Email</th>
-                                <th class="px-4 py-3 font-semibold">Kasir</th>
-                                <th class="px-4 py-3 font-semibold">TTD</th>
-                                <th class="px-4 py-3 font-semibold">Role</th>
-                                <th class="px-4 py-3 font-semibold">Dibuat</th>
-                                <th class="px-4 py-3 font-semibold">Aksi</th>
+                    <table class="ds-table">
+                        <thead class="sticky top-0 z-10">
+                            <tr>
+                                <th>Nama & Kode</th>
+                                <th>Email</th>
+                                <th>Kasir</th>
+                                <th>TTD</th>
+                                <th>Role</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700 divide-y divide-gray-200 dark:divide-gray-700 dark:text-gray-200">
+                        <tbody>
                             @forelse($this->rows as $row)
                                 @php
                                     $allRoles = $this->allRoles;
                                     $userRoles = $row->role_list ?? [];
                                 @endphp
-                                <tr wire:key="user-row-{{ $row->id }}"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <tr wire:key="user-row-{{ $row->id }}">
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="font-semibold">{{ $row->myuser_name ?? '-' }}</div>
                                         <div class="text-xs font-mono text-gray-500">{{ $row->myuser_code ?? '-' }}
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div>{{ $row->email ?? '-' }}</div>
                                         @if ($row->myuser_sip)
                                             <div class="text-xs text-gray-500">SIP: {{ $row->myuser_sip }}</div>
                                         @endif
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         @if ($row->kasir_id)
                                             <x-badge variant="alternative">{{ $row->kasir_id }}</x-badge>
                                         @else
@@ -339,7 +338,7 @@ new class extends Component {
                                         @endif
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td>
                                         @if ($row->myuser_ttd_image)
                                             <img src="{{ asset('storage/' . $row->myuser_ttd_image) }}"
                                                 class="h-8 w-auto rounded border border-gray-200 dark:border-gray-600"
@@ -350,7 +349,7 @@ new class extends Component {
                                     </td>
 
                                     {{-- Role — badge berwarna + dropdown --}}
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="relative" x-data="{ open: false }">
                                             <button type="button" @click="open = !open" @click.outside="open = false"
                                                 class="flex items-center gap-1.5 group">
@@ -415,10 +414,10 @@ new class extends Component {
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3 text-xs text-gray-500">{{ $row->created_at ?? '-' }}</td>
+                                    <td class="text-xs text-muted dark:text-gray-400">{{ $row->created_at ?? '-' }}</td>
 
                                     {{-- Aksi — ikut pola master-poli --}}
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="flex flex-wrap gap-2">
                                             {{-- ✅ Edit: x-outline-button (sama seperti master-poli) --}}
                                             <x-outline-button type="button"
@@ -458,7 +457,7 @@ new class extends Component {
                 </div>
 
                 <div
-                    class="sticky bottom-0 z-10 px-4 py-3 bg-white border-t border-gray-200 rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
+                    class="sticky bottom-0 z-10 px-4 py-3 bg-canvas border-t border-hairline rounded-b-2xl dark:bg-gray-900 dark:border-gray-700">
                     {{ $this->rows->links() }}
                 </div>
             </div>
