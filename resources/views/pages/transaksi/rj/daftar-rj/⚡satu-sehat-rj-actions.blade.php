@@ -33,7 +33,14 @@ new class extends Component {
         'observation',
         'procedure',
         'medication-request',
-        'encounter-selesai',
+        'chief-complaint',
+        'allergy',
+        'medication-dispense',   // butuh medicationRequestItems dari langkah medication-request
+        'lab',
+        'radiologi',
+        'nyeri-kesadaran',
+        'telaah-resep',
+        'encounter-selesai',     // butuh conditionIds (Encounter.diagnosis wajib)
     ];
 
     /** Sisa langkah yang belum dijalankan; kosong = tidak ada rantai berjalan. */
@@ -287,6 +294,20 @@ new class extends Component {
                             wire:key="ss-procedure-rj-{{ $rjNo ?? 'none' }}" />
                         <livewire:pages::transaksi.rj.satu-sehat.kirim-medication-request :rjNo="$rjNo"
                             wire:key="ss-medication-request-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-chief-complaint :rjNo="$rjNo"
+                            wire:key="ss-chief-complaint-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-allergy :rjNo="$rjNo"
+                            wire:key="ss-allergy-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-medication-dispense :rjNo="$rjNo"
+                            wire:key="ss-medication-dispense-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-lab :rjNo="$rjNo"
+                            wire:key="ss-lab-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-radiologi :rjNo="$rjNo"
+                            wire:key="ss-radiologi-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-nyeri-kesadaran :rjNo="$rjNo"
+                            wire:key="ss-nyeri-kesadaran-rj-{{ $rjNo ?? 'none' }}" />
+                        <livewire:pages::transaksi.rj.satu-sehat.kirim-telaah-resep :rjNo="$rjNo"
+                            wire:key="ss-telaah-resep-rj-{{ $rjNo ?? 'none' }}" />
 
                         {{-- Kartu penutup melebar SATU BARIS PENUH: langkah terakhir rantai,
                              jadi menyelipkannya di tengah baris grid akan mengaburkan urutannya.

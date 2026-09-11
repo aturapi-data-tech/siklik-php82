@@ -52,13 +52,19 @@ trait MedicationDispenseTrait
                 'use'    => 'official',
                 'value'  => $data['registrationId']
             ]],
-            'code'   => [
-                'coding' => [[
-                    'system'  => 'http://sys-ids.kemkes.go.id/kfa',
-                    'code'    => $data['medicationCode'],
-                    'display' => $data['medicationDisplay']
-                ]]
-            ],
+            // Racikan (compound) tidak punya kode KFA untuk campurannya — yang ber-KFA
+            // adalah bahan-bahannya (lihat 'ingredient'). Untuk kasus itu pemanggil
+            // mengirim medicationCode kosong, dan code cukup berisi teks.
+            'code'   => trim((string) ($data['medicationCode'] ?? '')) !== ''
+                ? [
+                    'coding' => [[
+                        'system'  => 'http://sys-ids.kemkes.go.id/kfa',
+                        'code'    => $data['medicationCode'],
+                        'display' => $data['medicationDisplay']
+                    ]],
+                    'text' => $data['medicationDisplay'],
+                ]
+                : ['text' => $data['medicationDisplay']],
             'status' => 'active',
             'manufacturer' => [
                 'reference' => "Organization/{$data['orgId']}"
@@ -125,7 +131,8 @@ trait MedicationDispenseTrait
             // 'substitution'   => $data['substitution'],
         ];
 
-        // Racikan: bahan-bahannya yang membawa kode KFA — disusun pemanggil.
+        // Racikan: bahan-bahannya yang membawa kode KFA
+        // (App\Support\Terminologi\RacikanKfa::fhirIngredient()).
         if (!empty($data['ingredient'])) {
             $payload['contained'][0]['ingredient'] = $data['ingredient'];
         }

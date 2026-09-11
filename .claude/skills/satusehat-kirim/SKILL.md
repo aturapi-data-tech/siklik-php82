@@ -27,6 +27,9 @@ Empat kartu pernah membaca key yang **tak pernah ada** di JSON EMR dan gagal SEN
 | Condition | `diagnpinaList[]`/`diagnosaPinaUtama`, key `kodeIcdx`/`descIcdx` | `diagnosis[]`, key `icdX ?? diagId` + `diagDesc` |
 | Procedure | `tindakanList`/`tindakan`, key `kodeIcd9`/`descIcd9` | `procedure[]`, key `procedureId` (= ICD-9-CM) + `procedureDesc` |
 | MedicationRequest | `kfaCode`/`product_id_satusehat` di item e-resep | lookup master obat lewat `productId` — **kolomnya belum ada**, lihat §5 |
+| Nyeri & Kesadaran | `screening.kesadaran` (node sirus — TIDAK ADA di siklik) | `pemeriksaan.tandaVital.tingkatKesadaran`, isinya **kode BPJS `kdSadar`** ('01' Compos mentis … '04' Coma), bukan teks |
+| Nyeri (skor) | `nyeri.nyeriMetode.nyeriMetodeScore` dibaca langsung | selalu lewat `NyeriOptions::daftarEntri()` — data nyata masih bentuk LAMA (`nyeriMetode` string + `skalaNyeri`/`vas.vas`); 0 record memakai `nyeriMetodeScore` |
+| Telaah Resep | 15 butir telaah sirus | `telaahResep` siklik hanya **10 butir** — 5 pertanyaan Q0007 TIDAK dikirim, jangan dijawab "Sesuai" |
 
 Peta key yang benar ada di `app/Http/Traits/Txn/Rj/EmrCompletenessRJTrait.php` (dipakai
 menghitung kelengkapan EMR, jadi key-nya pasti yang benar-benar ditulis).
@@ -100,6 +103,19 @@ Kasus nyata sekarang: `skmst_products` **belum punya kolom `product_id_satusehat
 item e-resep tidak punya `kfaCode`. Jadi MedicationRequest jujur melaporkan "0 item punya
 KFA" beserta sebabnya. Jangan mengarang kode KFA atau membaca key yang tak ada supaya kartu
 "terlihat jalan". Racikan (`eresepRacikan[]`) juga belum didukung dan dihitung terpisah.
+
+Kasus nyata lain (kartu potongan C-a, rinciannya di `docs/satusehat-api.md` §5.4):
+
+- **Skala nyeri VAS/FLACC/BPS belum punya kode Observation resmi** → dilewati, jumlahnya
+  disebut di kartu & toast. Hanya NRS (`valueInteger`) dan NIPS (`valueQuantity {score}`)
+  yang berangkat.
+- **Tingkat kesadaran belum punya padanan SNOMED** → dikirim sebagai `valueCodeableConcept`
+  ber-`text` TANPA `coding`. Itu sah di FHIR; mengarang kode tidak.
+- **Q0007: lima pertanyaan tanpa sumber data di siklik tidak dikirim** — jangan
+  menggenapinya dengan "Sesuai". Dan selama kode "Tidak Sesuai" belum diketahui, telaah
+  yang memuat jawaban "Tidak" **ditolak kirim**, bukan dikirim tanpa temuannya.
+- **`snomedCode` masih 0 dari 24.001 record** → kartu Chief Complaint & Allergy menyatakan
+  sebab penolakannya di muka, bukan setelah tombol ditekan.
 
 ## 6. Konfigurasi lewat `config()`, bukan `env()`
 

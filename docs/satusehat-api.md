@@ -31,16 +31,30 @@ bukan teori.
    DiagnosticReport · Patient · Practitioner · Organization · Location ·
    (Loinc/Snomed = lookup terminologi ke tx.fhir.org)
 
+  Helper terminologi & pembaca JSON (app/Support):
+   EresepJson (normalisasi node e-resep) · Terminologi\ObatKfa (non-racikan → KFA) ·
+   Terminologi\RacikanKfa (compound → ingredient[] ber-KFA) ·
+   Terminologi\MedicationRequestItem (peta resep → penyerahan) ·
+   KolomSatuSehat (penjaga kolom yang datang dari SQL manual) ·
+   PenanggungJawabPenunjang (performer ServiceRequest lab/radiologi) ·
+   PenunjangKirimTrait (indeks kirim per-order)
+
   UI RJ (Livewire/Volt SFC, satu tombol per resource):
    ⚡satu-sehat-rj-actions ──buka modal──▶ ⚡kirim-encounter │ ⚡kirim-condition │
                                           ⚡kirim-observation │ ⚡kirim-procedure │
-                                          ⚡kirim-medication-request
+                                          ⚡kirim-medication-request │
+                                          ⚡kirim-medication-dispense │ ⚡kirim-lab │
+                                          ⚡kirim-radiologi
 ```
 
 Hasil kiriman disimpan di node JSON `satusehat` pada `sktxn_rjhdrs.datadaftarpolirj_json`:
 `encounterId`, `conditionIds[]`, `observationIds[]`, `procedureIds[]`,
-`medicationRequestIds[]`, `medicationRequestItems[]`, dan flag `encounterInProgress` /
-`encounterFinished`. Ditulis lewat `DB::transaction` + `lockRJRow()` + `updateJsonRJ()`.
+`medicationRequestIds[]`, `medicationRequestItems[]`, `medicationDispenseIds[]`,
+`labServiceRequestIds[]`, `labSpecimenIds[]`, `labObservationIds[]`,
+`labDiagnosticReportIds[]`, `labKirim{}`, `radServiceRequestIds[]`,
+`radObservationIds[]`, `radDiagnosticReportIds[]`, `radKirim{}`, dan flag
+`encounterInProgress` / `encounterFinished`. Ditulis lewat `DB::transaction` +
+`lockRJRow()` + `updateJsonRJ()`.
 
 > Orkestrator batch `KirimRawatJalanTrait` (580 baris) **sudah DIHAPUS** — kode mati yang
 > tak pernah di-`use` siapa pun dan masih memuat bug key JSON yang sudah dibetulkan di
@@ -117,7 +131,7 @@ mana yang kosong — tidak mengirim apa pun.
 
 ## 5. Kartu yang ada sekarang, dan rencananya
 
-### 5.1 Aktif (5 kartu, modal Kirim Satu Sehat di Daftar RJ)
+### 5.1 Aktif — kartu di modal Kirim Satu Sehat (Daftar RJ)
 
 | # | Kartu | Resource FHIR | Sistem kode | Sumber JSON EMR |
 |---|---|---|---|---|
@@ -126,6 +140,19 @@ mana yang kosong — tidak mengirim apa pun.
 | 3 | Observation | `Observation` / `vital-signs` | **LOINC** + UCUM | `pemeriksaan.tandaVital` { `sistolik`, `distolik`, `frekuensiNadi`, `suhu`, `frekuensiNafas`, `spo2` } |
 | 4 | Procedure | `Procedure` / completed | **ICD-9-CM** | `procedure[]` { `procedureId`, `procedureDesc` } |
 | 5 | MedicationRequest | `MedicationRequest` + contained `Medication` | **KFA** | `eresep[]` { `productId`, `productName`, `qty`, … } + master obat |
+| 6 | Chief Complaint | `Condition` / `problem-list-item` | **SNOMED CT** | `anamnesa.keluhanUtama` { `keluhanUtama`, `snomedCode`, `snomedDisplayEn`, `snomedDisplayId` } |
+| 7 | Allergy Intolerance | `AllergyIntolerance` | **SNOMED CT** | `anamnesa.alergi` { `alergi`, `snomedCode`, `snomedDisplayEn`, `snomedDisplayId` } |
+| 8 | Nyeri & Kesadaran | `Observation` / `survey` + `exam` | SNOMED + **LOINC** | `penilaian.nyeri[]` { `nyeri.nyeriMetode.{nyeriMetode,nyeriMetodeScore}` } dan `pemeriksaan.tandaVital.tingkatKesadaran` |
+| 9 | Telaah Resep | `QuestionnaireResponse` **Q0007** | clinical-term Kemkes | `telaahResep` (10 butir + `penanggungJawab`) |
+| 10 | MedicationDispense | `MedicationDispense` + contained `Medication` | **KFA** | `satusehat.medicationRequestItems[]` (peta resep→penyerahan) |
+| 11 | Penunjang Lab | `ServiceRequest` → `Specimen` → `Observation`(laboratory) → `DiagnosticReport` | **LOINC** | DB: `sktxn_rjlabs` + `sktxn_checkuphdrs/dtls` + `skmst_clabitems` |
+| 12 | Penunjang Radiologi | `ServiceRequest` → `Observation`(imaging) → `DiagnosticReport` | **LOINC** | DB: `sktxn_rjrads` + `skmst_radiologis` |
+
+Rincian kartu 6–9 (kunci node, jebakan, apa yang sengaja TIDAK dikirim): **§5.4**.
+Rincian kartu 5 (racikan), 10, 11 & 12: **§5.5**.
+
+Kartu 11 & 12 membaca **DB langsung, bukan JSON EMR** — hasil lab & radiologi memang tidak
+pernah ditulis ke `datadaftarpolirj_json`.
 
 **Encounter adalah akar.** Semua kartu lain di-gate `:disabled="!$hasEncounter"` dan
 mereferensikan `Encounter/{id}`, `Patient/{id}`, `Practitioner/{id}`.
@@ -147,34 +174,212 @@ berikutnya; tanpa balasan wajib itu rantai menggantung diam-diam pada langkah pe
 gagal dan petugas cuma melihat modal membeku.
 
 Nama langkah yang dibalas: `encounter`, `condition`, `observation`, `procedure`,
-`medication-request`, `encounter-selesai`.
+`medication-request`, `chief-complaint`, `allergy`, `nyeri-kesadaran`, `telaah-resep`,
+`medication-dispense`, `lab`, `radiologi`, `encounter-selesai`.
+
+`medication-dispense` **wajib sesudah** `medication-request` (ia merujuk
+`MedicationRequest` yang sudah terbit). `lab` & `radiologi` bebas urutannya asal sesudah
+`encounter`.
+
+Event pemicunya `ss-<nama langkah>-rj.kirim` (payload `rjNo`), dan tag komponennya
+`<livewire:pages::transaksi.rj.satu-sehat.kirim-<nama langkah> :rjNo="$rjNo" />`
+(berkasnya `⚡kirim-<nama langkah>.blade.php`), kecuali `encounter-selesai` yang
+memakai kartu Encounter dengan parameter `bagian="selesai"`.
 
 Kartu Encounter juga sudah menerima parameter `bagian` (`'kirim'` | `'selesai'` | `'semua'`,
 default `'semua'`) supaya kartu "Selesaikan Encounter" bisa dipindah ke urutan paling bawah
 tanpa memecah logikanya ke berkas lain.
 
-### 5.3 Rencana potongan C — kartu baru
+### 5.3 Potongan C — status prasyarat
 
-| Kartu | Resource | Prasyarat yang BELUM terpenuhi |
+| Kartu | Prasyarat | Status |
 |---|---|---|
-| Chief Complaint | `Condition` / `problem-list-item`, SNOMED | LOV SNOMED keluhan utama + kolom penyimpan kodenya di JSON EMR |
-| Allergy | `AllergyIntolerance`, SNOMED | kode SNOMED alergi + padanan `category` (food/environment/medication); trait sudah siap |
-| MedicationDispense | `MedicationDispense`, KFA | sama seperti MedicationRequest: kolom KFA di master obat (C4) |
-| Lab | `ServiceRequest` → `Observation(laboratory)` → `DiagnosticReport` | pemetaan LOINC per pemeriksaan lab + IHS petugas lab |
+| MedicationRequest (racikan) | pemetaan bahan racikan → KFA | ✅ `App\Support\Terminologi\RacikanKfa` (§5.5) |
+| MedicationDispense | kolom KFA di master obat | ⏳ kode & UI siap, **SQL belum dijalankan** (§5.5) |
+| Lab | LOINC per pemeriksaan + performer penunjang | ✅ `skmst_clabitems.loinc_code` terisi 108/152; performer lihat §5.6 |
+| Radiologi | LOINC per pemeriksaan | ✅ `skmst_radiologis.loinc_code` terisi 127/136 (dari `install_bundle_satusehat.sql`) |
 
-**C4 — kolom KFA di master obat (prasyarat paling menghambat).**
-`skmst_products` **belum punya kolom `product_id_satusehat`** (diperiksa ke
-`user_tab_columns`: PRODUCT_ID, PRODUCT_NAME, PRODUCT_TYPE, CAT_ID, UOM_ID, SUPP_ID,
-COST_PRICE, SALES_PRICE, MARGIN_PERSEN, LIMIT_STOCK, QTY_BOX, PRODUCT_RAK, ACTIVE_STATUS).
-Item e-resep siklik pun tidak punya key `kfaCode` — jadi selama kolom itu belum dibuat &
-diisi, **tidak ada satu obat pun yang bisa dikirim**. Kartu MedicationRequest melaporkannya
-apa adanya ("0 item punya KFA" + sebab), bukan pura-pura siap; begitu kolomnya ada, kartu
-langsung jalan tanpa perubahan kode.
+**Kolom KFA di master obat — satu-satunya penghalang yang tersisa.**
+`skmst_products` **belum punya `product_id_satusehat` / `product_name_satusehat`**
+(diperiksa ke `user_tab_columns` 11/09/2026). Item e-resep siklik pun tidak punya key
+`kfaCode`, jadi selama kolom itu belum dibuat & diisi **tidak ada satu obat pun yang bisa
+dikirim** — non-racikan maupun racikan. Kartu melaporkannya apa adanya ("0 obat ber-KFA" +
+sebabnya), bukan pura-pura siap; begitu kolomnya ada, kartu langsung jalan tanpa perubahan
+kode. SQL-nya: `database/sql/2026_09_11_alter_skmst_products_add_satusehat.sql`.
 
-**Racikan** (`eresepRacikan[]`) belum didukung: campurannya tak punya KFA tunggal, yang
-ber-KFA adalah tiap bahannya. Trait `MedicationRequestTrait`/`MedicationDispenseTrait`
-sudah menerima `ingredient[]` dan `medicationType` `SD`/Compound, tapi pemetaan bahan →
-KFA-nya belum ada di siklik. Jumlah racikan dilaporkan di kartu supaya tidak hilang senyap.
+### 5.4 Kartu potongan C-a — kunci node, sumber data, jebakan
+
+Empat kartu diport dari sirus-php82 lalu **diadaptasi ke key siklik yang sudah
+diverifikasi ke data nyata** (24.001 baris `sktxn_rjhdrs`, diperiksa 11/09/2026).
+Menyalin kartu sirus apa adanya akan gagal senyap — beda key-nya bukan kosmetik.
+
+| Kartu | Node hasil di `satusehat` | Langkah | Event |
+|---|---|---|---|
+| Chief Complaint | `chiefComplaintId` (skalar) | `chief-complaint` | `ss-chief-complaint-rj.kirim` |
+| Allergy | `allergyId` (skalar) | `allergy` | `ss-allergy-rj.kirim` |
+| Nyeri & Kesadaran | `nyeriKesadaranObservationIds[]` | `nyeri-kesadaran` | `ss-nyeri-kesadaran-rj.kirim` |
+| Telaah Resep | `telaahResepQuestionnaireId` (skalar) | `telaah-resep` | `ss-telaah-resep-rj.kirim` |
+
+**Chief Complaint.** `anamnesa.keluhanUtama.snomedCode` diisi LOV SNOMED
+(`lov.selected.keluhanUtamaSnomed`). Per 11/09/2026 **belum ada satu pun record
+ber-`snomedCode`** di basis data — LOV-nya baru. Kartu karena itu menyatakan sebabnya
+di muka, bukan menunggu tombol ditekan. Kode TIDAK pernah diturunkan dari teks bebas.
+
+**Allergy.** `category` **WAJIB** juga untuk "tidak ada alergi" (RuleNumber 10075);
+`type` & `criticality` justru harus DIHILANGKAN di situ. Pemetaannya di
+`App\Support\Terminologi\AlergiSnomed`. Beda dari sirus: siklik **tidak punya key
+`adaAlergi`**, jadi keadaan "tidak ada alergi" hanya dikenali dari kodenya —
+`AlergiSnomed::normalisasi()` milik sirus sengaja tidak diport.
+
+**Nyeri & Kesadaran.** Dua jebakan yang masing-masing membuat kartu salah kirim:
+
+1. Kesadaran ada di `pemeriksaan.tandaVital.tingkatKesadaran`, **bukan**
+   `screening.kesadaran` (node itu tidak ada di siklik), dan isinya **kode BPJS PCare**
+   `kdSadar` — 200/200 kunjungan terbaru memakai `'01'` (Compos mentis), bukan teks AVPU
+   yang masih terdaftar di `tingkatKesadaranOptions` form perawat. `NyeriKesadaranObservationMap`
+   menerjemahkan kodenya ke teks dan mengirimnya sebagai `valueCodeableConcept` **tanpa
+   `coding`** — sah di FHIR, dan jauh lebih jujur daripada mengarang kode.
+2. `penilaian.nyeri` di data nyata **selalu bentuk LAMA** (satu entri assoc, `nyeriMetode`
+   berupa STRING, skor di `skalaNyeri` atau `vas.vas`); 0 record memakai `nyeriMetodeScore`
+   yang ditulis form baru. Semua pembacaan wajib lewat `NyeriOptions::daftarEntri()`.
+
+Skala yang **punya** kode resmi hanya **NRS** (SNOMED `1172399009`, `valueInteger`) dan
+**NIPS** (LOINC `98012-8`, `valueQuantity {score}`). **VAS, FLACC, BPS dilewati** — dan
+jumlahnya disebut di kartu & toast. Catatan: contoh resmi "Observation - BPS" display-nya
+justru Wong-Baker FACES (skala anak), instrumen yang berbeda sama sekali dari Behavioral
+Pain Scale di dropdown siklik, jadi BPS siklik sengaja **tidak** dipetakan ke sana.
+
+**Telaah Resep (Q0007).** Telaah siklik hanya **10 butir**, sirus 15. Lima pertanyaan
+Q0007 tidak punya sumber data di siklik (`1.2` identitas & paraf dokter, `1.3` tanggal
+resep, `1.4` ruangan asal resep, `2.3` stabilitas obat, `3.1` ketepatan indikasi) dan
+**sengaja tidak dikirim — bukan dijawab "Sesuai"**: mengarang jawaban atas pertanyaan yang
+tak pernah diajukan ke apoteker lalu menuliskannya ke rekam medis nasional jauh lebih buruk
+daripada kuesioner yang tidak lengkap. Sebaliknya butir siklik `kejelasanTulisanResep`
+tidak punya linkId Q0007 dan ikut tidak terkirim; kartu menyebutkan keduanya.
+
+Yang dikirim: `1.1`←`bbPasienAnak`, `2.1`←`tepatObat`, `2.2`←`tepatDosis`,
+`2.4`←`tepatRute`+`tepatWaktu` (keduanya harus 'Ya'), `3.2`←`duplikasi`,
+`3.3`←`alergi`, `3.4`←`kontraIndikasiLain`, `3.5`←`interaksiObat`, dan `4` (reference
+MedicationRequest) hanya bila resepnya sudah terbit di SATUSEHAT. Bentuk bersarangnya
+mengikuti contoh resmi: grup `2`, grup `3`, dan butir `4` berada **di DALAM** grup `1`.
+
+Dua penghalang kirim yang disengaja:
+- **Kode "Tidak Sesuai" belum ada.** Koleksi Postman resmi cuma memuat `OV000052`
+  ("Sesuai"); `Coding` tak punya field `text` sehingga tak bisa diakali. Selama
+  `TelaahResepQ0007::TIDAK_SESUAI` masih `null`, telaah yang memuat jawaban "Tidak" pada
+  butir ber-`valueCoding` **ditolak kirim** beserta sebutan butirnya. Melewatinya berarti
+  telaah bermasalah terkirim tanpa masalahnya.
+- **Butir kosong ditolak** (`butirBelumDijawab()`) — kalau lolos, ia terkirim sebagai
+  "Sesuai"/"tidak ada masalah" yang tak pernah dinyatakan siapa pun.
+
+`penanggungJawab.userLogCode` di siklik adalah `users.myuser_code`, sedangkan satu-satunya
+pemetaan ke `Practitioner` IHS adalah `skmst_doctors.dr_uuid` — apoteker praktis tak pernah
+ada di sana, jadi `author` hampir selalu kosong. Kuesioner tetap dikirim tanpa `author`
+(elemen objek kosong justru ditolak validator) dan kekurangan itu disebut di toast.
+
+### 5.5 Kartu potongan C-b — obat (KFA, racikan, penyerahan)
+
+| Kartu | Node hasil di `satusehat` | Langkah | Event | Tag Livewire |
+|---|---|---|---|---|
+| MedicationRequest | `medicationRequestIds[]` + `medicationRequestItems[]` | `medication-request` | `ss-medication-request-rj.kirim` | `pages::transaksi.rj.satu-sehat.kirim-medication-request` |
+| MedicationDispense | `medicationDispenseIds[]` | `medication-dispense` | `ss-medication-dispense-rj.kirim` | `pages::transaksi.rj.satu-sehat.kirim-medication-dispense` |
+
+**KFA datang dari master obat, bukan dari JSON.** `skmst_products.product_id_satusehat`
+(kode) + `product_name_satusehat` (display). Diisi manual dari Kamus Farmasi & Alkes
+Kemenkes lewat **Master Produk Apotek → SATUSEHAT — Kode KFA**; belum ada pencarian KFA
+otomatis (sirus pun tidak punya — inputnya manual juga di sana). Kolom yang kosong bukan
+kegagalan senyap: daftar master menandai baris "KFA belum diisi", kartu menghitungnya,
+toast menyebutkannya.
+
+Kolom itu datang dari **SQL manual**, bukan migration, jadi ada jendela waktu ketika kode
+sudah terpasang tapi kolomnya belum ada. `App\Support\KolomSatuSehat` menjawab
+"kolomnya ada?" sekali per request (`user_tab_columns`, di-cache) dan **semua** pembaca
+lewat situ — tanpa itu halaman Master Obat dan kartu kirim mati ORA-00904 sebelum sempat
+melapor. Pola yang sama dipakai untuk `skmst_radiologis.loinc_code`.
+
+**Racikan = compound, KFA ada di BAHANNYA.** Baris `eresepRacikan[]` siklik **tidak punya
+`productId` sama sekali** (probe 11/09/2026, RJ 23977 dkk — hanya `productName`, `dosis`,
+`qty`, `noRacikan`). `App\Support\Terminologi\RacikanKfa` karena itu memetakan lewat dua
+jalur: `productId` bila ada, kalau tidak **nama** yang cocok **tepat satu** produk ber-KFA.
+Nama kembar DITOLAK, bukan diambil yang pertama — menebak berarti salah obat. Grup yang
+tak lolos dilaporkan beserta nama bahan yang gagal.
+
+Untuk compound, `medicationCode` dikirim **kosong** sehingga `contained.Medication.code`
+berisi `text` saja (tanpa `coding`), dan `ingredient[]` (`RacikanKfa::fhirIngredient()`)
+yang membawa kode KFA per bahan; `medicationType` = `SD`/Compound. `strength` sengaja
+tidak diisi: dosis racikan siklik teks bebas ("1/2", "3", "sesuai bb") — menebak angkanya
+berisiko salah takar.
+
+**`medicationRequestItems[]` adalah peta resep→penyerahan**, ditulis saat
+MedicationRequest dikirim: `{id, jenis(nonRacikan|racikan), kunci(productId|noRacikan),
+kode, display, qty}`. Tanpa peta ini MedicationDispense harus menebak pasangannya lewat
+urutan daftar — geser satu item, obat tertaut ke resep yang salah.
+`App\Support\Terminologi\MedicationRequestItem::ambil()` memulihkan kunjungan lama dari
+urutan pengiriman (non-racikan dulu, lalu racikan yang siap) dan **menolak** bila
+jumlahnya tak cocok; dispense lalu membatalkan diri, bukan memasangkan sembarangan.
+
+`whenPrepared`/`whenHandedOver` = `taskIdPelayanan.taskId7` (obat diserahkan), jatuh ke
+`now()` bila kosong — sama seperti waktu selesai Encounter (§8). `performer` memakai IHS
+dokter karena apoteker belum punya pemetaan ke `Practitioner`. Satuan quantity memakai
+`v3-orderableDrugForm`; CodeSystem `kfa-satuan` DITOLAK (RuleNumber 10050).
+
+### 5.6 Kartu potongan C-b — penunjang per-order & indeks kirim ulang
+
+| Kartu | Node hasil di `satusehat` | Langkah | Event | Tag Livewire |
+|---|---|---|---|---|
+| Lab | `labServiceRequestIds[]`, `labSpecimenIds[]`, `labObservationIds[]`, `labDiagnosticReportIds[]`, `labKirim{}` | `lab` | `ss-lab-rj.kirim` | `pages::transaksi.rj.satu-sehat.kirim-lab` |
+| Radiologi | `radServiceRequestIds[]`, `radObservationIds[]`, `radDiagnosticReportIds[]`, `radKirim{}` | `radiologi` | `ss-radiologi-rj.kirim` | `pages::transaksi.rj.satu-sehat.kirim-radiologi` |
+
+**Indeks per-order (`labKirim` / `radKirim`) di samping array datar.**
+Array datar saja tidak cukup: begitu satu order gagal di tengah (SR terbentuk, DR belum),
+tak ada cara tahu order mana yang bolong — kiriman ulang lalu mem-POST SR dengan
+identifier yang sama dan **macet permanen** di penolakan duplikat (RuleNumber 20002).
+`App\Http\Traits\SATUSEHAT\PenunjangKirimTrait` menyimpan `{kunciOrder: {sr, sp, obs, dr}}`
+memakai identifier stabil tiap order (lab `{rjNo}-{checkupNo}`, radiologi
+`rad-{rjNo}-{radDtl}`). Array datar TETAP ditulis apa adanya — hitungan kartu dan pembaca
+lain (termasuk yang mencocokkan string mentah ke CLOB) bergantung padanya.
+
+Record lama yang belum punya indeks dipulihkan sekali lewat pencarian identifier ke
+SATUSEHAT (`cariIdLewatIdentifier`). Identifier DiagnosticReport **dicoba dua bentuk**:
+`…/diagnostic/{org}/lab` (atau `/rad`) dan bentuk lama `…/diagnostic/{org}` tanpa akhiran —
+sebelum RuleNumber 10432 identifier-nya tanpa akhiran, dan tanpa percobaan kedua DR lama
+tak ketemu lalu dibuatkan DR KEDUA.
+
+**`DiagnosticReport.result` wajib** (RuleNumber 10385), tapi `Observation` **tidak punya
+identifier** sehingga tak bisa dipulihkan maupun ditolak duplikat oleh server. Karena itu
+Observation dibuat **DI DALAM** cabang pembuatan DR di kedua kartu: kalau dibuat di luar,
+order yang laporannya sudah ada akan ditinggali observasi yatim tiap tombol Kirim ditekan.
+Lab yang tak punya satu pun Observation berhasil **tidak** mengirim DR sama sekali.
+
+**Sumber lab.** Relasi rj→checkup ada di DUA tempat dan keduanya dipakai:
+`sktxn_rjlabs(rj_no → checkup_no)` dan `sktxn_checkuphdrs.ref_no`; record lama kadang hanya
+punya salah satunya, dan paket yang terlewat berarti hasil lab tak pernah terkirim. Paket
+diambil bila `status_rjri = 'RJ'` dan `checkup_status <> 'P'` (P = masih proses). Item dari
+`sktxn_checkupdtls` × `skmst_clabitems`, melewati baris judul grup (`is_group = 'Y'`) dan
+item tersembunyi (`hidden_status = 'Y'`). Hasil numerik → `valueQuantity` (+ UCUM dari
+`unit_desc`), selain itu `valueString`. Item **tanpa `loinc_code` dilewati dan dihitung** —
+isinya di Master Lab. Panel SR/DR memakai LOINC generik `26436-6`; Specimen = darah
+(SNOMED `119297000`), metode venipuncture (`129300006`).
+
+**Sumber radiologi.** `sktxn_rjrads` (`rad_dtl`, `rad_id`, `rad_result`, `dr_radiologi`,
+`waktu_entry`) ← `skmst_radiologis` (`loinc_code`, `loinc_display`). **TANPA
+ImagingStudy/Orthanc** — siklik klinik pratama tidak punya PACS, dan bagian itu sengaja
+tidak diport dari sirus. Hasil bacaan diwakili satu Observation ringkas (`category` =
+`imaging`, `valueString` = `rad_result` atau "Lihat hasil pada lampiran radiologi") supaya
+`DiagnosticReport.result` terisi. Master yang belum dipetakan jatuh ke LOINC generik
+**`18748-4`** — sah di mata validator tapi semua pemeriksaan jadi tak bisa dibedakan, jadi
+jumlahnya disebut di toast dan ditandai di daftar Master Radiologi.
+
+**`ServiceRequest.performer` wajib** (RuleNumber 10377) dan menurut koleksi Postman resmi
+isinya praktisi yang MENGERJAKAN pemeriksaan. siklik **tidak punya poli Laboratorium /
+Radiologi** (`skmst_polis` cuma POLI UMUM & POLI GIGI), jadi konvensi sirus "dokter aktif
+pada poli unit itu" tidak bisa diport. `App\Support\PenanggungJawabPenunjang` mencoba
+berurutan: `dr_id` yang tercatat pada order (lab: `sktxn_checkuphdrs.dr_id`) →
+`config('satusehat.pj_lab_dr_id')` / `pj_radiologi_dr_id` (env `SATUSEHAT_PJ_LAB_DR_ID`,
+`SATUSEHAT_PJ_RADIOLOGI_DR_ID`) → **nama** teks bebas (`sktxn_rjrads.dr_radiologi`) yang
+cocok **tepat satu** dokter aktif ber-IHS. Gagal semua → array kosong, dan
+`ServiceRequestTrait` memakai dokter pengirim sebagai pengganti: kiriman jalan, nilainya
+saja yang belum akurat.
 
 ---
 
@@ -292,6 +497,9 @@ mewarisi bug yang sama dan sudah dibetulkan:
 | Observation | `pemeriksaanFisik` / `tandaVital` di akar; `sistole`/`diastole`/`nadi`/`rr` | `pemeriksaan.tandaVital`; `sistolik`/`distolik`/`frekuensiNadi`/`suhu`/`frekuensiNafas`/`spo2` |
 | Procedure | `tindakanList`/`tindakan`, key `kodeIcd9`/`descIcd9` | `procedure[]`, key `procedureId` (ICD-9-CM) + `procedureDesc` |
 | MedicationRequest | `kfaCode` / `product_id_satusehat` di item e-resep | lookup master obat lewat `productId` (kolom KFA belum ada — §5.3) |
+| Nyeri & Kesadaran | `screening.kesadaran` (node sirus, tak ada di siklik) | `pemeriksaan.tandaVital.tingkatKesadaran` — isinya **kode BPJS** `kdSadar` |
+| Nyeri (skor) | `nyeri.nyeriMetode.nyeriMetodeScore` langsung | selalu lewat `NyeriOptions::daftarEntri()`; data nyata masih bentuk lama (`nyeriMetode` string + `skalaNyeri`/`vas.vas`) |
+| Telaah Resep | 15 butir telaah sirus | `telaahResep` hanya **10 butir**; 5 pertanyaan Q0007 tidak dikirim (§5.4) |
 
 Acuan peta key yang benar: `app/Http/Traits/Txn/Rj/EmrCompletenessRJTrait.php` (dipakai
 untuk menghitung kelengkapan EMR, jadi key-nya pasti yang benar-benar ditulis EMR).
@@ -315,8 +523,12 @@ Sekali saja, tapi wajib.
    perubahan env, bukan kode.
 2. **`web_log_status` tanpa kolom `http_payload`** (§3) — tambahkan kolom itu agar payload
    yang dikirim ikut tercatat, lalu lengkapi `logSatuSehat()`.
-3. **Kolom KFA di `skmst_products`** (§5.3 C4) — penghalang tunggal MedicationRequest &
-   MedicationDispense.
+3. **Kolom KFA di `skmst_products` belum dibuat** (§5.3, §5.5) — penghalang tunggal
+   MedicationRequest & MedicationDispense, non-racikan maupun racikan. Jalankan
+   `database/sql/2026_09_11_alter_skmst_products_add_satusehat.sql`, lalu isi kodenya
+   lewat Master Produk Apotek. Sesudah kolomnya ada, pemetaan bahan racikan lewat NAMA
+   (§5.5) perlu **diverifikasi ulang ke data nyata**: probe 11/09/2026 menemukan keempat
+   nama bahan RJ 23977 cocok tepat satu produk, tapi itu baru satu kunjungan.
 4. **Timeout 10 detik tanpa `connectTimeout()`/`retry()`** — samakan dengan pola BPJS
    (`timeout(8)->connectTimeout(3)`) supaya server SATUSEHAT yang lambat tidak membekukan
    layar.
@@ -334,6 +546,50 @@ Sekali saja, tapi wajib.
 9. **`taskId5`/`taskId7` belum pernah terisi** pada 1.500 kunjungan terakhir (hanya
    `taskId3` dan `taskId99`) — kartu Finish akan jatuh ke `now()` sampai alur task antrean
    poli/apotek benar-benar dipakai.
+10. **`snomedCode` masih kosong di SELURUH basis data** (0 dari 24.001 kunjungan, per
+    11/09/2026) — LOV SNOMED keluhan utama & alergi baru dipasang. Kartu Chief Complaint
+    dan Allergy akan selalu menolak sampai petugas mulai memilih kodenya.
+11. **Kode "Tidak Sesuai" Q0007 belum diketahui** (§5.4) — telaah yang memuat jawaban
+    "Tidak" pada butir ber-`valueCoding` belum bisa dikirim. Begitu kodenya didapat dari
+    Lampiran Terminologi SATUSEHAT, cukup isi konstanta `TelaahResepQ0007::TIDAK_SESUAI`.
+12. **Lima pertanyaan Q0007 tak punya sumber data** (§5.4). Kalau validator Kemkes ternyata
+    mewajibkan seluruh linkId, pilihannya adalah **menambah butirnya ke form Telaah Resep**
+    — bukan mengisinya dengan jawaban karangan.
+13. **Padanan SNOMED tingkat kesadaran belum ada** untuk keempat kode BPJS (Compos mentis /
+    Somnolence / Sopor / Coma); sementara ini dikirim sebagai teks. Isi `'code'` di
+    `NyeriKesadaranObservationMap::KESADARAN` begitu padanan resminya terbit.
+14. **VAS, FLACC, BPS belum punya kode Observation resmi** — entri nyeri yang memakainya
+    tidak ikut terkirim (dilaporkan di kartu, bukan disembunyikan).
+15. **IHS apoteker belum ada pemetaannya** — `telaahResep.penanggungJawab.userLogCode` =
+    `users.myuser_code`, sedangkan Practitioner hanya bisa diresolusi dari
+    `skmst_doctors.dr_uuid`. QuestionnaireResponse karena itu terkirim tanpa `author`,
+    dan `MedicationDispense.performer` memakai IHS DOKTER, bukan apoteker.
+16. **Kartu 10–12 belum disambung ke "Kirim Semua"** — `medication-dispense`, `lab`,
+    `radiologi` (§5.5, §5.6) belum ada di `URUTAN_KIRIM` maupun grid
+    `⚡satu-sehat-rj-actions.blade.php`. Tombol per kartu sudah berfungsi.
+17. **Petugas penunjang belum punya IHS** (§5.6) — `ServiceRequest.performer` lab &
+    radiologi praktis selalu jatuh ke dokter pengirim. Isi `SATUSEHAT_PJ_LAB_DR_ID` /
+    `SATUSEHAT_PJ_RADIOLOGI_DR_ID` bila ada dokter penanggung jawab ber-`dr_uuid`, atau
+    buat master penunjukan PJ sungguhan (lalu ubah `PenanggungJawabPenunjang` saja).
+18. **LOINC lab belum lengkap**: `skmst_clabitems.loinc_code` terisi 108/152 baris,
+    `skmst_radiologis.loinc_code` 127/136 (11/09/2026). Item lab tanpa LOINC **dilewati**
+    (hasilnya tak sampai ke SATUSEHAT); pemeriksaan radiologi tanpa LOINC tetap terkirim
+    tapi dengan kode generik `18748-4`. Keduanya dilaporkan di kartu, bukan disembunyikan.
+19. **Specimen lab selalu diasumsikan darah** (SNOMED `119297000`, venipuncture) — siklik
+    tak menyimpan jenis spesimen per paket. Urine/swab karena itu terkirim salah jenis;
+    butuh kolom jenis spesimen di master/transaksi lab.
+20. **Bentuk sediaan obat di-hardcode `BS066`/Tablet** pada MedicationRequest &
+    MedicationDispense (termasuk `quantity.code` `TAB`) — `skmst_uoms` belum dipetakan ke
+    CodeSystem `medication-form`. Sirup & injeksi karena itu terkirim sebagai tablet.
+21. **`serialize_precision = 100` di PHP server ini** → setiap `valueQuantity.value` **→ SELESAI 11 Sep 2026: `SatuSehatTrait::encodeJsonFhir()` (serialize_precision=-1) dipakai `makeRequest()` untuk semua body POST/PUT.**
+    bertipe float terkirim sebagai ekspansi biner 50 digit:
+    `10.4` menjadi `10.4000000000000003552713678800500929355621337890625`. Terlihat pada
+    hasil lab numerik (kartu Lab) **dan pada vital sign** (suhu `36.5`, dst. — kartu
+    Observation yang sudah jalan), jadi ini cacat transport lama, bukan bawaan kartu baru.
+    FHIR `decimal` membatasi 18 digit signifikan, jadi ada risiko nyata ditolak.
+    Perbaikannya di satu tempat: `SatuSehatTrait::makeRequest()` mengirim body yang
+    di-`json_encode` sendiri dengan `serialize_precision = -1` (atau set ini-nya di
+    `php.ini`/bootstrap). **Uji ke sandbox dulu** — ini menyentuh semua kartu sekaligus.
 
 ---
 

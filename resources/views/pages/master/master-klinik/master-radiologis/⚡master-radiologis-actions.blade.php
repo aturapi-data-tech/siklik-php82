@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Database\QueryException;
 use App\Http\Traits\WithRenderVersioning\WithRenderVersioningTrait;
+use App\Support\KolomSatuSehat;
 
 new class extends Component {
     use WithRenderVersioningTrait;
@@ -13,6 +14,19 @@ new class extends Component {
     public string $formMode = 'create'; // create|edit
     public array $renderVersions = [];
     protected array $renderAreas = ['modal'];
+
+    /**
+     * Kolom LOINC sudah ada di skmst_radiologis?
+     *
+     * Ditambahkan lewat SQL manual, bukan migration — sebelum SQL-nya dijalankan
+     * menyebutnya di SELECT/UPDATE berarti ORA-00904 dan modal mati total. Dengan
+     * penjaga ini bagian LOINC sekadar disembunyikan sampai kolomnya ada.
+     */
+    public bool $kolomLoincAda = false;
+
+    // SATUSEHAT — pemetaan LOINC pemeriksaan radiologi.
+    public ?string $loincCode = null;
+    public ?string $loincDisplay = null;
 
     // Primary Key
     public ?string $radId = null;
@@ -29,12 +43,14 @@ new class extends Component {
         public function mount(): void
     {
         $this->registerAreas(['modal']);
+        $this->kolomLoincAda = KolomSatuSehat::radiologiPunyaLoinc();
     }
 
     // ==================== OPEN CREATE MODAL ====================
     #[On('master.radiologis.openCreate')]
     public function openCreate(): void
     {
+        $this->kolomLoincAda = KolomSatuSehat::radiologiPunyaLoinc();
         $this->resetFormFields();
         $this->formMode = 'create';
         $this->resetValidation();
@@ -47,6 +63,8 @@ new class extends Component {
     #[On('master.radiologis.openEdit')]
     public function openEdit(string $radId): void
     {
+        $this->kolomLoincAda = KolomSatuSehat::radiologiPunyaLoinc();
+
         $row = DB::table('skmst_radiologis')->where('rad_id', $radId)->first();
         if (!$row) {
             $this->dispatch('toast', type: 'error', message: 'Data radiologis tidak ditemukan.');
@@ -72,7 +90,7 @@ new class extends Component {
     // ==================== RESET FORM FIELDS ====================
     protected function resetFormFields(): void
     {
-        $this->reset(['radId', 'radDesc', 'radPrice', 'radJd']);
+        $this->reset(['radId', 'radDesc', 'radPrice', 'radJd', 'loincCode', 'loincDisplay']);
         $this->activeStatus = '1'; // default aktif
         $this->resetVersion();
     }
@@ -85,6 +103,11 @@ new class extends Component {
         $this->radPrice = (string) ($row->rad_price ?? '0');
         $this->activeStatus = (string) ($row->active_status ?? '1');
         $this->radJd = $row->rad_jd;
+
+        if ($this->kolomLoincAda) {
+            $this->loincCode = $row->loinc_code;
+            $this->loincDisplay = $row->loinc_display;
+        }
     }
 
     // ==================== LOAD DROPDOWN OPTIONS ====================
@@ -105,6 +128,8 @@ new class extends Component {
             'radPrice' => ['required', 'numeric', 'min:0'],
             'activeStatus' => ['required', Rule::in(['0', '1'])],
             'radJd' => ['nullable', 'string', 'max:50'],
+            'loincCode' => ['nullable', 'string', 'max:20'],
+            'loincDisplay' => ['nullable', 'string', 'max:250'],
         ];
     }
 
@@ -139,6 +164,8 @@ new class extends Component {
             'radPrice' => 'Harga',
             'activeStatus' => 'Status Aktif',
             'radJd' => 'Jasa Dokter',
+            'loincCode' => 'Kode LOINC',
+            'loincDisplay' => 'Nama LOINC',
         ];
     }
 
@@ -153,6 +180,13 @@ new class extends Component {
             'active_status' => $data['activeStatus'],
             'rad_jd' => $data['radJd'],
         ];
+
+        // Kolom LOINC hanya ikut ditulis kalau memang sudah ada di tabel — menyertakannya
+        // sebelum SQL dijalankan berarti ORA-00904 dan data gagal disimpan sama sekali.
+        if ($this->kolomLoincAda) {
+            $payload['loinc_code'] = trim((string) $data['loincCode']) ?: null;
+            $payload['loinc_display'] = trim((string) $data['loincDisplay']) ?: null;
+        }
 
         try {
             if ($this->formMode === 'create') {
@@ -318,6 +352,41 @@ new class extends Component {
 
                             </div>
                         </div>
+                    </x-border-form>
+
+                    {{-- SATUSEHAT — pemetaan LOINC pemeriksaan --}}
+                    <x-border-form title="SATUSEHAT — Kode LOINC" class="mt-4">
+                        @if ($kolomLoincAda)
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div>
+                                    <x-input-label value="Kode LOINC" />
+                                    <x-text-input wire:model.live="loincCode" maxlength="20"
+                                        :error="$errors->has('loincCode')" class="w-full mt-1"
+                                        placeholder="36643-5" />
+                                    <x-input-error :messages="$errors->get('loincCode')" class="mt-1" />
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <x-input-label value="Nama LOINC (opsional)" />
+                                    <x-text-input wire:model.live="loincDisplay" maxlength="250"
+                                        :error="$errors->has('loincDisplay')" class="w-full mt-1"
+                                        placeholder="Chest X-ray" />
+                                    <x-input-error :messages="$errors->get('loincDisplay')" class="mt-1" />
+                                </div>
+                            </div>
+                            <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                                Dipakai kartu Kirim Satu Sehat (ServiceRequest, Observation &amp; DiagnosticReport).
+                                Kosong → pemeriksaan tetap terkirim, tapi dengan kode generik
+                                <span class="font-mono">18748-4</span> "Diagnostic imaging study" sehingga tak bisa
+                                dibedakan dari pemeriksaan lain. Nama LOINC kosong → dipakai Nama Tindakan.
+                            </p>
+                        @else
+                            <p class="text-xs text-amber-600 dark:text-amber-400">
+                                Kolom LOINC belum ada di <span class="font-mono">skmst_radiologis</span>.
+                                Jalankan <span class="font-mono">database/sql/2026_09_11_alter_skmst_radiologis_add_loinc.sql</span>
+                                (atau <span class="font-mono">install_bundle_satusehat.sql</span>, yang sekalian mengisi
+                                pemetaannya) lebih dulu.
+                            </p>
+                        @endif
                     </x-border-form>
                 </div>
             </div>

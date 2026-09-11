@@ -62,6 +62,18 @@ trait SatuSehatTrait
     /**
      * Make API Request to SatuSehat
      */
+    /** JSON FHIR: float dengan presisi terpendek yang bulat-balik (bukan ekspansi biner 50 digit). */
+    protected function encodeJsonFhir(array $data): string
+    {
+        $presisiLama = ini_get('serialize_precision');
+        ini_set('serialize_precision', '-1');
+        try {
+            return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        } finally {
+            ini_set('serialize_precision', (string) $presisiLama);
+        }
+    }
+
     protected function makeRequest($method, $endpoint, $data = [])
     {
 
@@ -81,10 +93,12 @@ trait SatuSehatTrait
             if (strtolower($method) === 'get') {
                 $response = $client->get($url);
             } else {
-                // Untuk POST/PUT/PATCH/DELETE: kirim $data sebagai JSON‐body
+                // Untuk POST/PUT/PATCH/DELETE: body di-encode SENDIRI dengan serialize_precision=-1.
+                // Bawaan server (serialize_precision=100) membuat float 10.4 terkirim sebagai 50 digit
+                // (10.40000000000000035527…) — FHIR decimal maksimal 18 digit signifikan → ditolak.
                 $response = $client
-                    ->withHeaders(['Content-Type' => 'application/json'])
-                    ->{$method}($url, $data);
+                    ->withBody($this->encodeJsonFhir($data), 'application/json')
+                    ->{$method}($url);
             }
         } catch (\Throwable $e) {
             // Network/timeout — tidak ada $response sama sekali, tapi panggilannya
