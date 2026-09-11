@@ -26,6 +26,10 @@ tab di hub `⚡modul-dokumen-rj.blade.php`. Blade cetak PDF di
 `resources/views/pages/components/modul-dokumen/rj/<dok>/`. Viewer rekam medis di
 `resources/views/pages/components/rekam-medis/rj/dokumen-view/`.
 
+Template General/Inform Consent dipecah ke `<dok>/partials/*.blade.php` (kartu-ringkas, modal-header,
+form-*, tabel-entri, modal-footer) yang di-`@include` dari komponen ⚡. Blok PHP tetap di ⚡; partial
+memakai properti komponen & `$this`. Variabel `@php` lokal TIDAK bocor antar-partial.
+
 ## Penyimpanan: satu CLOB, banyak node
 
 Semua isi dokumen menumpang di **satu kolom CLOB** `sktxn_rjhdrs.datadaftarpolirj_json`,

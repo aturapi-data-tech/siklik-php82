@@ -22,6 +22,7 @@ Dokumen ini punya dua lapis:
 | # | Berkas | Isi |
 |---|---|---|
 | 1 | `…/modul-dokumen/<dok>/⚡rm-<dok>-rj-actions.blade.php` | komponen Volt: kartu ringkas + modal (formulir, daftar entri, siklus, cetak) |
+| 1b | `…/modul-dokumen/<dok>/partials/{kartu-ringkas,modal-header,form-*,tabel-entri,modal-footer}.blade.php` | potongan template yang di-`@include` dari #1 (12 Sep 2026). Blok PHP & `<x-modal>` tetap di #1; partial memakai properti komponen + `$this` apa adanya. **Variabel `@php` lokal tidak bocor antar-partial** — hitung ulang di partial yang memakainya |
 | 2 | `…/pages/components/modul-dokumen/rj/<dok>/⚡cetak-<dok>-rj.blade.php` + `…-print.blade.php` | pemicu cetak (DomPDF) + blade cetaknya |
 | 3 | `…/modul-dokumen/⚡modul-dokumen-rj.blade.php` | daftarkan **tab + panel** `<livewire:… :rjNo :disabled wire:key>` + **badge "ada data"** (§6) |
 
@@ -278,12 +279,10 @@ Tiga modul RJ sudah diselaraskan ke §3–§6, dan modul multi-entri sudah dua l
 
 ### Backlog (sengaja belum dikerjakan)
 
-1. **Ukuran berkas > 400 baris** (General Consent 890, Inform Consent 1316). Belum dipecah —
-   pemecahan komponen Volt SFC berisiko dan tidak diminta sekarang.
-2. **Kelola User menyimpan TTD ke folder `ttd/`**, sedangkan data nyata di kolom
+1. **Kelola User menyimpan TTD ke folder `ttd/`**, sedangkan data nyata di kolom
    `myuser_ttd_image` memakai `UserTtd/…`. Keduanya terbaca (`TtdUser` menangani nilai
    ber-slash apa pun), tapi dua folder untuk satu keperluan sebaiknya disatukan.
-3. **Isi modal hub Modul Dokumen sudah lazy** (`@if ($rjNo)` di `⚡modul-dokumen-rj`, anak memuat
+2. **Isi modal hub Modul Dokumen sudah lazy** (`@if ($rjNo)` di `⚡modul-dokumen-rj`, anak memuat
    dari prop di `mount()`), tetapi tiga tab di dalamnya masih Alpine `x-show` (semua anak mounted
    saat modal terbuka) — sengaja, karena komponen dokumen ringan (lihat `docs/standar-ui-komponen.md` §1b).
 
