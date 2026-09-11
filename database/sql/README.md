@@ -14,7 +14,7 @@ section pakai existence check sebelum DDL.
 Dibuat `php artisan siklik:audit-skema` (laporan `docs/audit-skema.md`). Isi: `01_fk_implisit.sql` (FK untuk kolom yang
 selama ini hanya relasi implisit + index kolom FK), `02_drop_objek_invalid.sql` (+ `_backup_objek_invalid.sql`),
 `03_drop_sequence_tak_terpakai.sql`, `99_rollback.sql`. Jalankan lewat SQL*Plus berurutan setelah backup; di Oracle dev
-01 & 02 sudah dijalankan 11 Sep 2026, 03 belum. Setelah eksekusi: `php artisan siklik:dok-tabel` + regenerasi dump `_dev/`.
+01, 02 & 03 sudah dijalankan 11 Sep 2026. Setelah eksekusi: `php artisan siklik:dok-tabel` + regenerasi dump `_dev/`.
 
 ## 🔤 Prefix tabel `SK` (sejak 11 Sep 2026)
 

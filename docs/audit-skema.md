@@ -5,8 +5,8 @@ Dibuat otomatis `php artisan siklik:audit-skema` pada 11/09/2026 08:42 dari DB y
 > **Status eksekusi (Oracle dev 127.0.0.1/orcl, 11 Sep 2026):** `01_fk_implisit.sql` ✅ (39 FK: 36 VALIDATE + 3 NOVALIDATE, 42 index),
 > `02_drop_objek_invalid.sql` ✅ (27 objek PL/SQL warisan bridging RS/APEX di-drop; backup DDL di `_backup_objek_invalid.sql`;
 > 4 objek lain pulih hanya dengan COMPILE — ADD_NUMBERS, ORACLE_TERBILANG, TK_BACKUP_DB, trigger USERS_ID_TRG),
-> `03_drop_sequence_tak_terpakai.sql` ⏳ **belum dijalankan** — eksekusi manual lewat SQL*Plus setelah ditinjau (43 sequence, semua
-> belum pernah dipakai atau sisa skema contoh DEMO_; rollback CREATE ulang ada di `99_rollback.sql`).
+> `03_drop_sequence_tak_terpakai.sql` ✅ (43 sequence yang belum pernah dipakai / sisa skema contoh DEMO_ di-drop setelah ditinjau;
+> rollback CREATE ulang ada di `99_rollback.sql`; tersisa 21 sequence).
 > Laporan di bawah adalah keadaan SEBELUM eksekusi. Jalankan ulang `php artisan siklik:audit-skema` untuk keadaan terkini.
 
 ## 1. Relasi implisit → FK
