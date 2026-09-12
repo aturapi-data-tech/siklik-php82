@@ -16,6 +16,16 @@ selama ini hanya relasi implisit + index kolom FK), `02_drop_objek_invalid.sql` 
 `03_drop_sequence_tak_terpakai.sql`, `99_rollback.sql`. Jalankan lewat SQL*Plus berurutan setelah backup; di Oracle dev
 01, 02 & 03 sudah dijalankan 11 Sep 2026. Setelah eksekusi: `php artisan siklik:dok-tabel` + regenerasi dump `_dev/`.
 
+## 🏗️ DDL CREATE lengkap schema (`create-siklik/`)
+
+Dibuat `php artisan siklik:ddl-create` (opsi `--tanpa-sistem` melewati tabel Laravel/Spatie) dari data dictionary
+DB yang terhubung. Isi: `01_tabel.sql` (CREATE TABLE + PK/UK/CHECK + COMMENT), `02_fk.sql` (semua FK antar tabel),
+`03_index.sql` (index lepas + index fungsi), `04_sequence_trigger.sql`, `05_plsql.sql` (type/function/procedure/package),
+`06_view.sql` (urut ketergantungan, FORCE), `siklik_ddl_lengkap.sql` (gabungan 01–06 untuk schema kosong), `99_drop_semua.sql` (membatalkan instalasi — hapus
+tabel + data, hanya schema uji). Jalankan lewat SQL*Plus (`echo exit | sqlplus -S user/pw@host/orcl @siklik_ddl_lengkap.sql`) karena trigger/PL/SQL/view memakai terminator `/`.
+Detail & catatan (PK dgn index bernama lain, view INVALID, storage clause) di `create-siklik/README.md`.
+Generate ulang setiap kali skema berubah, idealnya terhadap DB produksi supaya objek fitur lanjutan ikut.
+
 ## 🔤 Prefix tabel `SK` (sejak 11 Sep 2026)
 
 Semua tabel/view bisnis kini berprefix `SKMST_ / SKTXN_ / SKACC_ / SKVIEW_` (huruf modul lama
