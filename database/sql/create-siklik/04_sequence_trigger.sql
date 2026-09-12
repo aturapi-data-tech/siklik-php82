@@ -1,0 +1,102 @@
+-- ============================================================
+-- LANGKAH 4 — Sequence & trigger
+-- Dibuat  : php artisan siklik:ddl-create  (2026-09-12 10:09)
+-- Sumber  : data dictionary schema yang terhubung saat generate
+-- START WITH mengikuti nilai terakhir di DB sumber saat generate; sesuaikan bila memuat data lama.
+-- ============================================================
+SET DEFINE OFF
+SET SQLBLANKLINES ON
+SET ECHO ON
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+
+-- Sequence (21)
+CREATE SEQUENCE AB1_SEQ START WITH 21 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE CASHOUTNON_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE CASHOUT_SEQ START WITH 61 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE CODTLNON_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE CODTL_SEQ START WITH 81 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE DEMO_PROD_SEQ START WITH 187282 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE FAILED_JOBS_ID_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE JOBS_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE MIGRATIONS_ID_SEQ START WITH 21 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE PERMISSIONS_ID_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE PERSONAL_ACCESS_TOKENS_ID_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE PRODUCTNON_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE RCVDTLNON_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE RCVDTL_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE RCVPNON_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE RCVP_SEQ START WITH 40 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE NOCACHE NOCYCLE NOORDER;
+CREATE SEQUENCE RJCDTL_SEQ START WITH 86860 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE ROLES_ID_SEQ START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE RR2_SEQ_1 START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE SLSDTL_SEQ START WITH 3078 INCREMENT BY 1 MINVALUE 0 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+CREATE SEQUENCE USERS_ID_SEQ START WITH 161 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE CACHE 20 NOCYCLE NOORDER;
+
+-- Trigger (8) — terminator "/" karena badan PL/SQL
+
+CREATE OR REPLACE TRIGGER failed_jobs_id_trg before insert on FAILED_JOBS for each row
+begin
+            if :new.ID is null then
+                select failed_jobs_id_seq.nextval into :new.ID from dual;
+            end if;
+            end;
+/
+
+CREATE OR REPLACE TRIGGER jobs_bi BEFORE INSERT ON jobs FOR EACH ROW
+BEGIN
+    IF :NEW.id IS NULL THEN
+        SELECT jobs_seq.NEXTVAL INTO :NEW.id FROM dual;
+    END IF;
+END;
+/
+
+CREATE OR REPLACE TRIGGER migrations_id_trg before insert on MIGRATIONS for each row
+begin
+            if :new.ID is null then
+                select migrations_id_seq.nextval into :new.ID from dual;
+            end if;
+            end;
+/
+
+CREATE OR REPLACE TRIGGER permissions_id_trg before insert on PERMISSIONS for each row
+begin
+            if :new.ID is null then
+                select permissions_id_seq.nextval into :new.ID from dual;
+            end if;
+            end;
+/
+
+CREATE OR REPLACE TRIGGER personal_access_tokens_id_trg before insert on PERSONAL_ACCESS_TOKENS for each row
+begin
+            if :new.ID is null then
+                select personal_access_tokens_id_seq.nextval into :new.ID from dual;
+            end if;
+            end;
+/
+
+CREATE OR REPLACE TRIGGER roles_id_trg before insert on ROLES for each row
+begin
+            if :new.ID is null then
+                select roles_id_seq.nextval into :new.ID from dual;
+            end if;
+            end;
+/
+
+CREATE OR REPLACE TRIGGER users_id_trg before insert on USERS for each row
+begin
+            if :new.ID is null then
+                select users_id_seq.nextval into :new.ID from dual;
+            end if;
+            end;
+/
+
+CREATE OR REPLACE TRIGGER "WEB_LOG_BIR" BEFORE INSERT ON web_log_status FOR EACH ROW
+DECLARE
+               id number;
+             BEGIN
+               SELECT demo_prod_seq.nextval
+                 INTO id
+                 FROM dual;
+               :new.id := id;
+             END;
+/
